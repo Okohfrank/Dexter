@@ -1,0 +1,76 @@
+"""Security utilities for password hashing and JWT token management."""
+
+from datetime import datetime, timedelta, timezone
+from typing import Any
+import uuid
+
+from jose import jwt, JWTError
+from passlib.context import CryptContext
+from pydantic import BaseModel
+
+from app.core.config import get_settings
+from app.core.exceptions import DexterAuthError
+
+settings = get_settings()
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+ALGORITHM = "HS256"
+
+
+class TokenPayload(BaseModel):
+    """Payload definition for JSON Web Tokens."""
+    sub: uuid.UUID
+    exp: datetime
+    type: str
+
+
+def hash_password(password: str) -> str:
+    """Hash a plain text password."""
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plain text password against a hashed password."""
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
+    """Create a new JWT access token."""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    to_encode.update({"exp": expire, "type": "access"})
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def create_refresh_token(data: dict[str, Any]) -> str:
+    """Create a new JWT refresh token."""
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode.update({"exp": expire, "type": "refresh"})
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def verify_token(token: str) -> TokenPayload:
+    """Verify and parse a JWT token."""
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        return TokenPayload(**payload)
+    except JWTError as e:
+        raise DexterAuthError(detail="Could not validate credentials") from e
+    except ValueError as e:
+        raise DexterAuthError(detail="Invalid token payload") from e
+
+__all__ = [
+    "TokenPayload",
+    "hash_password",
+    "verify_password",
+    "create_access_token",
+    "create_refresh_token",
+    "verify_token"
+]
