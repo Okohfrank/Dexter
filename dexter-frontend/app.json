@@ -2,7 +2,11 @@
   "expo": {
     "name": "dexter-frontend",
     "slug": "dexter-frontend",
+    "scheme": "dexter",
     "version": "1.0.0",
+    "experiments": {
+      "typedRoutes": true
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -23,8 +27,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-font"
     ]
   }
 }
