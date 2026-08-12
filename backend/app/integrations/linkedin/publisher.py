@@ -61,7 +61,26 @@ class LinkedInPublisher:
     async def _initialize_image_upload(
         self, author_urn: str
     ) -> LinkedInMediaUploadResponse:
-        """Register an image upload with LinkedIn."""
+        """Register an image upload with LinkedIn using the REST Images API."""
+        payload = {
+            "initializeUploadRequest": {
+                "owner": author_urn
+            }
+        }
+        try:
+            data = await self._client.post("https://api.linkedin.com/rest/images?action=initializeUpload", json=payload)
+            value = data["value"]
+            image_urn = value["image"]
+            upload_url = value["uploadUrl"]
+            return LinkedInMediaUploadResponse(asset=image_urn, upload_url=upload_url)
+        except Exception as e:
+            self._logger.warning(f"Failed rest/images upload init, trying assets fallback: {e}")
+            return await self._initialize_image_upload_legacy(author_urn)
+
+    async def _initialize_image_upload_legacy(
+        self, author_urn: str
+    ) -> LinkedInMediaUploadResponse:
+        """Legacy Assets API fallback."""
         payload = {
             "registerUploadRequest": {
                 "owner": author_urn,
@@ -74,13 +93,10 @@ class LinkedInPublisher:
                 ]
             }
         }
-        try:
-            data = await self._client.post("/assets?action=registerUpload", json=payload)
-            asset = data["value"]["asset"]
-            upload_url = data["value"]["uploadMechanism"]["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"]["uploadUrl"]
-            return LinkedInMediaUploadResponse(asset=asset, upload_url=upload_url)
-        except Exception as e:
-            raise LinkedInMediaUploadError(f"Failed to initialize upload: {e}")
+        data = await self._client.post("/assets?action=registerUpload", json=payload)
+        asset = data["value"]["asset"]
+        upload_url = data["value"]["uploadMechanism"]["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"]["uploadUrl"]
+        return LinkedInMediaUploadResponse(asset=asset, upload_url=upload_url)
             
     async def _upload_image(
         self, upload_url: str, image_data: bytes, image_mime: str

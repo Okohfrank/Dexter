@@ -44,6 +44,15 @@ class Settings(BaseSettings):
     # OpenAI
     OPENAI_API_KEY: str = Field(default="")
 
+    # Anthropic (Claude 3.5 Sonnet)
+    ANTHROPIC_API_KEY: str = Field(default="")
+
+    # Groq (Llama 3.3 70B - Free)
+    GROQ_API_KEY: str = Field(default="")
+
+    # Google Gemini (Gemini 2.0 Flash - Free)
+    GEMINI_API_KEY: str = Field(default="")
+
     # Miso AI (Conversational Model - misolabs.ai)
     MISO_API_KEY: str = Field(default="")
     MISO_BASE_URL: str = Field(default="https://api.misolabs.ai/v1")

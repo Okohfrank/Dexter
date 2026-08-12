@@ -70,7 +70,7 @@ class PublishingService:
         )
     
     async def execute_publish(self, post_id: uuid.UUID) -> dict:
-        """Actually publish a post (called by worker)."""
+        """Actually publish a post to LinkedIn."""
         self._logger.info("executing_publish", post_id=post_id)
         
         result = await self._db.execute(select(ScheduledPost).where(ScheduledPost.id == post_id))
@@ -83,15 +83,27 @@ class PublishingService:
         await self._db.commit()
         
         try:
+            from app.integrations.linkedin.client import LinkedInClient
+            from app.integrations.linkedin.publisher import LinkedInPublisher
+
             token = await self._oauth.get_decrypted_token(post.connected_account_id)
-            # Find publisher via registry (hardcoded lookup for mock)
-            # publisher = self._registry.get_publisher("linkedin")
-            # pub_result = await publisher.publish_text(...)
-            
+            client = LinkedInClient(access_token=token)
+            publisher = LinkedInPublisher(client=client)
+
+            profile = await publisher.get_profile()
+            author_urn = f"urn:li:person:{profile.sub}"
+
+            platform_post_id = await publisher.publish_text(
+                author_urn=author_urn,
+                text=post.content_text
+            )
+
+            await client.close()
+
             published_post = PublishedPost(
                 scheduled_post_id=post.id,
-                platform_post_id="mock_external_id",
-                permalink="https://mock.url",
+                platform_post_id=platform_post_id,
+                permalink=f"https://www.linkedin.com/feed/update/{platform_post_id}",
                 published_at=datetime.now(timezone.utc),
             )
             self._db.add(published_post)
@@ -100,9 +112,9 @@ class PublishingService:
             await self._db.commit()
             
             await self._event_bus.publish(
-                post_published_event(actor_id=post.business_id, post_id=post.id, platform_post_id="mock", payload={})
+                post_published_event(actor_id=post.business_id, post_id=post.id, platform_post_id=platform_post_id, payload={})
             )
-            return {"success": True, "post_id": str(post.id)}
+            return {"success": True, "post_id": str(post.id), "platform_post_id": platform_post_id}
             
         except Exception as e:
             post.status = PostStatus.FAILED
@@ -113,6 +125,33 @@ class PublishingService:
                 post_failed_event(actor_id=post.business_id, post_id=post.id, error=str(e), payload={})
             )
             return {"success": False, "error": str(e)}
+
+    async def get_scheduled_posts(self, connected_account_id: uuid.UUID) -> list[ScheduledPost]:
+        """Fetch all scheduled posts for frontend calendar/plans page."""
+        result = await self._db.execute(
+            select(ScheduledPost)
+            .where(ScheduledPost.connected_account_id == connected_account_id)
+            .order_by(ScheduledPost.scheduled_for.asc())
+        )
+        return list(result.scalars().all())
+
+    async def update_scheduled_post(
+        self, post_id: uuid.UUID, content_text: Optional[str] = None, scheduled_for: Optional[datetime] = None
+    ) -> ScheduledPost:
+        """Allow user to edit/override any scheduled post prior to publishing."""
+        result = await self._db.execute(select(ScheduledPost).where(ScheduledPost.id == post_id))
+        post = result.scalar_one_or_none()
+        if not post:
+            raise ValueError(f"Post {post_id} not found")
+
+        if content_text is not None:
+            post.content_text = content_text
+        if scheduled_for is not None:
+            post.scheduled_for = scheduled_for
+
+        await self._db.commit()
+        await self._db.refresh(post)
+        return post
     
     async def get_post_status(self, post_id: uuid.UUID, user_id: uuid.UUID) -> PostStatusResponse:
         """Get current status of a post."""
