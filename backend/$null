@@ -1,0 +1,7 @@
+Exception calling "PlaySync" with "0" argument(s): "The file located at C:\Users\USER\Desktop\Dexter\backend\scripts\dexter_reply.mp3 is not a valid wave file."
+At line:1 char:1
++ (New-Object Media.SoundPlayer 'C:\Users\USER\Desktop\Dexter\backend\s ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [], MethodInvocationException
+    + FullyQualifiedErrorId : InvalidOperationException
+ 
