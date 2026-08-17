@@ -20,7 +20,17 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30)
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7)
+    EMAIL_VERIFICATION_EXPIRE_HOURS: int = Field(default=24)
     TOKEN_ENCRYPTION_KEY: str
+
+    # Email (SMTP)
+    SMTP_HOST: str = Field(default="")
+    SMTP_PORT: int = Field(default=587)
+    SMTP_USERNAME: str = Field(default="")
+    SMTP_PASSWORD: str = Field(default="")
+    SMTP_FROM_EMAIL: str = Field(default="")
+    SMTP_USE_TLS: bool = Field(default=True)
+    FRONTEND_BASE_URL: str = Field(default="http://localhost:3000")
 
     # Database
     DATABASE_URL: str

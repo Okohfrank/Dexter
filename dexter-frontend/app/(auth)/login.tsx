@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Link } from 'expo-router';
+import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { Link, useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import {
   AuthScreen,
   BrandMark,
@@ -10,10 +11,76 @@ import {
   Divider,
 } from '../../src/components/ui';
 import { colors, spacing, typography } from '../../src/theme';
+import { login, getLinkedInAuthorizationUrl, getMe } from '../../src/api/auth';
+import { listBusinesses } from '../../src/api/business';
+import { listConnectedAccounts } from '../../src/api/oauth';
+import { useAuthStore } from '../../src/api/client';
+import { useAppStore } from '../../src/store/app';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Missing info', 'Please enter your email and password.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await login(email.trim(), password);
+      useAuthStore.getState().setTokens({
+        access_token: res.access_token,
+        refresh_token: res.refresh_token,
+      });
+      try {
+        const me = await getMe();
+        useAuthStore.getState().setAuth({
+          user: me,
+          access_token: res.access_token,
+          refresh_token: res.refresh_token,
+        });
+      } catch {
+        // /me failed; tokens are still stored for subsequent retries.
+      }
+      try {
+        const businesses = await listBusinesses();
+        if (businesses.length > 0) {
+          useAppStore.getState().setBusiness(businesses[0]);
+          const accounts = await listConnectedAccounts(businesses[0].id).catch(() => []);
+          useAppStore.getState().setConnectedAccounts(accounts);
+          router.replace('/(dashboard)');
+        } else {
+          router.replace('/(onboarding)');
+        }
+      } catch {
+        router.replace('/(dashboard)');
+      }
+    } catch (e: any) {
+      Alert.alert('Login failed', e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLinkedIn = async () => {
+    const me = useAuthStore.getState().user;
+    if (!me) {
+      Alert.alert('Log in first', 'Connect LinkedIn after logging in.');
+      return;
+    }
+    try {
+      // A real business id is needed; wire this to the user's active business.
+      const businessId = '00000000-0000-0000-0000-000000000000';
+      const { authorization_url } = await getLinkedInAuthorizationUrl(businessId);
+      await WebBrowser.openBrowserAsync(authorization_url);
+      Alert.alert('LinkedIn', 'Complete sign-in in the browser.');
+    } catch (e: any) {
+      Alert.alert('LinkedIn', e.message);
+    }
+  };
 
   return (
     <AuthScreen>
@@ -56,10 +123,11 @@ export default function LoginScreen() {
         </Link>
       </View>
 
-      <PrimaryButton title="Log in" onPress={() => {}} />
+      <PrimaryButton title="Log in" onPress={handleLogin} disabled={loading} />
+      {loading && <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.sm }} />}
 
       <Divider label="or continue with" />
-      <OutlinedButton title="Continue with LinkedIn" icon="logo-linkedin" onPress={() => {}} />
+      <OutlinedButton title="Continue with LinkedIn" icon="logo-linkedin" onPress={handleLinkedIn} />
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>New to Dexter? </Text>

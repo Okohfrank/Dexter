@@ -12,11 +12,11 @@ from app.models.base import Base
 # Import all models here so they are registered with Base.metadata
 import app.models.user
 import app.models.business
-import app.models.account
-import app.models.token
-import app.models.publishing
-import app.models.media
-import app.models.events
+import app.models.connected_account
+import app.models.oauth_token
+import app.models.post
+import app.models.media_asset
+import app.models.event_log
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

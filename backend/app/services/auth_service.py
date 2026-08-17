@@ -4,11 +4,19 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
+from app.core.security import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    create_refresh_token,
+    create_verification_token,
+    verify_token,
+)
 from app.core.exceptions import DexterConflictError, DexterAuthError, DexterForbiddenError, DexterNotFoundError
 from app.core.logging import get_logger
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
+from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse, AuthResponse
+from app.services.email_service import EmailService
 
 class AuthService:
     """Handles user registration, login, and token management."""
@@ -16,9 +24,10 @@ class AuthService:
     def __init__(self, db: AsyncSession):
         self._db = db
         self._logger = get_logger(__name__)
+        self._email = EmailService()
     
-    async def register(self, data: UserCreate) -> UserResponse:
-        """Register a new user."""
+    async def register(self, data: UserCreate) -> AuthResponse:
+        """Register a new user and send a verification email."""
         self._logger.info("registering_user", email=data.email)
         result = await self._db.execute(select(User).where(User.email == data.email))
         if result.scalar_one_or_none():
@@ -36,14 +45,65 @@ class AuthService:
         await self._db.commit()
         await self._db.refresh(new_user)
         
-        return UserResponse(
-            id=new_user.id,
-            email=new_user.email,
-            full_name=new_user.full_name,
-            is_active=new_user.is_active,
-            is_verified=new_user.is_verified,
-            created_at=new_user.created_at
+        verification_token = create_verification_token(new_user.id)
+        self._email.send_verification_email(new_user.email, new_user.full_name, verification_token)
+        
+        return AuthResponse(
+            user=UserResponse(
+                id=new_user.id,
+                email=new_user.email,
+                full_name=new_user.full_name,
+                is_active=new_user.is_active,
+                is_verified=new_user.is_verified,
+                created_at=new_user.created_at
+            ),
+            access_token=create_access_token(data={"sub": str(new_user.id)}),
+            refresh_token=create_refresh_token(data={"sub": str(new_user.id)}),
+            token_type="bearer"
         )
+    
+    async def verify_email(self, token: str) -> UserResponse:
+        """Mark a user as verified using a verification token."""
+        try:
+            payload = verify_token(token)
+        except DexterAuthError:
+            raise DexterAuthError(detail="Invalid or expired verification token")
+
+        if payload.type != "verify":
+            raise DexterAuthError(detail="Invalid token type")
+
+        user = await self.get_user_by_id(payload.sub)
+        if user.is_verified:
+            raise DexterConflictError(detail="Email already verified")
+
+        user.is_verified = True
+        await self._db.commit()
+        await self._db.refresh(user)
+        self._logger.info("email_verified", user_id=user.id)
+        
+        return UserResponse(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+            created_at=user.created_at
+        )
+    
+    async def resend_verification(self, email: str) -> None:
+        """Send a new verification email to an unverified user."""
+        result = await self._db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        if not user:
+            raise DexterNotFoundError(detail="User not found")
+        if user.is_verified:
+            raise DexterConflictError(detail="Email already verified")
+        if not user.is_active:
+            raise DexterForbiddenError(detail="Account is inactive")
+
+        verification_token = create_verification_token(user.id)
+        self._email.send_verification_email(user.email, user.full_name, verification_token)
+        self._logger.info("verification_email_resent", user_id=user.id)
     
     async def login(self, data: UserLogin) -> TokenResponse:
         """Authenticate and return tokens."""

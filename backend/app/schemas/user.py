@@ -33,6 +33,25 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
 
+class AuthResponse(BaseModel):
+    """Schema returned after successful registration."""
+    user: UserResponse
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+class RefreshRequest(BaseModel):
+    """Schema for refreshing an access token."""
+    refresh_token: str
+
+class VerificationRequest(BaseModel):
+    """Schema for email verification."""
+    token: str
+
+class ResendVerificationRequest(BaseModel):
+    """Schema for requesting a new verification email."""
+    email: EmailStr
+
 class TokenPayload(BaseModel):
     """Schema for token payload."""
     sub: uuid.UUID

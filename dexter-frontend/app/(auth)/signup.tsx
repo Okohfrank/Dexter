@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Link } from 'expo-router';
+import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { Link, useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import {
   AuthScreen,
   BrandMark,
@@ -11,12 +12,69 @@ import {
   Checkbox,
 } from '../../src/components/ui';
 import { colors, spacing, typography } from '../../src/theme';
+import { register, getLinkedInAuthorizationUrl } from '../../src/api/auth';
+import { useAuthStore } from '../../src/api/client';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleCreate = async () => {
+    if (!agreed) return;
+    if (!email || !password || !name) {
+      Alert.alert('Missing info', 'Please fill in all fields.');
+      return;
+    }
+    if (password.length < 8) {
+      Alert.alert('Weak password', 'Password must be at least 8 characters.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await register(email.trim(), password, name.trim());
+      useAuthStore.getState().setAuth({
+        user: res.user,
+        access_token: res.access_token,
+        refresh_token: res.refresh_token,
+      });
+      Alert.alert(
+        'Account created',
+        res.user.is_verified
+          ? 'You\'re all set!'
+          : 'Check your email to verify your account.',
+        [{
+          text: 'OK',
+          onPress: () => router.replace('/(onboarding)'),
+        }],
+      );
+    } catch (e: any) {
+      Alert.alert('Sign up failed', e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLinkedIn = async () => {
+    const me = useAuthStore.getState().user;
+    if (!me) {
+      Alert.alert('Log in first', 'Connect LinkedIn after signing in.');
+      return;
+    }
+    try {
+      // A real business id is needed; wire this to the user's active business.
+      const businessId = '00000000-0000-0000-0000-000000000000';
+      const { authorization_url } = await getLinkedInAuthorizationUrl(businessId);
+      await WebBrowser.openBrowserAsync(authorization_url);
+      // The backend /oauth/linkedin/callback handles the redirect server-side.
+      Alert.alert('LinkedIn', 'Complete sign-in in the browser.');
+    } catch (e: any) {
+      Alert.alert('LinkedIn', e.message);
+    }
+  };
 
   return (
     <AuthScreen>
@@ -70,12 +128,13 @@ export default function SignupScreen() {
 
       <PrimaryButton
         title="Create account"
-        disabled={!agreed}
-        onPress={() => {}}
+        disabled={!agreed || loading}
+        onPress={agreed ? handleCreate : undefined}
       />
+      {loading && <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.sm }} />}
 
       <Divider label="or continue with" />
-      <OutlinedButton title="Continue with LinkedIn" icon="logo-linkedin" onPress={() => {}} />
+      <OutlinedButton title="Continue with LinkedIn" icon="logo-linkedin" onPress={handleLinkedIn} />
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>Already have an account? </Text>

@@ -24,13 +24,19 @@ TestingSessionLocal = async_sessionmaker(
     class_=AsyncSession
 )
 
+@pytest_asyncio.fixture(autouse=True)
+async def clean_db():
+    """Isolate tests by truncating all rows before each test."""
+    async with engine.begin() as conn:
+        for table in reversed(Base.metadata.sorted_tables):
+            await conn.execute(table.delete())
+    yield
+
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def setup_database():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
 
 @pytest_asyncio.fixture
 async def db_session():

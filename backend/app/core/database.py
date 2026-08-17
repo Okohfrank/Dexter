@@ -3,6 +3,7 @@
 from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from app.core.config import get_settings
+from app.models.base import Base
 
 settings = get_settings()
 
@@ -23,6 +24,9 @@ async def init_db() -> None:
         class_=AsyncSession,
         expire_on_commit=False,
     )
+    if settings.is_development:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
 async def close_db() -> None:
     """Dispose of the database engine."""
