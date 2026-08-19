@@ -47,6 +47,9 @@ const MOCK_SCHEDULED: ScheduledPost[] = [
 
 type Tab = 'planned' | 'published' | 'learned';
 
+/** Mock IDs aren't real UUIDs — don't hit the API with them (PRD §4). */
+const isMockId = (id: string) => !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
 export default function DashboardScreen() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
@@ -100,11 +103,15 @@ export default function DashboardScreen() {
         text: 'Cancel post',
         style: 'destructive',
         onPress: async () => {
+          if (isMockId(id)) {
+            setScheduled((prev) => prev.filter((p) => p.id !== id));
+            return;
+          }
           try {
             await cancelPost(id);
             setScheduled((prev) => prev.filter((p) => p.id !== id));
-          } catch {
-            setScheduled((prev) => prev.filter((p) => p.id !== id));
+          } catch (e: any) {
+            Alert.alert('Failed', e.message);
           }
         },
       },
@@ -117,6 +124,11 @@ export default function DashboardScreen() {
       {
         text: 'Publish',
         onPress: async () => {
+          if (isMockId(id)) {
+            setScheduled((prev) => prev.filter((p) => p.id !== id));
+            Alert.alert('Published', 'Post is live.');
+            return;
+          }
           try {
             await publishNow(id);
             Alert.alert('Published', 'Post is live.');
@@ -240,12 +252,16 @@ export default function DashboardScreen() {
                     </Pressable>
                     <Pressable
                       style={styles.ghostBtn}
-                      onPress={() =>
+                      onPress={() => {
+                        if (isMockId(post.id)) {
+                          Alert.alert('Sample post', 'Edit works on live posts. Try it once Dexter schedules something real.');
+                          return;
+                        }
                         router.push({
                           pathname: '/(dashboard)/edit-post',
                           params: { post: JSON.stringify(post) },
-                        })
-                      }
+                        });
+                      }}
                     >
                       <Text style={styles.ghostBtnText}>Edit / Swap</Text>
                     </Pressable>
