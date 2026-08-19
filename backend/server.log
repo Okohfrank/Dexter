@@ -1,0 +1,171 @@
+2026-08-18 17:23:02,006 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-08-18T16:23:02.012123Z [info     ] BEGIN (implicit)               [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_begin_impl lineno=2712
+2026-08-18 17:23:02,119 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("users")
+2026-08-18T16:23:02.123245Z [info     ] PRAGMA main.table_info("users") [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,249 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-08-18T16:23:02.253161Z [info     ] [raw sql] ()                   [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,465 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("businesses")
+2026-08-18T16:23:02.466098Z [info     ] PRAGMA main.table_info("businesses") [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,477 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-08-18T16:23:02.478797Z [info     ] [raw sql] ()                   [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,497 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("connected_accounts")
+2026-08-18T16:23:02.498658Z [info     ] PRAGMA main.table_info("connected_accounts") [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,520 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-08-18T16:23:02.521526Z [info     ] [raw sql] ()                   [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,538 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("oauth_tokens")
+2026-08-18T16:23:02.538812Z [info     ] PRAGMA main.table_info("oauth_tokens") [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,545 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-08-18T16:23:02.546519Z [info     ] [raw sql] ()                   [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,555 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("media_assets")
+2026-08-18T16:23:02.555998Z [info     ] PRAGMA main.table_info("media_assets") [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,569 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-08-18T16:23:02.570010Z [info     ] [raw sql] ()                   [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,586 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("scheduled_posts")
+2026-08-18T16:23:02.587042Z [info     ] PRAGMA main.table_info("scheduled_posts") [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,597 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-08-18T16:23:02.597827Z [info     ] [raw sql] ()                   [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,620 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("published_posts")
+2026-08-18T16:23:02.620777Z [info     ] PRAGMA main.table_info("published_posts") [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,636 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-08-18T16:23:02.637446Z [info     ] [raw sql] ()                   [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,650 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("event_log")
+2026-08-18T16:23:02.651240Z [info     ] PRAGMA main.table_info("event_log") [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,657 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-08-18T16:23:02.658105Z [info     ] [raw sql] ()                   [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 17:23:02,673 INFO sqlalchemy.engine.Engine COMMIT
+2026-08-18T16:23:02.674539Z [info     ] COMMIT                         [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_commit_impl lineno=2718
+2026-08-18T16:23:02.686825Z [info     ] 2026-08-18T16:23:02.686511Z [info     ] dexter_started                 [app.main] environment=development filename=main.py func_name=lifespan lineno=22 [app.main] filename=main.py func_name=lifespan lineno=22
+INFO:     127.0.0.1:54522 - "GET /docs HTTP/1.1" 200 OK
+2026-08-18T17:35:06.221955Z [info     ] 2026-08-18T17:35:06.219295Z [info     ] login_attempt                  [app.services.auth_service] email=oladiposamcharles@gmail.com filename=auth_service.py func_name=login lineno=110 [app.services.auth_service] filename=auth_service.py func_name=login lineno=110
+2026-08-18 18:35:06,258 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-08-18T17:35:06.258942Z [info     ] BEGIN (implicit)               [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_begin_impl lineno=2712
+2026-08-18 18:35:06,334 INFO sqlalchemy.engine.Engine SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.email = ?
+2026-08-18T17:35:06.335191Z [info     ] SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.email = ? [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:06,342 INFO sqlalchemy.engine.Engine [generated in 0.00776s] ('oladiposamcharles@gmail.com',)
+2026-08-18T17:35:06.343626Z [info     ] [generated in 0.00776s] ('oladiposamcharles@gmail.com',) [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+INFO:     10.48.121.171:60856 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+2026-08-18 18:35:06,797 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-08-18T17:35:06.799869Z [info     ] ROLLBACK                       [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_rollback_impl lineno=2715
+2026-08-18 18:35:06,838 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-08-18T17:35:06.838552Z [info     ] BEGIN (implicit)               [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_begin_impl lineno=2712
+2026-08-18 18:35:06,847 INFO sqlalchemy.engine.Engine SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = ?
+2026-08-18T17:35:06.847996Z [info     ] SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = ? [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:06,851 INFO sqlalchemy.engine.Engine [generated in 0.00530s] ('d536bb03c69a49a7b2bc3e1d88780203',)
+2026-08-18T17:35:06.852270Z [info     ] [generated in 0.00530s] ('d536bb03c69a49a7b2bc3e1d88780203',) [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+INFO:     10.48.121.171:60856 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+2026-08-18 18:35:06,865 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-08-18T17:35:06.866053Z [info     ] ROLLBACK                       [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_rollback_impl lineno=2715
+2026-08-18 18:35:06,998 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-08-18T17:35:06.998961Z [info     ] BEGIN (implicit)               [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_begin_impl lineno=2712
+2026-08-18 18:35:07,005 INFO sqlalchemy.engine.Engine SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = ?
+2026-08-18T17:35:07.005593Z [info     ] SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = ? [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:07,015 INFO sqlalchemy.engine.Engine [cached since 0.1693s ago] ('d536bb03c69a49a7b2bc3e1d88780203',)
+2026-08-18T17:35:07.016513Z [info     ] [cached since 0.1693s ago] ('d536bb03c69a49a7b2bc3e1d88780203',) [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:07,030 INFO sqlalchemy.engine.Engine SELECT businesses.user_id, businesses.name, businesses.industry, businesses.description, businesses.website, businesses.is_active, businesses.id, businesses.created_at, businesses.updated_at 
+FROM businesses 
+WHERE businesses.user_id = ? ORDER BY businesses.created_at DESC
+2026-08-18T17:35:07.030942Z [info     ] SELECT businesses.user_id, businesses.name, businesses.industry, businesses.description, businesses.website, businesses.is_active, businesses.id, businesses.created_at, businesses.updated_at 
+FROM businesses 
+WHERE businesses.user_id = ? ORDER BY businesses.created_at DESC [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:07,037 INFO sqlalchemy.engine.Engine [generated in 0.00699s] ('d536bb03c69a49a7b2bc3e1d88780203',)
+2026-08-18T17:35:07.037857Z [info     ] [generated in 0.00699s] ('d536bb03c69a49a7b2bc3e1d88780203',) [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+INFO:     10.48.121.171:60856 - "GET /api/v1/businesses/ HTTP/1.1" 200 OK
+2026-08-18 18:35:07,050 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-08-18T17:35:07.050727Z [info     ] ROLLBACK                       [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_rollback_impl lineno=2715
+2026-08-18 18:35:07,284 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-08-18T17:35:07.285214Z [info     ] BEGIN (implicit)               [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_begin_impl lineno=2712
+2026-08-18 18:35:07,296 INFO sqlalchemy.engine.Engine SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = ?
+2026-08-18T17:35:07.297357Z [info     ] SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = ? [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:07,304 INFO sqlalchemy.engine.Engine [cached since 0.4583s ago] ('d536bb03c69a49a7b2bc3e1d88780203',)
+2026-08-18T17:35:07.305552Z [info     ] [cached since 0.4583s ago] ('d536bb03c69a49a7b2bc3e1d88780203',) [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:07,317 INFO sqlalchemy.engine.Engine SELECT businesses.user_id, businesses.name, businesses.industry, businesses.description, businesses.website, businesses.is_active, businesses.id, businesses.created_at, businesses.updated_at 
+FROM businesses 
+WHERE businesses.user_id = ? ORDER BY businesses.created_at DESC
+2026-08-18T17:35:07.318379Z [info     ] SELECT businesses.user_id, businesses.name, businesses.industry, businesses.description, businesses.website, businesses.is_active, businesses.id, businesses.created_at, businesses.updated_at 
+FROM businesses 
+WHERE businesses.user_id = ? ORDER BY businesses.created_at DESC [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:07,328 INFO sqlalchemy.engine.Engine [cached since 0.2979s ago] ('d536bb03c69a49a7b2bc3e1d88780203',)
+2026-08-18T17:35:07.328921Z [info     ] [cached since 0.2979s ago] ('d536bb03c69a49a7b2bc3e1d88780203',) [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+INFO:     10.48.121.171:60856 - "GET /api/v1/businesses/ HTTP/1.1" 200 OK
+2026-08-18 18:35:07,339 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-08-18T17:35:07.339851Z [info     ] ROLLBACK                       [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_rollback_impl lineno=2715
+2026-08-18 18:35:22,353 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-08-18T17:35:22.354766Z [info     ] BEGIN (implicit)               [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_begin_impl lineno=2712
+2026-08-18 18:35:22,361 INFO sqlalchemy.engine.Engine SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = ?
+2026-08-18T17:35:22.362052Z [info     ] SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = ? [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:22,367 INFO sqlalchemy.engine.Engine [cached since 15.52s ago] ('d536bb03c69a49a7b2bc3e1d88780203',)
+2026-08-18T17:35:22.367619Z [info     ] [cached since 15.52s ago] ('d536bb03c69a49a7b2bc3e1d88780203',) [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:22,383 INFO sqlalchemy.engine.Engine INSERT INTO businesses (user_id, name, industry, description, website, is_active, id) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING created_at, updated_at
+2026-08-18T17:35:22.383900Z [info     ] INSERT INTO businesses (user_id, name, industry, description, website, is_active, id) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING created_at, updated_at [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:22,389 INFO sqlalchemy.engine.Engine [generated in 0.00836s] ('d536bb03c69a49a7b2bc3e1d88780203', 'Acme studio', None, None, None, 1, '0f62435617604a2cb972d795fac56a4a')
+2026-08-18T17:35:22.390424Z [info     ] [generated in 0.00836s] ('d536bb03c69a49a7b2bc3e1d88780203', 'Acme studio', None, None, None, 1, '0f62435617604a2cb972d795fac56a4a') [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:22,408 INFO sqlalchemy.engine.Engine COMMIT
+2026-08-18T17:35:22.408982Z [info     ] COMMIT                         [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_commit_impl lineno=2718
+2026-08-18 18:35:22,426 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-08-18T17:35:22.427366Z [info     ] BEGIN (implicit)               [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_begin_impl lineno=2712
+2026-08-18 18:35:22,438 INFO sqlalchemy.engine.Engine SELECT businesses.user_id, businesses.name, businesses.industry, businesses.description, businesses.website, businesses.is_active, businesses.id, businesses.created_at, businesses.updated_at 
+FROM businesses 
+WHERE businesses.id = ?
+2026-08-18T17:35:22.439029Z [info     ] SELECT businesses.user_id, businesses.name, businesses.industry, businesses.description, businesses.website, businesses.is_active, businesses.id, businesses.created_at, businesses.updated_at 
+FROM businesses 
+WHERE businesses.id = ? [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:22,447 INFO sqlalchemy.engine.Engine [generated in 0.00922s] ('0f62435617604a2cb972d795fac56a4a',)
+2026-08-18T17:35:22.448031Z [info     ] [generated in 0.00922s] ('0f62435617604a2cb972d795fac56a4a',) [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+INFO:     10.48.121.171:51682 - "POST /api/v1/businesses/ HTTP/1.1" 201 Created
+2026-08-18 18:35:22,461 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-08-18T17:35:22.461534Z [info     ] ROLLBACK                       [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_rollback_impl lineno=2715
+2026-08-18 18:35:24,288 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-08-18T17:35:24.289289Z [info     ] BEGIN (implicit)               [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_begin_impl lineno=2712
+2026-08-18 18:35:24,296 INFO sqlalchemy.engine.Engine SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = ?
+2026-08-18T17:35:24.296835Z [info     ] SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = ? [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:24,302 INFO sqlalchemy.engine.Engine [cached since 17.46s ago] ('d536bb03c69a49a7b2bc3e1d88780203',)
+2026-08-18T17:35:24.302654Z [info     ] [cached since 17.46s ago] ('d536bb03c69a49a7b2bc3e1d88780203',) [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18T17:35:24.319235Z [info     ] 2026-08-18T17:35:24.318000Z [info     ] generate_oauth_url             [app.services.oauth_service] business_id=UUID('0f624356-1760-4a2c-b972-d795fac56a4a') filename=oauth_service.py func_name=get_authorization_url lineno=34 platform=linkedin [app.services.oauth_service] filename=oauth_service.py func_name=get_authorization_url lineno=34
+INFO:     10.48.121.171:51682 - "GET /api/v1/oauth/linkedin/authorize?business_id=0f624356-1760-4a2c-b972-d795fac56a4a HTTP/1.1" 200 OK
+2026-08-18 18:35:24,342 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-08-18T17:35:24.342876Z [info     ] ROLLBACK                       [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_rollback_impl lineno=2715
+2026-08-18 18:35:24,483 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-08-18T17:35:24.483571Z [info     ] BEGIN (implicit)               [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_begin_impl lineno=2712
+2026-08-18 18:35:24,492 INFO sqlalchemy.engine.Engine SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = ?
+2026-08-18T17:35:24.492732Z [info     ] SELECT users.email, users.hashed_password, users.full_name, users.is_active, users.is_verified, users.id, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = ? [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:24,499 INFO sqlalchemy.engine.Engine [cached since 17.65s ago] ('d536bb03c69a49a7b2bc3e1d88780203',)
+2026-08-18T17:35:24.499741Z [info     ] [cached since 17.65s ago] ('d536bb03c69a49a7b2bc3e1d88780203',) [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:24,511 INFO sqlalchemy.engine.Engine SELECT connected_accounts.business_id, connected_accounts.platform, connected_accounts.platform_user_id, connected_accounts.display_name, connected_accounts.profile_url, connected_accounts.is_active, connected_accounts.id, connected_accounts.created_at, connected_accounts.updated_at 
+FROM connected_accounts 
+WHERE connected_accounts.business_id = ? AND connected_accounts.is_active = 1
+2026-08-18T17:35:24.511878Z [info     ] SELECT connected_accounts.business_id, connected_accounts.platform, connected_accounts.platform_user_id, connected_accounts.display_name, connected_accounts.profile_url, connected_accounts.is_active, connected_accounts.id, connected_accounts.created_at, connected_accounts.updated_at 
+FROM connected_accounts 
+WHERE connected_accounts.business_id = ? AND connected_accounts.is_active = 1 [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+2026-08-18 18:35:24,517 INFO sqlalchemy.engine.Engine [generated in 0.00599s] ('0f62435617604a2cb972d795fac56a4a',)
+2026-08-18T17:35:24.517745Z [info     ] [generated in 0.00599s] ('0f62435617604a2cb972d795fac56a4a',) [sqlalchemy.engine.Engine] filename=base.py func_name=_execute_context lineno=1848
+INFO:     10.48.121.171:51682 - "GET /api/v1/oauth/accounts?business_id=0f624356-1760-4a2c-b972-d795fac56a4a HTTP/1.1" 200 OK
+2026-08-18 18:35:24,526 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-08-18T17:35:24.526943Z [info     ] ROLLBACK                       [sqlalchemy.engine.Engine] filename=base.py func_name=_connection_rollback_impl lineno=2715
