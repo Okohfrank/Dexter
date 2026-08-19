@@ -3,8 +3,9 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
+import { GlassCard, GlassPill } from '../../src/components/ui';
 
 export default function InterviewModeScreen() {
   const router = useRouter();
@@ -19,35 +20,42 @@ export default function InterviewModeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.content}>
         <Text style={styles.eyebrow}>Step 2 of 5</Text>
-        <Text style={styles.title}>How do you want to talk to Dexter?</Text>
+        <Text style={styles.title}>Choose your interview mode</Text>
         <Text style={styles.subtitle}>
-          Dexter asks questions about your business, audience, and goals — like a real employee would.
+          Dexter asks targeted questions about your target audience, tone, and objectives to build your Business Brain.
         </Text>
 
-        <Pressable style={styles.card} onPress={() => pick('text')}>
-          <View style={styles.cardIcon}>
-            <Ionicons name="chatbubbles-outline" size={26} color={colors.primary} />
-          </View>
-          <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>Text</Text>
-            <Text style={styles.cardSubtitle}>
-              Type your answers in a conversation. Works everywhere.
-            </Text>
-          </View>
-          <Ionicons name="arrow-forward" size={18} color={colors.textSecondary} />
+        <Pressable onPress={() => pick('text')}>
+          <GlassCard style={styles.card} elevated>
+            <View style={styles.cardIcon}>
+              <Ionicons name="chatbubbles" size={24} color={colors.primaryLight} />
+            </View>
+            <View style={styles.cardBody}>
+              <Text style={styles.cardTitle}>Text Conversation</Text>
+              <Text style={styles.cardSubtitle}>
+                Type your responses in an interactive chat session with Dexter.
+              </Text>
+            </View>
+            <Ionicons name="arrow-forward" size={18} color={colors.textSecondary} />
+          </GlassCard>
         </Pressable>
 
-        <Pressable style={[styles.card, styles.cardDisabled]} onPress={() => pick('voice')}>
-          <View style={styles.cardIcon}>
-            <Ionicons name="mic-outline" size={26} color={colors.textSecondary} />
-          </View>
-          <View style={styles.cardBody}>
-            <Text style={styles.cardTitle}>Voice</Text>
-            <Text style={styles.cardSubtitle}>Talk to Dexter naturally. Coming soon.</Text>
-          </View>
-          <View style={styles.soonBadge}>
-            <Text style={styles.soonText}>Soon</Text>
-          </View>
+        <Pressable onPress={() => pick('voice')}>
+          <GlassCard style={styles.card} highlighted>
+            <View style={[styles.cardIcon, { backgroundColor: colors.primaryGlass }]}>
+              <Ionicons name="mic" size={24} color={colors.primaryLight} />
+            </View>
+            <View style={styles.cardBody}>
+              <View style={styles.titleRow}>
+                <Text style={styles.cardTitle}>Voice Agent</Text>
+                <GlassPill label="BETA" variant="primary" />
+              </View>
+              <Text style={styles.cardSubtitle}>
+                Speak naturally with Dexter via the MisoLabs voice pipeline.
+              </Text>
+            </View>
+            <Ionicons name="arrow-forward" size={18} color={colors.textSecondary} />
+          </GlassCard>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -57,38 +65,34 @@ export default function InterviewModeScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1, padding: spacing.xxl, justifyContent: 'center', gap: spacing.lg },
-  eyebrow: { ...typography.caption, color: colors.textSecondary, textTransform: 'uppercase' },
+  eyebrow: {
+    ...typography.caption,
+    color: colors.primaryLight,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    fontWeight: '700',
+  },
   title: { ...typography.display, color: colors.textPrimary },
-  subtitle: { ...typography.body, color: colors.textSecondary },
+  subtitle: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.sm },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
     padding: spacing.xl,
-    marginTop: spacing.lg,
-    ...shadows.card,
+    marginTop: spacing.md,
   },
-  cardDisabled: { opacity: 0.6 },
   cardIcon: {
     width: 52,
     height: 52,
-    borderRadius: radii.md,
-    backgroundColor: colors.primaryLight,
+    borderRadius: radii.pill,
+    backgroundColor: colors.glassSurfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cardBody: { flex: 1 },
-  cardTitle: { ...typography.heading, color: colors.textPrimary },
-  cardSubtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
-  soonBadge: {
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  soonText: { color: colors.textSecondary, ...typography.caption },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  cardTitle: { ...typography.heading, color: colors.textPrimary, fontSize: 17 },
+  cardSubtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 4 },
 });

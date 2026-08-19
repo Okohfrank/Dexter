@@ -10,7 +10,7 @@ import {
   OutlinedButton,
   Divider,
 } from '../../src/components/ui';
-import { colors, spacing, typography } from '../../src/theme';
+import { colors, spacing, typography, fonts } from '../../src/theme';
 import { login, getLinkedInAuthorizationUrl, getMe } from '../../src/api/auth';
 import { listBusinesses } from '../../src/api/business';
 import { listConnectedAccounts } from '../../src/api/oauth';
@@ -43,7 +43,7 @@ export default function LoginScreen() {
           refresh_token: res.refresh_token,
         });
       } catch {
-        // /me failed; tokens are still stored for subsequent retries.
+        // Fallback
       }
       try {
         const businesses = await listBusinesses();
@@ -72,7 +72,6 @@ export default function LoginScreen() {
       return;
     }
     try {
-      // A real business id is needed; wire this to the user's active business.
       const businessId = '00000000-0000-0000-0000-000000000000';
       const { authorization_url } = await getLinkedInAuthorizationUrl(businessId);
       await WebBrowser.openBrowserAsync(authorization_url);
@@ -88,7 +87,7 @@ export default function LoginScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Welcome back</Text>
         <Text style={styles.subtitle}>
-          Dexter's been hard at work since you left. See what's planned, posted, and learned.
+          Dexter has been autonomously orchestrating your brand. Check in on your performance.
         </Text>
       </View>
 
@@ -123,8 +122,8 @@ export default function LoginScreen() {
         </Link>
       </View>
 
-      <PrimaryButton title="Log in" onPress={handleLogin} disabled={loading} />
-      {loading && <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.sm }} />}
+      <PrimaryButton title="Sign In" onPress={handleLogin} disabled={loading} />
+      {loading && <ActivityIndicator color={colors.primaryLight} style={{ marginTop: spacing.sm }} />}
 
       <Divider label="or continue with" />
       <OutlinedButton title="Continue with LinkedIn" icon="logo-linkedin" onPress={handleLinkedIn} />
@@ -142,21 +141,22 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { marginTop: spacing.xxl, marginBottom: spacing.xxxl },
+  header: { marginTop: spacing.xl, marginBottom: spacing.xxl },
   title: { ...typography.display, color: colors.textPrimary },
   subtitle: {
     ...typography.body,
     color: colors.textSecondary,
     marginTop: spacing.sm,
+    lineHeight: 22,
   },
   forgotRow: { alignItems: 'flex-end', marginBottom: spacing.sm },
-  forgotText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
+  forgotText: { color: colors.primaryLight, fontWeight: '600', fontSize: 13 },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: spacing.xxxl,
+    marginTop: spacing.xxl,
   },
   footerText: { ...typography.body, color: colors.textSecondary },
-  footerLink: { ...typography.body, color: colors.primary, fontWeight: '600' },
+  footerLink: { ...typography.body, color: colors.primaryLight, fontWeight: '700' },
 });

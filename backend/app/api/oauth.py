@@ -43,7 +43,10 @@ async def callback(
     platform: Platform,
     code: str,
     state: str,
+    db: AsyncSession = Depends(get_db),
     oauth_service: OAuthService = Depends(get_oauth_service),
-    current_user: User = Depends(get_current_user)
 ) -> ConnectedAccountResponse:
-    return await oauth_service.handle_callback(platform, code, state, current_user.id)
+    """OAuth callback — public (browser redirect). The user is resolved from
+    the state token (biz_{business_id}) instead of a Bearer header, because
+    LinkedIn redirects the browser here with no Authorization header."""
+    return await oauth_service.handle_callback(platform, code, state, db)

@@ -12,6 +12,7 @@ from app.core.logging import get_logger
 from app.schemas.connected_account import OAuthAuthorizeResponse, ConnectedAccountResponse
 from app.models.connected_account import ConnectedAccount
 from app.models.oauth_token import OAuthToken
+from app.models.business import Business
 from app.integrations.linkedin.oauth import LinkedInOAuth
 
 class OAuthService:
@@ -41,9 +42,14 @@ class OAuthService:
         raise NotImplementedError(f"OAuth not implemented for {platform}")
     
     async def handle_callback(
-        self, platform: Platform, code: str, state: str, user_id: uuid.UUID
+        self, platform: Platform, code: str, state: str, db: AsyncSession
     ) -> ConnectedAccountResponse:
-        """Handle OAuth callback: exchange code, store tokens, create connected account."""
+        """Handle OAuth callback: exchange code, store tokens, create connected account.
+
+        `db` is the same session used by the router's `get_db` dependency.
+        The actor (user) is resolved from the business encoded in `state`
+        because this endpoint is hit by a browser redirect, not an API call.
+        """
         self._logger.info("handle_oauth_callback", platform=platform)
         
         # Parse state
@@ -53,14 +59,25 @@ class OAuthService:
         parts = state.split("_")
         business_id = uuid.UUID(parts[1])
         
+        result = await db.execute(
+            select(Business).where(Business.id == business_id)
+        )
+        business = result.scalar_one_or_none()
+        if not business:
+            raise ValueError("Business not found for state")
+        user_id = business.user_id
+        
         if platform == Platform.LINKEDIN:
             tokens = await self._linkedin_oauth.exchange_code_for_tokens(code)
             
-            # Fetch profile (assuming linkedin profile implementation available)
-            # using tokens["access_token"]
-            platform_user_id = "mock_linkedin_id"
-            display_name = "LinkedIn User"
-            profile_url = "https://linkedin.com/mock"
+            # Fetch the real LinkedIn profile with the freshly issued token
+            from app.integrations.linkedin.client import LinkedInClient
+            from app.integrations.linkedin.publisher import LinkedInPublisher
+            publisher = LinkedInPublisher(LinkedInClient(tokens.access_token))
+            profile = await publisher.get_profile()
+            platform_user_id = profile.sub
+            display_name = profile.name or "LinkedIn User"
+            profile_url = profile.picture or "https://linkedin.com"
             
             # Create/update connected account
             result = await self._db.execute(

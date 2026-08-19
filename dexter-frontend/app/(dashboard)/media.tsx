@@ -4,21 +4,24 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  ScrollView,
   FlatList,
   Alert,
   ActivityIndicator,
   TextInput,
   Image,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { colors, spacing, radii, typography, shadows } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { listMediaAssets, uploadMediaAsset } from '../../src/api/media';
+import { GlassCard, GlassPill } from '../../src/components/ui';
 import type { MediaAsset } from '../../src/types';
+
+const PRESET_TAGS = ['All', 'Product', 'Brand', 'Team', 'Event', 'Video'];
 
 export default function MediaLibraryScreen() {
   const router = useRouter();
@@ -27,7 +30,11 @@ export default function MediaLibraryScreen() {
   const [assets, setAssets] = useState<MediaAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [filter, setFilter] = useState<string>('');
+  const [search, setSearch] = useState<string>('');
+  const [activeTag, setActiveTag] = useState<string>('All');
+
+  const [editingAsset, setEditingAsset] = useState<MediaAsset | null>(null);
+  const [newTagInput, setNewTagInput] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -35,7 +42,7 @@ export default function MediaLibraryScreen() {
         const list = await listMediaAssets(business?.id);
         setAssets(list);
       } catch {
-        // Keep empty list if the mock source fails.
+        // Keep fallback
       } finally {
         setLoading(false);
       }
@@ -45,11 +52,11 @@ export default function MediaLibraryScreen() {
   const pickAndUpload = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Permission needed', 'Allow photo access to add media to your library.');
+      Alert.alert('Permission needed', 'Allow media access to add photos and videos to your library.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsMultipleSelection: true,
       selectionLimit: 6,
       quality: 0.8,
@@ -59,12 +66,14 @@ export default function MediaLibraryScreen() {
     try {
       const newAssets: MediaAsset[] = [];
       for (const asset of result.assets) {
+        const isVid = asset.type === 'video';
+        const defaultTags = isVid ? ['Video'] : ['Photo'];
         const created = await uploadMediaAsset({
           business_id: business?.id,
-          file_name: asset.fileName ?? 'upload.jpg',
-          media_type: 'image',
+          file_name: asset.fileName ?? (isVid ? 'video.mp4' : 'image.jpg'),
+          media_type: isVid ? 'video' : 'image',
           url: asset.uri,
-          tags: [],
+          tags: defaultTags,
         });
         newAssets.push(created);
       }
@@ -87,13 +96,40 @@ export default function MediaLibraryScreen() {
     ]);
   };
 
-  const filtered = filter.trim()
-    ? assets.filter(
-        (a) =>
-          a.file_name.toLowerCase().includes(filter.toLowerCase()) ||
-          a.tags.some((t) => t.toLowerCase().includes(filter.toLowerCase())),
-      )
-    : assets;
+  const handleAddTag = () => {
+    const tag = newTagInput.trim();
+    if (!tag || !editingAsset) return;
+    const updated = {
+      ...editingAsset,
+      tags: [...new Set([...editingAsset.tags, tag])],
+    };
+    setAssets((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+    setEditingAsset(updated);
+    setNewTagInput('');
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    if (!editingAsset) return;
+    const updated = {
+      ...editingAsset,
+      tags: editingAsset.tags.filter((t) => t !== tagToRemove),
+    };
+    setAssets((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+    setEditingAsset(updated);
+  };
+
+  const filtered = assets.filter((a) => {
+    const matchesSearch =
+      !search.trim() ||
+      a.file_name.toLowerCase().includes(search.toLowerCase()) ||
+      a.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
+
+    const matchesTag =
+      activeTag === 'All' ||
+      (activeTag === 'Video' ? a.media_type === 'video' : a.tags.includes(activeTag));
+
+    return matchesSearch && matchesTag;
+  });
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -104,14 +140,14 @@ export default function MediaLibraryScreen() {
         <View style={styles.headerTitle}>
           <Text style={styles.title}>Media Library</Text>
           <Text style={styles.subtitle}>
-            Dexter pulls from here when it picks visuals for your posts.
+            Dexter auto-selects from here when planning visuals.
           </Text>
         </View>
         <Pressable style={styles.addBtn} onPress={pickAndUpload} disabled={uploading}>
           {uploading ? (
-            <ActivityIndicator size="small" color={colors.textInverse} />
+            <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Ionicons name="add" size={24} color={colors.textInverse} />
+            <Ionicons name="add" size={22} color="#FFFFFF" />
           )}
         </Pressable>
       </View>
@@ -120,16 +156,34 @@ export default function MediaLibraryScreen() {
         <Ionicons name="search" size={16} color={colors.textSecondary} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search by name or tag…"
-          placeholderTextColor={colors.textSecondary}
-          value={filter}
-          onChangeText={setFilter}
+          placeholder="Search by filename or tag…"
+          placeholderTextColor={colors.textMuted}
+          value={search}
+          onChangeText={setSearch}
         />
-        {filter.length > 0 && (
-          <Pressable onPress={() => setFilter('')}>
+        {search.length > 0 && (
+          <Pressable onPress={() => setSearch('')}>
             <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
           </Pressable>
         )}
+      </View>
+
+      {/* Preset Tag Filter Pills */}
+      <View style={styles.tagFiltersRow}>
+        {PRESET_TAGS.map((tag) => {
+          const isSelected = activeTag === tag;
+          return (
+            <Pressable
+              key={tag}
+              style={[styles.filterChip, isSelected && styles.filterChipActive]}
+              onPress={() => setActiveTag(tag)}
+            >
+              <Text style={[styles.filterChipText, isSelected && styles.filterChipTextActive]}>
+                {tag}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       {loading ? (
@@ -144,41 +198,91 @@ export default function MediaLibraryScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="images-outline" size={40} color={colors.textSecondary} />
-              <Text style={styles.emptyTitle}>No media yet</Text>
+              <Text style={styles.emptyTitle}>No media found</Text>
               <Text style={styles.emptyText}>
-                Add images, videos, and brand assets for Dexter to use.
+                {search || activeTag !== 'All'
+                  ? 'Try adjusting your search or tag filters.'
+                  : 'Add images, videos, and brand assets for Dexter to use.'}
               </Text>
             </View>
           }
           renderItem={({ item }) => (
-            <View style={styles.assetCard}>
+            <Pressable style={styles.assetCard} onPress={() => setEditingAsset(item)}>
               <View style={styles.assetImageWrap}>
                 <Image source={{ uri: item.url }} style={styles.assetImage} />
+                {item.media_type === 'video' && (
+                  <View style={styles.videoBadge}>
+                    <Ionicons name="videocam" size={12} color="#FFFFFF" />
+                  </View>
+                )}
                 <Pressable style={styles.removeBtn} onPress={() => removeAsset(item.id)}>
-                  <Ionicons name="close" size={14} color={colors.textInverse} />
+                  <Ionicons name="close" size={14} color="#FFFFFF" />
                 </Pressable>
               </View>
               <Text style={styles.assetName} numberOfLines={1}>
                 {item.file_name}
               </Text>
-              {item.tags.length > 0 && (
-                <View style={styles.tagRow}>
-                  {item.tags.slice(0, 3).map((tag) => (
-                    <View key={tag} style={styles.tag}>
-                      <Text style={styles.tagText}>{tag}</Text>
-                    </View>
-                  ))}
+              <View style={styles.tagRow}>
+                {item.tags.map((tag) => (
+                  <View key={tag} style={styles.tag}>
+                    <Text style={styles.tagText}>{tag}</Text>
+                  </View>
+                ))}
+                <View style={styles.addTagSmallPill}>
+                  <Ionicons name="pricetag-outline" size={10} color={colors.primaryLight} />
                 </View>
-              )}
-            </View>
+              </View>
+            </Pressable>
           )}
         />
       )}
 
-      <Text style={styles.mockNote}>
-        Showing sample media — your uploaded photos appear here, and the backend will later
-        auto-select from this library.
-      </Text>
+      {/* Edit Tags Modal */}
+      <Modal visible={!!editingAsset} animationType="slide" transparent>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Manage Asset Tags</Text>
+              <Pressable style={styles.closeBtn} onPress={() => setEditingAsset(null)}>
+                <Ionicons name="close" size={20} color={colors.textPrimary} />
+              </Pressable>
+            </View>
+
+            {editingAsset && (
+              <View style={styles.modalBody}>
+                <Image source={{ uri: editingAsset.url }} style={styles.modalAssetImage} />
+                <Text style={styles.modalAssetName}>{editingAsset.file_name}</Text>
+
+                <Text style={styles.modalLabel}>Tags for Dexter</Text>
+                <View style={styles.modalChips}>
+                  {editingAsset.tags.map((tag) => (
+                    <View key={tag} style={styles.modalChip}>
+                      <Text style={styles.modalChipText}>{tag}</Text>
+                      <Pressable onPress={() => handleRemoveTag(tag)} hitSlop={6}>
+                        <Ionicons name="close-circle" size={14} color={colors.primaryLight} />
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+
+                <View style={styles.addTagInputRow}>
+                  <TextInput
+                    style={styles.addTagInput}
+                    placeholder="Add tag (e.g. Product, Event)…"
+                    placeholderTextColor={colors.textMuted}
+                    value={newTagInput}
+                    onChangeText={setNewTagInput}
+                    onSubmitEditing={handleAddTag}
+                  />
+                  <Pressable style={styles.addTagConfirmBtn} onPress={handleAddTag}>
+                    <Ionicons name="add" size={18} color="#FFFFFF" />
+                  </Pressable>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -196,9 +300,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radii.pill,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glassSurfaceElevated,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -206,12 +310,13 @@ const styles = StyleSheet.create({
   title: { ...typography.heading, color: colors.textPrimary },
   subtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
   addBtn: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: radii.pill,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.glow,
   },
   searchRow: {
     flexDirection: 'row',
@@ -220,27 +325,47 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xxl,
     marginTop: spacing.lg,
     paddingHorizontal: spacing.lg,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glassSurface,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
   searchInput: {
     flex: 1,
     paddingVertical: spacing.md,
     color: colors.textPrimary,
-    fontSize: 15,
-    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    fontFamily: fonts.regular,
   },
+  tagFiltersRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.xxl,
+    gap: spacing.xs,
+    marginTop: spacing.md,
+  },
+  filterChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    borderRadius: radii.pill,
+    backgroundColor: colors.glassSurface,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterChipText: { ...typography.caption, color: colors.textSecondary, fontWeight: '500' },
+  filterChipTextActive: { color: '#FFFFFF', fontWeight: '700' },
   loading: { marginTop: spacing.xxxl },
   grid: { padding: spacing.xxl, gap: spacing.md },
   gridRow: { gap: spacing.md },
   assetCard: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glassSurface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     padding: spacing.sm,
     gap: spacing.sm,
     ...shadows.card,
@@ -250,36 +375,122 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 1,
     borderRadius: radii.md,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.surface,
+  },
+  videoBadge: {
+    position: 'absolute',
+    bottom: spacing.sm,
+    left: spacing.sm,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: radii.xs,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
   },
   removeBtn: {
     position: 'absolute',
     top: spacing.sm,
     right: spacing.sm,
-    width: 26,
-    height: 26,
+    width: 24,
+    height: 24,
     borderRadius: radii.pill,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(0,0,0,0.65)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  assetName: { ...typography.caption, color: colors.textPrimary, fontWeight: '600' },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  assetName: { ...typography.caption, color: colors.textPrimary, fontWeight: '600', fontSize: 11 },
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, alignItems: 'center' },
   tag: {
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.primaryGlass,
     borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.primaryGlassBorder,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
-  tagText: { ...typography.caption, color: colors.primaryDark, fontSize: 10 },
+  tagText: { ...typography.caption, color: colors.primaryLight, fontSize: 10 },
+  addTagSmallPill: {
+    padding: 3,
+    backgroundColor: colors.glassSurfaceElevated,
+    borderRadius: radii.pill,
+  },
   empty: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxxl },
   emptyTitle: { ...typography.heading, color: colors.textPrimary },
   emptyText: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
-  mockNote: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: spacing.xxl,
-    paddingBottom: spacing.lg,
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.backgroundAlt,
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    padding: spacing.xxl,
+    gap: spacing.md,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalTitle: { ...typography.heading, color: colors.textPrimary },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radii.pill,
+    backgroundColor: colors.glassSurfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBody: { gap: spacing.sm },
+  modalAssetImage: {
+    width: '100%',
+    height: 140,
+    borderRadius: radii.md,
+    backgroundColor: colors.surface,
+  },
+  modalAssetName: { ...typography.subheading, color: colors.textPrimary },
+  modalLabel: { ...typography.caption, color: colors.textSecondary, textTransform: 'uppercase' },
+  modalChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  modalChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.primaryGlass,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.primaryGlassBorder,
+    paddingLeft: spacing.md,
+    paddingRight: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  modalChipText: { ...typography.caption, color: colors.primaryLight, fontWeight: '600' },
+  addTagInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  addTagInput: {
+    flex: 1,
+    backgroundColor: colors.glassSurface,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontFamily: fonts.regular,
+  },
+  addTagConfirmBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.pill,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

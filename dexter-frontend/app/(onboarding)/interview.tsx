@@ -13,15 +13,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { sendChatMessage } from '../../src/api/chat';
 import { useAppStore } from '../../src/store/app';
+import { GlassCard, GlassPill } from '../../src/components/ui';
 import type { ChatMessage, ChatBrief } from '../../src/types';
 
 const OPENING: ChatMessage = {
   role: 'assistant',
   content:
-    'Hi, I\'m Dexter! To understand your business, let me ask a few questions. Start by telling me about your business — what do you do, and who\'s it for?',
+    'Hi! I\'m Dexter, your autonomous brand employee. Let\'s establish your Business Brain. To start, tell me about your business — what products or services do you offer, and who is your ideal target audience?',
 };
 
 export default function InterviewScreen() {
@@ -36,7 +37,7 @@ export default function InterviewScreen() {
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   useEffect(() => {
-    listRef.current?.scrollToEnd({ animated: false });
+    listRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
   const handleSend = async () => {
@@ -64,7 +65,7 @@ export default function InterviewScreen() {
     } catch (e: any) {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: `I hit a snag: ${e.message}. Try again?` },
+        { role: 'assistant', content: `I encountered an issue: ${e.message}. Could you try rephrasing?` },
       ]);
     } finally {
       setSending(false);
@@ -77,7 +78,7 @@ export default function InterviewScreen() {
       <View style={[styles.bubbleRow, isUser ? styles.userRow : styles.assistantRow]}>
         {!isUser && (
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>D</Text>
+            <Ionicons name="sparkles" size={14} color={colors.primaryLight} />
           </View>
         )}
         <View style={[styles.bubble, isUser ? styles.userBubble : styles.assistantBubble]}>
@@ -94,11 +95,14 @@ export default function InterviewScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>Step 3 of 5</Text>
-          <Text style={styles.title}>Business interview</Text>
-          <Text style={styles.subtitle}>
-            {business ? `Interviewing for ${business.name}` : 'Answer as naturally as you like.'}
-          </Text>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.eyebrow}>Step 3 of 5</Text>
+            <Text style={styles.title}>Business Interview</Text>
+            <Text style={styles.subtitle}>
+              {business ? `Configuring profile for ${business.name}` : 'Answer naturally as Dexter asks questions.'}
+            </Text>
+          </View>
+          <GlassPill label="LIVE" variant="primary" icon="radio" />
         </View>
 
         <FlatList
@@ -112,32 +116,40 @@ export default function InterviewScreen() {
 
         {sending && (
           <View style={styles.typingRow}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.typingText}>Dexter is thinking…</Text>
+            <ActivityIndicator size="small" color={colors.primaryLight} />
+            <Text style={styles.typingText}>Dexter is processing your input…</Text>
           </View>
         )}
 
         {brief && (
-          <Pressable style={styles.finalizeCard} onPress={() => router.push('/(onboarding)/brain')}>
-            <Ionicons name="checkmark-circle" size={20} color={colors.positive} />
-            <Text style={styles.finalizeText}>
-              Dexter drafted a post and a profile summary. Review the Business Brain →
-            </Text>
+          <Pressable style={styles.finalizeWrap} onPress={() => router.push('/(onboarding)/brain')}>
+            <GlassCard style={styles.finalizeCard} highlighted>
+              <Ionicons name="checkmark-circle" size={20} color={colors.positive} />
+              <Text style={styles.finalizeText}>
+                Dexter synthesized your Business Brain. Tap here to review & refine.
+              </Text>
+              <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+            </GlassCard>
           </Pressable>
         )}
 
         <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            placeholder="Type your answer…"
-            placeholderTextColor={colors.textSecondary}
-            value={input}
-            onChangeText={setInput}
-            multiline
-            onSubmitEditing={handleSend}
-          />
-          <Pressable style={[styles.sendBtn, (!input.trim() || sending) && styles.sendBtnDisabled]} onPress={handleSend}>
-            <Ionicons name="send" size={18} color={colors.textInverse} />
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Type your response to Dexter…"
+              placeholderTextColor={colors.textMuted}
+              value={input}
+              onChangeText={setInput}
+              multiline
+              onSubmitEditing={handleSend}
+            />
+          </View>
+          <Pressable
+            style={[styles.sendBtn, (!input.trim() || sending) && styles.sendBtnDisabled]}
+            onPress={handleSend}
+          >
+            <Ionicons name="send" size={17} color="#FFFFFF" />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -148,33 +160,57 @@ export default function InterviewScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  header: { paddingHorizontal: spacing.xxl, paddingTop: spacing.lg, paddingBottom: spacing.md },
-  eyebrow: { ...typography.caption, color: colors.textSecondary, textTransform: 'uppercase' },
-  title: { ...typography.heading, color: colors.textPrimary },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xxl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  headerTitleWrap: { flex: 1 },
+  eyebrow: {
+    ...typography.caption,
+    color: colors.primaryLight,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    fontWeight: '700',
+  },
+  title: { ...typography.heading, color: colors.textPrimary, marginTop: 2 },
   subtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
-  list: { paddingHorizontal: spacing.xxl, paddingVertical: spacing.sm, gap: spacing.md },
+  list: { paddingHorizontal: spacing.xxl, paddingVertical: spacing.lg, gap: spacing.md },
   bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, maxWidth: '100%' },
   userRow: { justifyContent: 'flex-end' },
   assistantRow: { justifyContent: 'flex-start' },
   avatar: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     borderRadius: radii.pill,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.glassSurfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.primaryGlassBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: colors.textInverse, fontSize: 13, fontWeight: '700' },
   bubble: {
-    maxWidth: '80%',
+    maxWidth: '82%',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: radii.lg,
   },
-  assistantBubble: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  userBubble: { backgroundColor: colors.primary },
-  bubbleText: { ...typography.body, color: colors.textPrimary },
-  userBubbleText: { color: colors.textInverse },
+  assistantBubble: {
+    backgroundColor: colors.glassSurface,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+  },
+  userBubble: {
+    backgroundColor: colors.primary,
+    ...shadows.glow,
+  },
+  bubbleText: { ...typography.body, color: colors.textPrimary, fontSize: 14, lineHeight: 21 },
+  userBubbleText: { color: '#FFFFFF', fontWeight: '500' },
   typingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -183,38 +219,40 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   typingText: { ...typography.caption, color: colors.textSecondary },
+  finalizeWrap: {
+    marginHorizontal: spacing.xxl,
+    marginBottom: spacing.md,
+  },
   finalizeCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginHorizontal: spacing.xxl,
-    marginBottom: spacing.md,
     padding: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: colors.positiveBg,
-    borderWidth: 1,
-    borderColor: colors.positive,
   },
-  finalizeText: { flex: 1, ...typography.caption, color: colors.textPrimary },
+  finalizeText: { flex: 1, ...typography.caption, color: colors.textPrimary, fontWeight: '600' },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: spacing.sm,
     paddingHorizontal: spacing.xxl,
     paddingBottom: spacing.lg,
+    paddingTop: spacing.xs,
+  },
+  inputContainer: {
+    flex: 1,
+    backgroundColor: colors.glassSurface,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   input: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: radii.pill,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
     color: colors.textPrimary,
-    fontSize: 15,
-    fontFamily: 'Inter_400Regular',
-    maxHeight: 120,
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    maxHeight: 100,
+    paddingVertical: 4,
   },
   sendBtn: {
     width: 44,
@@ -223,6 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.glow,
   },
-  sendBtnDisabled: { opacity: 0.4 },
+  sendBtnDisabled: { opacity: 0.3, shadowOpacity: 0 },
 });

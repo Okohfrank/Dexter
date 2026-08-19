@@ -11,64 +11,37 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { useAuthStore } from '../../src/api/client';
 import { useAppStore } from '../../src/store/app';
 import { getScheduledPosts, cancelPost, publishNow } from '../../src/api/publishing';
+import { getPublishedPosts, getLearningInsights, FALLBACK_PUBLISHED_POSTS, FALLBACK_LEARNING_INSIGHTS } from '../../src/api/analytics';
+import { SocialPostPreview } from '../../src/components/SocialPostPreview';
+import { GlassCard, GlassPill } from '../../src/components/ui';
 import type { ScheduledPost, PublishedPost, LearningInsight } from '../../src/types';
 
 const MOCK_SCHEDULED: ScheduledPost[] = [
   {
     id: 'mock-s-1',
     content_text:
-      'We didn\'t build an AI employee. We built the tool that lets your brand post like one. Here\'s what that means for your content…',
+      'We didn\'t build an AI employee. We built the tool that lets your brand post like one. Here\'s what that means for your content strategy: consistency, clarity, and autonomous execution. #AI #Founders #Automation',
     scheduled_for: new Date(Date.now() + 1000 * 60 * 60 * 30).toISOString(),
     status: 'queued',
-    platform_post_type: 'text',
+    platform_post_type: 'linkedin',
+    media_url: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&q=80',
+    media_type: 'image',
+    author_name: 'Alex Mercer',
+    author_headline: 'Founder & CEO • Dexter AI',
   },
   {
     id: 'mock-s-2',
     content_text:
-      'Posting consistently beats posting perfectly. 4x a week, at the right hours, is worth more than one viral piece a month.',
+      'Posting consistently beats posting perfectly every time. 4x a week, at the right hours, is worth more than one viral piece a month. #ContentStrategy #Growth #B2B',
     scheduled_for: new Date(Date.now() + 1000 * 60 * 60 * 78).toISOString(),
     status: 'queued',
-    platform_post_type: 'text',
-  },
-];
-
-const MOCK_PUBLISHED: PublishedPost[] = [
-  {
-    id: 'mock-p-1',
-    platform: 'linkedin',
-    content_text: 'AI is not replacing your social media manager — it\'s hiring you one.',
-    published_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    caption_variant: 'Professional / thought-leadership',
-    performance: { impressions: 1840, likes: 212, comments: 34, shares: 41, clicks: 97 },
-  },
-  {
-    id: 'mock-p-2',
-    platform: 'linkedin',
-    content_text: 'The 3 mistakes every small business makes with LinkedIn (and how to fix them).',
-    published_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6).toISOString(),
-    caption_variant: 'Professional / how-to',
-    performance: { impressions: 920, likes: 88, comments: 12, shares: 19, clicks: 53 },
-  },
-];
-
-const MOCK_LEARNINGS: LearningInsight[] = [
-  {
-    id: 'mock-l-1',
-    generated_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    summary:
-      'Posts with a question in the first line get 2.3x more comments. I\'m starting more posts with questions.',
-    relatedGoal: 'Grow LinkedIn following to 1,000 in 90 days',
-  },
-  {
-    id: 'mock-l-2',
-    generated_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-    summary:
-      'Tuesday 8:30am posts outperform the week\'s average by 40%. Engaged comments (not likes) are the strongest signal of growth.',
-    relatedGoal: 'Grow LinkedIn following to 1,000 in 90 days',
+    platform_post_type: 'linkedin',
+    author_name: 'Alex Mercer',
+    author_headline: 'Founder & CEO • Dexter AI',
   },
 ];
 
@@ -84,25 +57,35 @@ export default function DashboardScreen() {
 
   const [tab, setTab] = useState<Tab>('planned');
   const [scheduled, setScheduled] = useState<ScheduledPost[]>(MOCK_SCHEDULED);
+  const [published, setPublished] = useState<PublishedPost[]>(FALLBACK_PUBLISHED_POSTS);
+  const [learnings, setLearnings] = useState<LearningInsight[]>(FALLBACK_LEARNING_INSIGHTS);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const linkedin = connectedAccounts.find((a) => a.platform === 'linkedin');
-      if (!linkedin) return;
       setLoading(true);
       try {
-        const posts = await getScheduledPosts(linkedin.id);
-        if (posts.length > 0) setScheduled(posts);
+        const linkedin = connectedAccounts.find((a) => a.platform === 'linkedin');
+        if (linkedin) {
+          const posts = await getScheduledPosts(linkedin.id);
+          if (posts && posts.length > 0) setScheduled(posts);
+        }
+        const pub = await getPublishedPosts(business?.id);
+        setPublished(pub);
+
+        const lrn = await getLearningInsights(business?.id);
+        setLearnings(lrn);
       } catch {
-        // Keep mocks when the backend has no scheduled posts yet.
+        // Fallbacks preserved
       } finally {
         setLoading(false);
       }
     })();
-  }, [connectedAccounts]);
+  }, [connectedAccounts, business]);
 
   const firstName = user?.full_name?.split(' ')[0] ?? 'there';
+  const authorName = user?.full_name ?? 'Alex Mercer';
+  const authorHeadline = business?.name ? `Founder & CEO • ${business.name}` : 'Founder & CEO • Dexter AI';
 
   const handleLogout = () => {
     clearAuth();
@@ -111,7 +94,7 @@ export default function DashboardScreen() {
   };
 
   const handleCancel = (id: string) => {
-    Alert.alert('Cancel post?', 'Dexter will not publish this one.', [
+    Alert.alert('Cancel post?', 'Dexter will not publish this post.', [
       { text: 'Keep', style: 'cancel' },
       {
         text: 'Cancel post',
@@ -136,7 +119,7 @@ export default function DashboardScreen() {
         onPress: async () => {
           try {
             await publishNow(id);
-            Alert.alert('Published', 'It\'s live.');
+            Alert.alert('Published', 'Post is live.');
             setScheduled((prev) => prev.filter((p) => p.id !== id));
           } catch (e: any) {
             Alert.alert('Failed', e.message);
@@ -159,287 +142,300 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Top Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.eyebrow}>Dashboard</Text>
+          <View style={styles.headerTextWrap}>
+            <View style={styles.badgeRow}>
+              <GlassPill
+                label={autonomousMode ? 'AUTONOMOUS ACTIVE' : 'SUPERVISED'}
+                variant={autonomousMode ? 'positive' : 'warning'}
+                icon={autonomousMode ? 'radio' : 'pause'}
+              />
+            </View>
             <Text style={styles.title}>Good morning, {firstName}</Text>
             <Text style={styles.subtitle}>
               {autonomousMode
-                ? `Autonomous mode is ON — ${business?.name ?? 'your business'} runs itself.`
-                : 'Dexter is standing by.'}
+                ? `${business?.name ?? 'Your business'} is operating autonomously.`
+                : 'Dexter is standing by for instructions.'}
             </Text>
           </View>
           <View style={styles.headerActions}>
-            <Pressable style={styles.avatar} onPress={() => router.push('/(dashboard)/media')}>
-              <Ionicons name="images-outline" size={20} color={colors.textPrimary} />
+            <Pressable style={styles.avatarBtn} onPress={() => router.push('/(dashboard)/media')}>
+              <Ionicons name="images-outline" size={18} color={colors.textPrimary} />
             </Pressable>
-            <Pressable style={styles.avatar} onPress={handleLogout}>
-              <Ionicons name="log-out-outline" size={20} color={colors.textPrimary} />
+            <Pressable style={styles.avatarBtn} onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={18} color={colors.textPrimary} />
             </Pressable>
           </View>
         </View>
 
-        <Pressable style={styles.quickAction} onPress={() => router.push('/(onboarding)/brain')}>
-          <View style={styles.quickIcon}>
-            <Ionicons name="construct-outline" size={20} color={colors.primary} />
-          </View>
-          <View style={styles.quickBody}>
-            <Text style={styles.quickTitle}>Business Brain</Text>
-            <Text style={styles.quickSubtitle}>Review or edit how Dexter understands your business.</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+        {/* Business Brain Quick Access Card */}
+        <Pressable onPress={() => router.push('/(onboarding)/brain')}>
+          <GlassCard style={styles.quickCard} elevated>
+            <View style={styles.quickIconWrap}>
+              <Ionicons name="hardware-chip-outline" size={20} color={colors.primaryLight} />
+            </View>
+            <View style={styles.quickBody}>
+              <Text style={styles.quickTitle}>Business Brain</Text>
+              <Text style={styles.quickSubtitle}>Review or modify how Dexter understands your brand.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+          </GlassCard>
         </Pressable>
 
-        <View style={styles.tabs}>
+        {/* Frosted Segmented Tabs */}
+        <View style={styles.tabsContainer}>
           {(
             [
-              ['planned', 'Planning'],
-              ['published', 'Published'],
-              ['learned', 'Learned'],
-            ] as [Tab, string][]
-          ).map(([key, label]) => (
+              ['planned', 'Planning', 'calendar'],
+              ['published', 'Published', 'checkmark-done'],
+              ['learned', 'Learned', 'bulb'],
+            ] as [Tab, string, keyof typeof Ionicons.glyphMap][]
+          ).map(([key, label, icon]) => (
             <Pressable
               key={key}
-              style={[styles.tab, tab === key && styles.tabActive]}
+              style={[styles.tabBtn, tab === key && styles.tabBtnActive]}
               onPress={() => setTab(key)}
             >
-              <Text style={[styles.tabText, tab === key && styles.tabTextActive]}>{label}</Text>
+              <Ionicons
+                name={icon}
+                size={14}
+                color={tab === key ? '#FFFFFF' : colors.textSecondary}
+              />
+              <Text style={[styles.tabBtnText, tab === key && styles.tabBtnTextActive]}>
+                {label}
+              </Text>
             </Pressable>
           ))}
         </View>
 
         {loading && <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.lg }} />}
 
+        {/* Planned Posts Tab */}
         {tab === 'planned' && (
-          <>
+          <View style={styles.feedContainer}>
             {scheduled.map((post) => (
-              <View key={post.id} style={styles.postCard}>
-                <View style={styles.postHeader}>
-                  <View style={styles.platformPill}>
-                    <Ionicons name="logo-linkedin" size={13} color={colors.primary} />
-                    <Text style={styles.platformText}>LinkedIn</Text>
+              <View key={post.id} style={styles.postWrapper}>
+                <SocialPostPreview
+                  post={post}
+                  authorName={authorName}
+                  authorHeadline={authorHeadline}
+                  platform="linkedin"
+                  formattedTime={formatWhen(post.scheduled_for)}
+                />
+
+                {/* Dexter Reasoning & Actions Bento Box */}
+                <GlassCard style={styles.decisionCard} elevated>
+                  <View style={styles.decisionHeader}>
+                    <Ionicons name="sparkles" size={15} color={colors.primaryLight} />
+                    <Text style={styles.decisionLabel}>Dexter's Decision</Text>
                   </View>
-                  <Text style={styles.postStatus}>{post.status}</Text>
-                </View>
-                <Text style={styles.postText}>{post.content_text}</Text>
-                <View style={styles.postMeta}>
-                  <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-                  <Text style={styles.postMetaText}>{formatWhen(post.scheduled_for)}</Text>
-                </View>
-                <Text style={styles.reasonText}>
-                  Why: mid-week mornings have the highest engagement for your audience.
-                </Text>
-                <View style={styles.postActions}>
-                  <Pressable style={styles.ghostBtn} onPress={() => handleCancel(post.id)}>
-                    <Text style={styles.ghostText}>Skip</Text>
-                  </Pressable>
-                  <Pressable
-                    style={styles.ghostBtn}
-                    onPress={() => router.push({ pathname: '/(dashboard)/edit-post', params: { post: JSON.stringify(post) } })}
-                  >
-                    <Text style={styles.ghostText}>Edit</Text>
-                  </Pressable>
-                  <Pressable style={styles.solidBtn} onPress={() => handlePublishNow(post.id)}>
-                    <Text style={styles.solidText}>Publish now</Text>
-                  </Pressable>
-                </View>
+                  <Text style={styles.reasonText}>
+                    Scheduled for {formatWhen(post.scheduled_for)} because engagement peaks for your B2B audience during this window.
+                  </Text>
+                  <View style={styles.postActions}>
+                    <Pressable style={styles.ghostBtn} onPress={() => handleCancel(post.id)}>
+                      <Text style={styles.ghostBtnText}>Skip</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.ghostBtn}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/(dashboard)/edit-post',
+                          params: { post: JSON.stringify(post) },
+                        })
+                      }
+                    >
+                      <Text style={styles.ghostBtnText}>Edit / Swap</Text>
+                    </Pressable>
+                    <Pressable style={styles.solidBtn} onPress={() => handlePublishNow(post.id)}>
+                      <Text style={styles.solidBtnText}>Publish now</Text>
+                    </Pressable>
+                  </View>
+                </GlassCard>
               </View>
             ))}
-            <Text style={styles.mockNote}>
-              Showing sample posts — live data appears once a LinkedIn account is connected and
-              Dexter starts planning.
-            </Text>
-          </>
+          </View>
         )}
 
+        {/* Published Posts Tab */}
         {tab === 'published' && (
-          <>
-            {MOCK_PUBLISHED.map((post) => (
-              <View key={post.id} style={styles.postCard}>
-                <View style={styles.postHeader}>
-                  <View style={styles.platformPill}>
-                    <Ionicons name="logo-linkedin" size={13} color={colors.primary} />
-                    <Text style={styles.platformText}>LinkedIn</Text>
-                  </View>
-                  <Text style={styles.variantText}>{post.caption_variant}</Text>
+          <View style={styles.feedContainer}>
+            {published.map((post) => (
+              <View key={post.id} style={styles.postWrapper}>
+                <View style={styles.variantBadgeWrap}>
+                  <GlassPill label={`Pillar: ${post.caption_variant}`} variant="primary" />
                 </View>
-                <Text style={styles.postText}>{post.content_text}</Text>
-                <Text style={styles.postMetaText}>{formatWhen(post.published_at)}</Text>
-                <View style={styles.statsRow}>
-                  <Stat icon="eye-outline" value={post.performance.impressions} label="views" />
-                  <Stat icon="heart-outline" value={post.performance.likes} label="likes" />
-                  <Stat icon="chatbubble-outline" value={post.performance.comments} label="comments" />
-                  <Stat icon="share-social-outline" value={post.performance.shares} label="shares" />
-                </View>
+                <SocialPostPreview
+                  post={post}
+                  authorName={authorName}
+                  authorHeadline={authorHeadline}
+                  platform={post.platform}
+                  formattedTime={formatWhen(post.published_at)}
+                />
               </View>
             ))}
-          </>
+          </View>
         )}
 
+        {/* Learned Insights Tab */}
         {tab === 'learned' && (
-          <>
-            {MOCK_LEARNINGS.map((l) => (
-              <View key={l.id} style={styles.postCard}>
+          <View style={styles.feedContainer}>
+            {learnings.map((l) => (
+              <GlassCard key={l.id} style={styles.learnCard} elevated>
                 <View style={styles.learnHeader}>
-                  <Ionicons name="bulb-outline" size={18} color={colors.primary} />
+                  <Ionicons name="bulb" size={18} color={colors.primaryLight} />
                   <Text style={styles.learnDate}>{formatWhen(l.generated_at)}</Text>
                 </View>
-                <Text style={styles.postText}>{l.summary}</Text>
+                <Text style={styles.learnSummary}>{l.summary}</Text>
                 <View style={styles.goalPill}>
-                  <Ionicons name="flag-outline" size={12} color={colors.primaryDark} />
+                  <Ionicons name="flag-outline" size={12} color={colors.positive} />
                   <Text style={styles.goalText}>{l.relatedGoal}</Text>
                 </View>
-              </View>
+              </GlassCard>
             ))}
-          </>
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function Stat({
-  icon,
-  value,
-  label,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  value: number;
-  label: string;
-}) {
-  return (
-    <View style={styles.stat}>
-      <Ionicons name={icon} size={14} color={colors.textSecondary} />
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: spacing.xxl, gap: spacing.lg },
+  scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxl },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
-  eyebrow: { ...typography.caption, color: colors.textSecondary, textTransform: 'uppercase' },
+  headerTextWrap: { flex: 1 },
+  badgeRow: { marginBottom: spacing.xs },
   title: { ...typography.display, color: colors.textPrimary, marginTop: spacing.xs },
-  subtitle: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
-  avatar: {
-    width: 44,
-    height: 44,
+  subtitle: { ...typography.body, color: colors.textSecondary, marginTop: 2 },
+  headerActions: { flexDirection: 'row', gap: spacing.sm },
+  avatarBtn: {
+    width: 40,
+    height: 40,
     borderRadius: radii.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    backgroundColor: colors.glassSurfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerActions: { flexDirection: 'row', gap: spacing.sm },
-  tabs: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 4,
-  },
-  quickAction: {
+  quickCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    ...shadows.card,
+    padding: spacing.md,
   },
-  quickIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.md,
-    backgroundColor: colors.primaryLight,
+  quickIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.pill,
+    backgroundColor: colors.primaryGlass,
+    borderWidth: 1,
+    borderColor: colors.primaryGlassBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   quickBody: { flex: 1 },
-  quickTitle: { ...typography.subheading, color: colors.textPrimary },
-  quickSubtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radii.pill },
-  tabActive: { backgroundColor: colors.primary },
-  tabText: { ...typography.caption, color: colors.textSecondary },
-  tabTextActive: { color: colors.textInverse, fontWeight: '700' },
-  postCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
+  quickTitle: { ...typography.subheading, color: colors.textPrimary, fontWeight: '700' },
+  quickSubtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 1 },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.glassSurface,
+    borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    gap: spacing.sm,
-    ...shadows.card,
+    borderColor: colors.glassBorder,
+    padding: 4,
+    gap: 4,
   },
-  postHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  platformPill: {
+  tabBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: spacing.sm,
     borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 4,
   },
-  platformText: { ...typography.caption, color: colors.primaryDark },
-  postStatus: { ...typography.caption, color: colors.textSecondary, textTransform: 'capitalize' },
-  variantText: { ...typography.caption, color: colors.textSecondary },
-  postText: { ...typography.body, color: colors.textPrimary, fontSize: 15 },
-  postMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  postMetaText: { ...typography.caption, color: colors.textSecondary },
-  reasonText: {
+  tabBtnActive: {
+    backgroundColor: colors.primary,
+    ...shadows.glow,
+  },
+  tabBtnText: {
     ...typography.caption,
-    color: colors.primaryDark,
-    fontStyle: 'italic',
-    backgroundColor: colors.primaryLight,
-    borderRadius: radii.sm,
-    padding: spacing.sm,
+    color: colors.textSecondary,
+    fontWeight: '600',
   },
-  postActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xs },
+  tabBtnTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  feedContainer: { gap: spacing.lg },
+  postWrapper: { gap: spacing.sm },
+  decisionCard: {
+    gap: spacing.sm,
+    padding: spacing.md,
+  },
+  decisionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  decisionLabel: {
+    ...typography.caption,
+    color: colors.primaryLight,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  reasonText: {
+    ...typography.body,
+    color: colors.textPrimary,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  postActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
   ghostBtn: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
     borderRadius: radii.pill,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    backgroundColor: colors.glassSurfaceElevated,
   },
-  ghostText: { ...typography.subheading, color: colors.textPrimary },
+  ghostBtnText: { ...typography.caption, color: colors.textPrimary, fontWeight: '600' },
   solidBtn: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
     borderRadius: radii.pill,
     backgroundColor: colors.primary,
   },
-  solidText: { ...typography.subheading, color: colors.textInverse },
-  mockNote: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.xs },
-  stat: { alignItems: 'center', gap: 2 },
-  statValue: { ...typography.subheading, color: colors.textPrimary },
-  statLabel: { ...typography.caption, color: colors.textSecondary },
+  solidBtnText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
+  variantBadgeWrap: { marginBottom: 2 },
+  learnCard: { gap: spacing.sm, padding: spacing.lg },
   learnHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  learnDate: { ...typography.caption, color: colors.textSecondary },
+  learnDate: { ...typography.caption, color: colors.textMuted },
+  learnSummary: { ...typography.body, color: colors.textPrimary, fontSize: 14, lineHeight: 22 },
   goalPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: colors.positiveBg,
+    borderWidth: 1,
+    borderColor: colors.positiveBorder,
     borderRadius: radii.pill,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: 4,
     alignSelf: 'flex-start',
   },
-  goalText: { ...typography.caption, color: colors.primaryDark },
+  goalText: { ...typography.caption, color: colors.positive, fontWeight: '600' },
 });

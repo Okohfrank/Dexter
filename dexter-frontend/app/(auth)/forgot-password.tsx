@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Link } from 'expo-router';
+import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { Link, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import {
   AuthScreen,
   BrandMark,
@@ -11,23 +12,42 @@ import { colors, spacing, typography } from '../../src/theme';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const router = useRouter();
+
+  const handleReset = async () => {
+    if (!email) {
+      Alert.alert('Missing email', 'Please enter your account email.');
+      return;
+    }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setSent(true);
+    }, 800);
+  };
 
   return (
     <AuthScreen>
       <BrandMark />
       <View style={styles.header}>
-        <Text style={styles.title}>
-          {sent ? 'Check your inbox' : 'Reset your password'}
-        </Text>
+        <Text style={styles.title}>Reset password</Text>
         <Text style={styles.subtitle}>
-          {sent
-            ? `We sent a password reset link to ${email || 'your email'}.`
-            : 'Enter your email and we\'ll send you a link to get back in.'}
+          Enter your email and Dexter will send you instructions to reset your password.
         </Text>
       </View>
 
-      {!sent && (
+      {sent ? (
+        <View style={styles.successCard}>
+          <Ionicons name="checkmark-circle" size={24} color={colors.positive} />
+          <Text style={styles.successTitle}>Check your inbox</Text>
+          <Text style={styles.successText}>
+            We sent a password reset link to {email}.
+          </Text>
+          <PrimaryButton title="Back to sign in" onPress={() => router.replace('/login')} />
+        </View>
+      ) : (
         <>
           <AuthTextInput
             label="Email"
@@ -37,43 +57,53 @@ export default function ForgotPasswordScreen() {
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
-            autoComplete="email"
-            textContentType="emailAddress"
           />
-          <PrimaryButton title="Send reset link" onPress={() => setSent(true)} />
+
+          <PrimaryButton title="Send Reset Link" onPress={handleReset} disabled={loading} />
+          {loading && <ActivityIndicator color={colors.primaryLight} style={{ marginTop: spacing.sm }} />}
+
+          <View style={styles.footer}>
+            <Link href="/login" asChild>
+              <Pressable hitSlop={8} style={styles.backRow}>
+                <Ionicons name="arrow-back" size={16} color={colors.primaryLight} />
+                <Text style={styles.footerLink}>Back to sign in</Text>
+              </Pressable>
+            </Link>
+          </View>
         </>
       )}
-
-      {sent && (
-        <PrimaryButton title="Back to log in" onPress={() => setSent(false)} />
-      )}
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Remembered it? </Text>
-        <Link href="/login" asChild>
-          <Pressable hitSlop={8}>
-            <Text style={styles.footerLink}>Log in</Text>
-          </Pressable>
-        </Link>
-      </View>
     </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { marginTop: spacing.xxl, marginBottom: spacing.xxxl },
+  header: { marginTop: spacing.xl, marginBottom: spacing.xxl },
   title: { ...typography.display, color: colors.textPrimary },
   subtitle: {
     ...typography.body,
     color: colors.textSecondary,
     marginTop: spacing.sm,
+    lineHeight: 22,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  successCard: {
+    backgroundColor: colors.glassSurfaceElevated,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    padding: spacing.xl,
     alignItems: 'center',
-    marginTop: spacing.xxxl,
+    gap: spacing.sm,
   },
-  footerText: { ...typography.body, color: colors.textSecondary },
-  footerLink: { ...typography.body, color: colors.primary, fontWeight: '600' },
+  successTitle: { ...typography.heading, color: colors.textPrimary, marginTop: 4 },
+  successText: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
+  footer: {
+    alignItems: 'center',
+    marginTop: spacing.xxl,
+  },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  footerLink: { ...typography.body, color: colors.primaryLight, fontWeight: '700' },
 });

@@ -1,78 +1,84 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated, Easing, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Animated,
+  Easing,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
+import { transcribeAudio } from '../../src/api/voice';
+import { GlassCard, GlassPill } from '../../src/components/ui';
 
-const BAR_COUNT = 18;
+const BAR_COUNT = 24;
 
-/**
- * Voice interview shell (PRD §3.2).
- *
- * Voice transcription isn't implemented on the backend yet (MisoLabs.ai is
- * future work). This screen provides the full mic + waveform UI but wires it
- * to a "coming soon" state rather than blocking the flow.
- */
 export default function VoiceInterviewScreen() {
   const router = useRouter();
+  const business = useAppStore((s) => s.business);
   const setInterviewMode = useAppStore((s) => s.setInterviewMode);
-  const [listening, setListening] = useState(false);
+
   const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [transcriptPreview, setTranscriptPreview] = useState<string | null>(null);
+
   const anims = useRef<Animated.Value[]>(
-    Array.from({ length: BAR_COUNT }, () => new Animated.Value(0.2)),
+    Array.from({ length: BAR_COUNT }, () => new Animated.Value(0.15)),
   ).current;
 
   useEffect(() => {
-    if (!listening) {
+    if (!recording) {
       anims.forEach((a) => a.stopAnimation());
       return;
     }
-    const loop = anims.map((a) => {
+    const loops = anims.map((a) => {
       return Animated.loop(
         Animated.sequence([
           Animated.timing(a, {
-            toValue: 1,
-            duration: 450 + Math.random() * 300,
+            toValue: 0.3 + Math.random() * 0.7,
+            duration: 250 + Math.random() * 250,
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
           }),
           Animated.timing(a, {
-            toValue: 0.2,
-            duration: 450 + Math.random() * 300,
+            toValue: 0.15,
+            duration: 250 + Math.random() * 250,
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
           }),
         ]),
       );
     });
-    loop.forEach((l) => l.start());
-    return () => loop.forEach((l) => l.stop());
-  }, [listening]);
+    loops.forEach((l) => l.start());
+    return () => loops.forEach((l) => l.stop());
+  }, [recording]);
 
-  const handleMicPress = () => {
-    if (!listening) {
-      setListening(true);
+  const toggleRecording = async () => {
+    if (!recording) {
       setRecording(true);
+      setTranscriptPreview(null);
     } else {
-      setListening(false);
       setRecording(false);
-      Alert.alert(
-        'Voice interviews are coming soon',
-        'Text transcription isn\'t wired up yet. Switch to text mode to try the interview now.',
-        [
-          { text: 'Not now', style: 'cancel' },
-          {
-            text: 'Use text instead',
-            onPress: () => {
-              setInterviewMode('text');
-              router.replace('/(onboarding)/interview');
-            },
-          },
-        ],
-      );
+      setTranscribing(true);
+      try {
+        const result = await transcribeAudio('mock-recording-uri', business?.id);
+        setTranscriptPreview(result.transcript);
+      } catch (e: any) {
+        Alert.alert('Audio Error', e.message);
+      } finally {
+        setTranscribing(false);
+      }
     }
+  };
+
+  const handleProceedToBrain = () => {
+    router.push('/(onboarding)/brain');
   };
 
   return (
@@ -81,38 +87,82 @@ export default function VoiceInterviewScreen() {
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.title}>Voice interview</Text>
+        <View style={styles.headerTitleWrap}>
+          <Text style={styles.headerTitle}>Voice Interview</Text>
+          <Text style={styles.headerSubtitle}>MisoLabs Voice Agent Engine</Text>
+        </View>
+        <GlassPill label="BETA" variant="primary" icon="sparkles" />
       </View>
 
       <View style={styles.body}>
-        <Text style={styles.eyebrow}>Step 3 of 5</Text>
+        <Text style={styles.eyebrow}>Step 2 of 5</Text>
+        <Text style={styles.title}>Talk to Dexter</Text>
         <Text style={styles.subtitle}>
-          {listening ? 'Listening… answer naturally.' : 'Tap the mic and talk to Dexter.'}
+          {recording
+            ? 'Dexter is listening… Speak freely about your product, audience, and goals.'
+            : 'Tap the microphone to begin your voice onboarding session.'}
         </Text>
 
-        <View style={styles.waveform}>
-          {anims.map((a, i) => (
-            <Animated.View
-              key={i}
-              style={[styles.bar, { transform: [{ scaleY: a }] }, listening && styles.barActive]}
-            />
-          ))}
+        {/* Dynamic Glass Waveform Container */}
+        <GlassCard style={styles.waveformCard} elevated={recording}>
+          <View style={styles.waveform}>
+            {anims.map((a, i) => (
+              <Animated.View
+                key={i}
+                style={[
+                  styles.bar,
+                  { transform: [{ scaleY: a }] },
+                  recording && styles.barActive,
+                ]}
+              />
+            ))}
+          </View>
+        </GlassCard>
+
+        {/* Glowing Tactile Mic Button */}
+        <View style={styles.micContainer}>
+          <Pressable
+            style={[styles.micBtn, recording && styles.micBtnActive]}
+            onPress={toggleRecording}
+            disabled={transcribing}
+          >
+            {transcribing ? (
+              <ActivityIndicator size="large" color="#FFFFFF" />
+            ) : (
+              <Ionicons
+                name={recording ? 'stop' : 'mic'}
+                size={38}
+                color="#FFFFFF"
+              />
+            )}
+          </Pressable>
         </View>
 
-        <Pressable style={[styles.micBtn, listening && styles.micBtnActive]} onPress={handleMicPress}>
-          <Ionicons
-            name={recording ? 'stop' : 'mic'}
-            size={40}
-            color={listening ? colors.textInverse : colors.primary}
-          />
-        </Pressable>
-
-        <View style={styles.soonBadge}>
-          <Ionicons name="flask-outline" size={14} color={colors.primaryDark} />
-          <Text style={styles.soonText}>
-            Voice is in preview — tap to see what's next, or use text mode.
-          </Text>
-        </View>
+        {/* Live Transcript / Feedback Glass Panel */}
+        {transcriptPreview ? (
+          <GlassCard style={styles.transcriptCard} highlighted>
+            <View style={styles.transcriptHeader}>
+              <Ionicons name="checkmark-circle" size={18} color={colors.positive} />
+              <Text style={styles.transcriptTitle}>Interview Transcribed</Text>
+            </View>
+            <Text style={styles.transcriptText}>"{transcriptPreview}"</Text>
+            <Pressable style={styles.proceedBtn} onPress={handleProceedToBrain}>
+              <Text style={styles.proceedBtnText}>Review Business Brain</Text>
+              <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+            </Pressable>
+          </GlassCard>
+        ) : (
+          <Pressable
+            style={styles.switchModeBtn}
+            onPress={() => {
+              setInterviewMode('text');
+              router.replace('/(onboarding)/interview');
+            }}
+          >
+            <Ionicons name="chatbubbles-outline" size={16} color={colors.primaryLight} />
+            <Text style={styles.switchModeText}>Prefer typing? Switch to text interview</Text>
+          </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -123,7 +173,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.xxl,
     paddingTop: spacing.lg,
   },
@@ -131,51 +181,129 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radii.pill,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glassSurfaceElevated,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { ...typography.heading, color: colors.textPrimary },
-  body: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl, gap: spacing.lg },
-  eyebrow: { ...typography.caption, color: colors.textSecondary, textTransform: 'uppercase' },
-  subtitle: { ...typography.heading, color: colors.textPrimary, textAlign: 'center' },
+  headerTitleWrap: { flex: 1, marginLeft: spacing.md },
+  headerTitle: { ...typography.heading, color: colors.textPrimary, fontSize: 17 },
+  headerSubtitle: { ...typography.caption, color: colors.textSecondary, fontSize: 11 },
+  body: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xxl,
+    gap: spacing.lg,
+  },
+  eyebrow: {
+    ...typography.caption,
+    color: colors.primaryLight,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    fontWeight: '700',
+  },
+  title: { ...typography.display, textAlign: 'center', color: colors.textPrimary },
+  subtitle: {
+    ...typography.body,
+    textAlign: 'center',
+    color: colors.textSecondary,
+    maxWidth: 320,
+  },
+  waveformCard: {
+    width: '100%',
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: spacing.md,
+  },
   waveform: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    height: 90,
-    marginVertical: spacing.xxl,
+    gap: 4,
+    height: 80,
   },
   bar: {
-    width: 6,
+    width: 5,
     height: 70,
     borderRadius: radii.pill,
-    backgroundColor: colors.border,
+    backgroundColor: colors.glassBorderHighlight,
   },
-  barActive: { backgroundColor: colors.primary },
-  micBtn: {
-    width: 92,
-    height: 92,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 2,
-    borderColor: colors.primary,
+  barActive: {
+    backgroundColor: colors.primary,
+  },
+  micContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    ...{ shadowColor: colors.primary, shadowOpacity: 0.3, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
+    marginVertical: spacing.md,
   },
-  micBtnActive: { backgroundColor: colors.primary },
-  soonBadge: {
+  micBtn: {
+    width: 88,
+    height: 88,
+    borderRadius: radii.pill,
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.glow,
+  },
+  micBtnActive: {
+    backgroundColor: colors.negative,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  transcriptCard: {
+    width: '100%',
+    gap: spacing.sm,
+  },
+  transcriptHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primaryLight,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    marginTop: spacing.lg,
+    gap: 6,
   },
-  soonText: { flexShrink: 1, ...typography.caption, color: colors.primaryDark },
+  transcriptTitle: {
+    ...typography.subheading,
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
+  transcriptText: {
+    ...typography.body,
+    color: colors.textPrimary,
+    fontStyle: 'italic',
+    fontSize: 13,
+  },
+  proceedBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    borderRadius: radii.pill,
+    paddingVertical: spacing.md,
+    marginTop: spacing.xs,
+  },
+  proceedBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+    fontFamily: fonts.bold,
+  },
+  switchModeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radii.pill,
+    backgroundColor: colors.glassSurface,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+  },
+  switchModeText: {
+    ...typography.caption,
+    color: colors.primaryLight,
+    fontWeight: '600',
+  },
 });

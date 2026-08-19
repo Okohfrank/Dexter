@@ -81,6 +81,11 @@ export type ScheduledPost = {
   scheduled_for: string;
   status: PostStatus;
   platform_post_type: string;
+  media_url?: string | null;
+  media_type?: MediaType | null;
+  media_asset_ids?: string[];
+  author_name?: string;
+  author_headline?: string;
 };
 
 export type PostPerformance = {
@@ -99,6 +104,10 @@ export type PublishedPost = {
   /** Platform-specific caption variant (PRD §6). */
   caption_variant: string;
   performance: PostPerformance;
+  media_url?: string | null;
+  media_type?: MediaType | null;
+  author_name?: string;
+  author_headline?: string;
 };
 
 /** Plain-language insight tied back to a user goal (not raw analytics). */

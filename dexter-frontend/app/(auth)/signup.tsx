@@ -9,48 +9,31 @@ import {
   PrimaryButton,
   OutlinedButton,
   Divider,
-  Checkbox,
 } from '../../src/components/ui';
 import { colors, spacing, typography } from '../../src/theme';
 import { register, getLinkedInAuthorizationUrl } from '../../src/api/auth';
 import { useAuthStore } from '../../src/api/client';
 
 export default function SignupScreen() {
-  const [name, setName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleCreate = async () => {
-    if (!agreed) return;
-    if (!email || !password || !name) {
-      Alert.alert('Missing info', 'Please fill in all fields.');
-      return;
-    }
-    if (password.length < 8) {
-      Alert.alert('Weak password', 'Password must be at least 8 characters.');
+  const handleSignup = async () => {
+    if (!email || !password) {
+      Alert.alert('Missing info', 'Please enter your email and password.');
       return;
     }
     setLoading(true);
     try {
-      const res = await register(email.trim(), password, name.trim());
-      useAuthStore.getState().setAuth({
-        user: res.user,
+      const res = await register(email.trim(), password, fullName.trim() || 'Founder');
+      useAuthStore.getState().setTokens({
         access_token: res.access_token,
         refresh_token: res.refresh_token,
       });
-      Alert.alert(
-        'Account created',
-        res.user.is_verified
-          ? 'You\'re all set!'
-          : 'Check your email to verify your account.',
-        [{
-          text: 'OK',
-          onPress: () => router.replace('/(onboarding)'),
-        }],
-      );
+      router.replace('/(onboarding)');
     } catch (e: any) {
       Alert.alert('Sign up failed', e.message);
     } finally {
@@ -59,18 +42,10 @@ export default function SignupScreen() {
   };
 
   const handleLinkedIn = async () => {
-    const me = useAuthStore.getState().user;
-    if (!me) {
-      Alert.alert('Log in first', 'Connect LinkedIn after signing in.');
-      return;
-    }
     try {
-      // A real business id is needed; wire this to the user's active business.
       const businessId = '00000000-0000-0000-0000-000000000000';
       const { authorization_url } = await getLinkedInAuthorizationUrl(businessId);
       await WebBrowser.openBrowserAsync(authorization_url);
-      // The backend /oauth/linkedin/callback handles the redirect server-side.
-      Alert.alert('LinkedIn', 'Complete sign-in in the browser.');
     } catch (e: any) {
       Alert.alert('LinkedIn', e.message);
     }
@@ -80,23 +55,22 @@ export default function SignupScreen() {
     <AuthScreen>
       <BrandMark />
       <View style={styles.header}>
-        <Text style={styles.title}>Hire your AI employee</Text>
+        <Text style={styles.title}>Hire your AI Agent</Text>
         <Text style={styles.subtitle}>
-          Create an account and Dexter will handle your content strategy, scheduling, and posting.
+          Dexter plans, writes, and publishes thought-leadership content on your social accounts.
         </Text>
       </View>
 
       <AuthTextInput
-        label="Full name"
+        label="Full Name"
         icon="person-outline"
-        placeholder="Jane Smith"
-        value={name}
-        onChangeText={setName}
-        autoComplete="name"
-        textContentType="name"
+        placeholder="Alex Mercer"
+        value={fullName}
+        onChangeText={setFullName}
+        autoCapitalize="words"
       />
       <AuthTextInput
-        label="Email"
+        label="Work Email"
         icon="mail-outline"
         placeholder="you@company.com"
         value={email}
@@ -109,38 +83,25 @@ export default function SignupScreen() {
       <AuthTextInput
         label="Password"
         icon="lock-closed-outline"
-        placeholder="At least 8 characters"
+        placeholder="••••••••"
         secure
         value={password}
         onChangeText={setPassword}
         autoCapitalize="none"
-        autoComplete="new-password"
         textContentType="newPassword"
       />
 
-      <Pressable style={styles.terms} onPress={() => setAgreed((a) => !a)}>
-        <Checkbox checked={agreed} />
-        <Text style={styles.termsText}>
-          I agree to Dexter's <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
-          <Text style={styles.termsLink}>Privacy Policy</Text>.
-        </Text>
-      </Pressable>
+      <PrimaryButton title="Get Started" onPress={handleSignup} disabled={loading} />
+      {loading && <ActivityIndicator color={colors.primaryLight} style={{ marginTop: spacing.sm }} />}
 
-      <PrimaryButton
-        title="Create account"
-        disabled={!agreed || loading}
-        onPress={agreed ? handleCreate : undefined}
-      />
-      {loading && <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.sm }} />}
-
-      <Divider label="or continue with" />
+      <Divider label="or sign up with" />
       <OutlinedButton title="Continue with LinkedIn" icon="logo-linkedin" onPress={handleLinkedIn} />
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>Already have an account? </Text>
         <Link href="/login" asChild>
           <Pressable hitSlop={8}>
-            <Text style={styles.footerLink}>Log in</Text>
+            <Text style={styles.footerLink}>Sign in</Text>
           </Pressable>
         </Link>
       </View>
@@ -149,31 +110,20 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { marginTop: spacing.xxl, marginBottom: spacing.xxxl },
+  header: { marginTop: spacing.xl, marginBottom: spacing.xxl },
   title: { ...typography.display, color: colors.textPrimary },
   subtitle: {
     ...typography.body,
     color: colors.textSecondary,
     marginTop: spacing.sm,
+    lineHeight: 22,
   },
-  terms: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  termsText: {
-    flex: 1,
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  termsLink: { color: colors.primary, fontWeight: '600' },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: spacing.xxxl,
+    marginTop: spacing.xxl,
   },
   footerText: { ...typography.body, color: colors.textSecondary },
-  footerLink: { ...typography.body, color: colors.primary, fontWeight: '600' },
+  footerLink: { ...typography.body, color: colors.primaryLight, fontWeight: '700' },
 });
