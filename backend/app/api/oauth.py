@@ -38,6 +38,17 @@ async def authorize(
 ) -> OAuthAuthorizeResponse:
     return await oauth_service.get_authorization_url(platform, business_id)
 
+@router.post("/mock-connect", response_model=ConnectedAccountResponse)
+async def mock_connect(
+    business_id: uuid.UUID,
+    platform: Platform = Platform.LINKEDIN,
+    oauth_service: OAuthService = Depends(get_oauth_service),
+    current_user: User = Depends(get_current_user),
+) -> ConnectedAccountResponse:
+    """Connect a demo/sandbox account instantly for seamless onboarding and testing."""
+    return await oauth_service.create_mock_connected_account(business_id, platform)
+
+
 @router.get("/{platform}/callback", response_model=ConnectedAccountResponse)
 async def callback(
     platform: Platform,

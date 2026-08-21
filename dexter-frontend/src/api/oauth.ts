@@ -9,3 +9,13 @@ export async function listConnectedAccounts(businessId: string): Promise<Connect
   }
   return (await res.json()) as ConnectedAccount[];
 }
+
+export async function mockConnectAccount(businessId: string, platform = 'linkedin'): Promise<ConnectedAccount> {
+  const res = await apiFetch(`/oauth/mock-connect?business_id=${businessId}&platform=${platform}`, {
+    method: 'POST',
+  });
+  if (!res.ok) {
+    throw await getApiError(res, 'Could not connect test account');
+  }
+  return (await res.json()) as ConnectedAccount;
+}

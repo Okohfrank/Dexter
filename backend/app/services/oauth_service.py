@@ -130,6 +130,56 @@ class OAuthService:
             
         raise NotImplementedError(f"Callback not implemented for {platform}")
     
+    async def create_mock_connected_account(
+        self, business_id: uuid.UUID, platform: Platform = Platform.LINKEDIN
+    ) -> ConnectedAccountResponse:
+        """Create or enable a demo/mock connected account for development and sandbox testing."""
+        result = await self._db.execute(
+            select(ConnectedAccount).where(
+                ConnectedAccount.business_id == business_id,
+                ConnectedAccount.platform == platform,
+            )
+        )
+        account = result.scalar_one_or_none()
+
+        if not account:
+            account = ConnectedAccount(
+                business_id=business_id,
+                platform=platform,
+                platform_user_id=f"mock_li_{uuid.uuid4().hex[:8]}",
+                display_name="Alex Mercer (Demo)",
+                profile_url="https://www.linkedin.com/in/alex-mercer",
+                is_active=True,
+            )
+            self._db.add(account)
+            await self._db.flush()
+
+            oauth_token = OAuthToken(
+                connected_account_id=account.id,
+                access_token_encrypted=self._encryptor.encrypt("mock_linkedin_token"),
+                refresh_token_encrypted=self._encryptor.encrypt("mock_refresh_token"),
+                token_type="bearer",
+                scopes="openid profile w_member_social",
+                expires_at=None,
+            )
+            self._db.add(oauth_token)
+        else:
+            account.is_active = True
+
+        await self._db.commit()
+        await self._db.refresh(account)
+
+        return ConnectedAccountResponse(
+            id=account.id,
+            business_id=account.business_id,
+            platform=account.platform,
+            platform_user_id=account.platform_user_id,
+            display_name=account.display_name,
+            profile_url=account.profile_url,
+            is_active=account.is_active,
+            created_at=account.created_at,
+        )
+
     async def get_decrypted_token(self, connected_account_id: uuid.UUID) -> str:
         """Retrieve and decrypt access token for a connected account."""
         result = await self._db.execute(
