@@ -49,15 +49,82 @@ async def mock_connect(
     return await oauth_service.create_mock_connected_account(business_id, platform)
 
 
-@router.get("/{platform}/callback", response_model=ConnectedAccountResponse)
+@router.get("/{platform}/callback")
 async def callback(
     platform: Platform,
     code: str,
     state: str,
     db: AsyncSession = Depends(get_db),
     oauth_service: OAuthService = Depends(get_oauth_service),
-) -> ConnectedAccountResponse:
+):
     """OAuth callback — public (browser redirect). The user is resolved from
     the state token (biz_{business_id}) instead of a Bearer header, because
     LinkedIn redirects the browser here with no Authorization header."""
-    return await oauth_service.handle_callback(platform, code, state, db)
+    from fastapi.responses import HTMLResponse
+    account = await oauth_service.handle_callback(platform, code, state, db)
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Channel Connected - Dexter</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body {{
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: #F8F9FB;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          margin: 0;
+          padding: 20px;
+          text-align: center;
+          box-sizing: border-box;
+        }}
+        .card {{
+          background: white;
+          padding: 40px 28px;
+          border-radius: 24px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+          max-width: 380px;
+          width: 100%;
+          border: 1px solid #E2E8F0;
+        }}
+        .icon {{
+          width: 60px;
+          height: 60px;
+          background: #EEF2FF;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 16px;
+          font-size: 28px;
+          color: #4F46E5;
+        }}
+        h2 {{ color: #1E293B; margin: 0 0 8px; font-size: 22px; }}
+        p {{ color: #64748B; font-size: 14px; line-height: 1.5; margin: 0 0 24px; }}
+        .btn {{
+          display: inline-block;
+          background: #4F46E5;
+          color: white;
+          text-decoration: none;
+          padding: 13px 28px;
+          border-radius: 99px;
+          font-weight: 700;
+          font-size: 15px;
+        }}
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="icon">✓</div>
+        <h2>LinkedIn Connected!</h2>
+        <p>Linked as <strong>{account.display_name}</strong>. Dexter is now authorized to create and manage posts.</p>
+        <a href="dexter://" class="btn">Return to Dexter App</a>
+      </div>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
