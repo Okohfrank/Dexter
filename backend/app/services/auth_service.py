@@ -10,6 +10,7 @@ from app.core.security import (
     create_access_token,
     create_refresh_token,
     create_verification_token,
+    create_password_reset_token,
     verify_token,
 )
 from app.core.exceptions import DexterConflictError, DexterAuthError, DexterForbiddenError, DexterNotFoundError
@@ -160,3 +161,35 @@ class AuthService:
         if not user:
             raise DexterNotFoundError(detail="User not found")
         return user
+
+    async def forgot_password(self, email: str) -> None:
+        """Initiate password reset flow by sending a reset email."""
+        result = await self._db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        if not user:
+            # Silently return to prevent user enumeration attacks
+            self._logger.info("forgot_password_user_not_found", email=email)
+            return
+
+        if not user.is_active:
+            raise DexterForbiddenError(detail="Account is inactive")
+
+        token = create_password_reset_token(user.id)
+        self._email.send_password_reset_email(user.email, user.full_name, token)
+        self._logger.info("password_reset_email_sent", user_id=user.id)
+
+    async def reset_password(self, token: str, new_password: str) -> None:
+        """Reset user password using a valid reset token."""
+        try:
+            payload = verify_token(token)
+        except DexterAuthError:
+            raise DexterAuthError(detail="Invalid or expired reset token")
+
+        if payload.type != "reset_password":
+            raise DexterAuthError(detail="Invalid token type")
+
+        user = await self.get_user_by_id(payload.sub)
+        user.hashed_password = hash_password(new_password)
+        await self._db.commit()
+        self._logger.info("password_reset_success", user_id=user.id)
+

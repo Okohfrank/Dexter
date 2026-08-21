@@ -14,6 +14,8 @@ from app.schemas.user import (
     RefreshRequest,
     VerificationRequest,
     ResendVerificationRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
 )
 
 router = APIRouter()
@@ -56,6 +58,23 @@ async def resend_verification(
 ) -> None:
     await auth_service.resend_verification(data.email)
 
+@router.post("/forgot-password", status_code=204)
+async def forgot_password(
+    data: ForgotPasswordRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+) -> None:
+    """Trigger password reset email."""
+    await auth_service.forgot_password(data.email)
+
+@router.post("/reset-password", status_code=200)
+async def reset_password(
+    data: ResetPasswordRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+) -> dict:
+    """Reset password using reset token."""
+    await auth_service.reset_password(data.token, data.new_password)
+    return {"status": "success", "message": "Password reset successfully"}
+
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)) -> UserResponse:
     return UserResponse(
@@ -66,3 +85,4 @@ async def get_me(current_user: User = Depends(get_current_user)) -> UserResponse
         is_verified=current_user.is_verified,
         created_at=current_user.created_at
     )
+

@@ -57,3 +57,23 @@ class EmailService:
                 hint="SMTP not configured; open this URL or POST the token to /auth/verify-email",
             )
         self._send(to_email, "Verify your Dexter account", html)
+
+    def send_password_reset_email(self, to_email: str, full_name: str, token: str) -> None:
+        """Send a password reset link to the user."""
+        reset_url = f"{self._settings.FRONTEND_BASE_URL}/reset-password?token={token}"
+        html = f"""
+        <html><body>
+        <h2>Hello {full_name},</h2>
+        <p>You requested a password reset for your Dexter account. Click the link below to set a new password:</p>
+        <p><a href="{reset_url}">Reset Password</a></p>
+        <p>This link will expire in 2 hours. If you did not request this, you can safely ignore this email.</p>
+        </body></html>
+        """
+        if not self._configured:
+            self._logger.info(
+                "dev_password_reset_url",
+                reset_url=reset_url,
+                hint="SMTP not configured; open this URL or POST the token to /auth/reset-password",
+            )
+        self._send(to_email, "Reset your Dexter password", html)
+

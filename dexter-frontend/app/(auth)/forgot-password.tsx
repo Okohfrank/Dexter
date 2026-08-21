@@ -9,6 +9,7 @@ import {
   PrimaryButton,
 } from '../../src/components/ui';
 import { colors, spacing, typography, radii } from '../../src/theme';
+import { forgotPassword } from '../../src/api/auth';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -17,16 +18,22 @@ export default function ForgotPasswordScreen() {
   const router = useRouter();
 
   const handleReset = async () => {
-    if (!email) {
+    const trimmed = email.trim();
+    if (!trimmed) {
       Alert.alert('Missing email', 'Please enter your account email.');
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await forgotPassword(trimmed);
       setSent(true);
-    }, 800);
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Could not send reset instructions. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <AuthScreen>

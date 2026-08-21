@@ -52,8 +52,18 @@ class ResendVerificationRequest(BaseModel):
     """Schema for requesting a new verification email."""
     email: EmailStr
 
+class ForgotPasswordRequest(BaseModel):
+    """Schema for initiating password reset."""
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    """Schema for resetting password with token."""
+    token: str
+    new_password: str = Field(min_length=8)
+
 class TokenPayload(BaseModel):
     """Schema for token payload."""
     sub: uuid.UUID
     exp: datetime
     type: str = "access"
+

@@ -21,3 +21,6 @@ async def test_health_and_api_routes():
         assert "/api/v1/voice/transcribe" in paths
         assert "/api/v1/media/generate-visual" in paths
         assert "/api/v1/notifications/register-token" in paths
+        assert "/api/v1/auth/forgot-password" in paths
+        assert "/api/v1/auth/reset-password" in paths
+

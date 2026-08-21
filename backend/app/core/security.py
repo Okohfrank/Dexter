@@ -66,6 +66,16 @@ def create_verification_token(user_id: uuid.UUID) -> str:
     )
 
 
+def create_password_reset_token(user_id: uuid.UUID) -> str:
+    """Create a short-lived JWT used to reset a user's password."""
+    expire = datetime.now(timezone.utc) + timedelta(hours=2)
+    return jwt.encode(
+        {"sub": str(user_id), "exp": expire, "type": "reset_password"},
+        settings.SECRET_KEY,
+        algorithm=ALGORITHM,
+    )
+
+
 def verify_token(token: str) -> TokenPayload:
     """Verify and parse a JWT token."""
     try:
@@ -83,5 +93,7 @@ __all__ = [
     "create_access_token",
     "create_refresh_token",
     "create_verification_token",
+    "create_password_reset_token",
     "verify_token"
 ]
+
