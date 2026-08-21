@@ -6,7 +6,7 @@
     "version": "1.0.0",
     "sdkVersion": "54.0.0",
     "extra": {
-      "apiBaseUrl": "http://10.170.20.200:8000/api/v1"
+      "apiBaseUrl": "http://10.40.168.200:8000/api/v1"
     },
     "experiments": {
       "typedRoutes": true
