@@ -123,7 +123,7 @@ export default function LoginScreen() {
       </View>
 
       <PrimaryButton title="Sign In" onPress={handleLogin} disabled={loading} />
-      {loading && <ActivityIndicator color={colors.primaryLight} style={{ marginTop: spacing.sm }} />}
+      {loading && <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.sm }} />}
 
       <Divider label="or continue with" />
       <OutlinedButton title="Continue with LinkedIn" icon="logo-linkedin" onPress={handleLinkedIn} />
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   forgotRow: { alignItems: 'flex-end', marginBottom: spacing.sm },
-  forgotText: { color: colors.primaryLight, fontWeight: '600', fontSize: 13 },
+  forgotText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -158,5 +158,5 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxl,
   },
   footerText: { ...typography.body, color: colors.textSecondary },
-  footerLink: { ...typography.body, color: colors.primaryLight, fontWeight: '700' },
+  footerLink: { ...typography.body, color: colors.primary, fontWeight: '700' },
 });

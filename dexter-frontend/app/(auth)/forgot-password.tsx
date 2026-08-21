@@ -8,7 +8,7 @@ import {
   AuthTextInput,
   PrimaryButton,
 } from '../../src/components/ui';
-import { colors, spacing, typography } from '../../src/theme';
+import { colors, spacing, typography, radii } from '../../src/theme';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -60,12 +60,12 @@ export default function ForgotPasswordScreen() {
           />
 
           <PrimaryButton title="Send Reset Link" onPress={handleReset} disabled={loading} />
-          {loading && <ActivityIndicator color={colors.primaryLight} style={{ marginTop: spacing.sm }} />}
+          {loading && <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.sm }} />}
 
           <View style={styles.footer}>
             <Link href="/login" asChild>
               <Pressable hitSlop={8} style={styles.backRow}>
-                <Ionicons name="arrow-back" size={16} color={colors.primaryLight} />
+                <Ionicons name="arrow-back" size={16} color={colors.primary} />
                 <Text style={styles.footerLink}>Back to sign in</Text>
               </Pressable>
             </Link>
@@ -86,10 +86,10 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   successCard: {
-    backgroundColor: colors.glassSurfaceElevated,
-    borderRadius: 20,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     padding: spacing.xl,
     alignItems: 'center',
     gap: spacing.sm,
@@ -105,5 +105,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  footerLink: { ...typography.body, color: colors.primaryLight, fontWeight: '700' },
+  footerLink: { ...typography.body, color: colors.primary, fontWeight: '700' },
 });

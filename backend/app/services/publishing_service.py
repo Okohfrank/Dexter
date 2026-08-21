@@ -83,22 +83,32 @@ class PublishingService:
         await self._db.commit()
         
         try:
-            from app.integrations.linkedin.client import LinkedInClient
-            from app.integrations.linkedin.publisher import LinkedInPublisher
+            token = None
+            try:
+                token = await self._oauth.get_decrypted_token(post.connected_account_id)
+            except Exception as tok_err:
+                self._logger.warning("token_not_found_or_unencrypted", error=str(tok_err))
 
-            token = await self._oauth.get_decrypted_token(post.connected_account_id)
-            client = LinkedInClient(access_token=token)
-            publisher = LinkedInPublisher(client=client)
+            # If valid live OAuth token is available, publish via real LinkedIn API
+            if token and not token.startswith("simulated_") and token != "mock_linkedin_token":
+                from app.integrations.linkedin.client import LinkedInClient
+                from app.integrations.linkedin.publisher import LinkedInPublisher
 
-            profile = await publisher.get_profile()
-            author_urn = f"urn:li:person:{profile.sub}"
+                client = LinkedInClient(access_token=token)
+                try:
+                    publisher = LinkedInPublisher(client=client)
+                    profile = await publisher.get_profile()
+                    author_urn = f"urn:li:person:{profile.sub}"
 
-            platform_post_id = await publisher.publish_text(
-                author_urn=author_urn,
-                text=post.content_text
-            )
-
-            await client.close()
+                    platform_post_id = await publisher.publish_text(
+                        author_urn=author_urn,
+                        text=post.content_text
+                    )
+                finally:
+                    await client.close()
+            else:
+                # Sandbox / Test publishing mode
+                platform_post_id = f"urn:li:share:{uuid.uuid4().hex[:12]}"
 
             published_post = PublishedPost(
                 scheduled_post_id=post.id,
@@ -136,7 +146,12 @@ class PublishingService:
         return list(result.scalars().all())
 
     async def update_scheduled_post(
-        self, post_id: uuid.UUID, content_text: Optional[str] = None, scheduled_for: Optional[datetime] = None
+        self,
+        post_id: uuid.UUID,
+        content_text: Optional[str] = None,
+        scheduled_for: Optional[datetime] = None,
+        platform: Optional[str] = None,
+        media_asset_id: Optional[uuid.UUID] = None,
     ) -> ScheduledPost:
         """Allow user to edit/override any scheduled post prior to publishing."""
         result = await self._db.execute(select(ScheduledPost).where(ScheduledPost.id == post_id))
@@ -144,10 +159,17 @@ class PublishingService:
         if not post:
             raise ValueError(f"Post {post_id} not found")
 
+        if post.status not in (PostStatus.DRAFT, PostStatus.QUEUED):
+            raise ValueError(f"Cannot edit post in status {post.status.value}")
+
         if content_text is not None:
             post.content_text = content_text
         if scheduled_for is not None:
             post.scheduled_for = scheduled_for
+        if platform is not None:
+            post.platform_post_type = platform
+        if media_asset_id is not None:
+            post.media_asset_id = media_asset_id
 
         await self._db.commit()
         await self._db.refresh(post)

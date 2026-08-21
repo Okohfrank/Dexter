@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
-import { GlassCard, GlassPill } from '../../src/components/ui';
+import { Card, Pill } from '../../src/components/ui';
 import type { BusinessBrain } from '../../src/types';
 
 const MOCK_BRAIN: BusinessBrain = {
@@ -24,7 +24,7 @@ const MOCK_BRAIN: BusinessBrain = {
   brandVoice: 'Authoritative, clear, founder-first, candid',
   restrictions: ['Zero clickbait or buzzword stuffing', 'No divisive political discussions'],
   writingStyle: 'Short punchy paragraphs, data-backed frameworks, strong first-line hooks',
-  visualStyle: 'Obsidian dark, frosted glass aesthetic, high contrast',
+  visualStyle: 'Modern light aesthetic, high clarity, clean typography',
   preferredHashtags: ['#AI', '#Founders', '#B2B', '#SaaS'],
   preferredCtas: ['Follow for weekly breakdown', 'Share thoughts below'],
 };
@@ -109,9 +109,9 @@ export default function BrainReviewScreen() {
 
         <View style={styles.fieldsContainer}>
           {FIELDS.map((field) => (
-            <GlassCard key={field.key} style={styles.fieldCard}>
+            <Card key={field.key} style={styles.fieldCard}>
               <View style={styles.fieldHeader}>
-                <Ionicons name="sparkles" size={14} color={colors.primaryLight} />
+                <Ionicons name="sparkles" size={14} color={colors.primary} />
                 <Text style={styles.fieldLabel}>{field.label}</Text>
               </View>
 
@@ -126,7 +126,7 @@ export default function BrainReviewScreen() {
                           hitSlop={8}
                           onPress={() => removeListItem(field.key, i)}
                         >
-                          <Ionicons name="close" size={12} color="#FFFFFF" />
+                          <Ionicons name="close" size={12} color={colors.primary} />
                         </Pressable>
                       </View>
                     ))}
@@ -163,7 +163,7 @@ export default function BrainReviewScreen() {
                   placeholderTextColor={colors.textMuted}
                 />
               )}
-            </GlassCard>
+            </Card>
           ))}
         </View>
 
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   header: { gap: spacing.xs },
   eyebrow: {
     ...typography.caption,
-    color: colors.primaryLight,
+    color: colors.primary,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     fontWeight: '700',
@@ -195,10 +195,10 @@ const styles = StyleSheet.create({
   fieldLabel: { ...typography.subheading, color: colors.textPrimary, fontWeight: '700' },
   listContainer: { gap: spacing.sm },
   input: {
-    backgroundColor: colors.glassSurfaceElevated,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     color: colors.textPrimary,
@@ -210,20 +210,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.primaryGlass,
+    backgroundColor: colors.primarySurface,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.primaryGlassBorder,
+    borderColor: colors.primaryBorder,
     paddingLeft: spacing.md,
     paddingRight: spacing.sm,
     paddingVertical: 5,
   },
-  chipText: { ...typography.caption, color: colors.primaryLight, fontWeight: '600', fontSize: 12 },
+  chipText: { ...typography.caption, color: colors.primary, fontWeight: '600', fontSize: 12 },
   chipRemoveBtn: {
     width: 18,
     height: 18,
     borderRadius: radii.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -235,10 +235,10 @@ const styles = StyleSheet.create({
   },
   addChipInput: {
     flex: 1,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     color: colors.textPrimary,
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     paddingVertical: spacing.lg,
     marginTop: spacing.md,
-    ...shadows.glow,
+    ...shadows.primaryBtn,
   },
   saveText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', fontFamily: fonts.bold },
 });

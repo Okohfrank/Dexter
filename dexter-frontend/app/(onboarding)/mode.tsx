@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
-import { GlassCard, GlassPill } from '../../src/components/ui';
+import { Card, Pill } from '../../src/components/ui';
 
 export default function InterviewModeScreen() {
   const router = useRouter();
@@ -26,9 +26,9 @@ export default function InterviewModeScreen() {
         </Text>
 
         <Pressable onPress={() => pick('text')}>
-          <GlassCard style={styles.card} elevated>
+          <Card style={styles.card} elevated>
             <View style={styles.cardIcon}>
-              <Ionicons name="chatbubbles" size={24} color={colors.primaryLight} />
+              <Ionicons name="chatbubbles" size={24} color={colors.primary} />
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.cardTitle}>Text Conversation</Text>
@@ -36,26 +36,26 @@ export default function InterviewModeScreen() {
                 Type your responses in an interactive chat session with Dexter.
               </Text>
             </View>
-            <Ionicons name="arrow-forward" size={18} color={colors.textSecondary} />
-          </GlassCard>
+            <Ionicons name="arrow-forward" size={18} color={colors.textMuted} />
+          </Card>
         </Pressable>
 
         <Pressable onPress={() => pick('voice')}>
-          <GlassCard style={styles.card} highlighted>
-            <View style={[styles.cardIcon, { backgroundColor: colors.primaryGlass }]}>
-              <Ionicons name="mic" size={24} color={colors.primaryLight} />
+          <Card style={styles.card} highlighted>
+            <View style={[styles.cardIcon, { backgroundColor: colors.primarySurface }]}>
+              <Ionicons name="mic" size={24} color={colors.primary} />
             </View>
             <View style={styles.cardBody}>
               <View style={styles.titleRow}>
                 <Text style={styles.cardTitle}>Voice Agent</Text>
-                <GlassPill label="BETA" variant="primary" />
+                <Pill label="BETA" variant="primary" />
               </View>
               <Text style={styles.cardSubtitle}>
                 Speak naturally with Dexter via the MisoLabs voice pipeline.
               </Text>
             </View>
-            <Ionicons name="arrow-forward" size={18} color={colors.textSecondary} />
-          </GlassCard>
+            <Ionicons name="arrow-forward" size={18} color={colors.textMuted} />
+          </Card>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, padding: spacing.xxl, justifyContent: 'center', gap: spacing.lg },
   eyebrow: {
     ...typography.caption,
-    color: colors.primaryLight,
+    color: colors.primary,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     fontWeight: '700',
@@ -85,9 +85,9 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassSurfaceElevated,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },

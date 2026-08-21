@@ -39,3 +39,29 @@ async def get_learning_insights(
     """
     service = AnalyticsService(db)
     return await service.generate_learning_insights(business_id)
+
+
+@router.get("/summary")
+async def get_performance_summary(
+    business_id: Optional[uuid.UUID] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Get aggregate summary across all published posts.
+    """
+    service = AnalyticsService(db)
+    return await service.get_performance_summary(business_id)
+
+
+@router.post("/sync")
+async def sync_metrics(
+    business_id: Optional[uuid.UUID] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Manually trigger sync of live LinkedIn metrics.
+    """
+    service = AnalyticsService(db)
+    return await service.sync_linkedin_post_metrics(business_id)

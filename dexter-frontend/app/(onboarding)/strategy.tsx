@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { generateContentStrategy, FALLBACK_STRATEGY } from '../../src/api/strategy';
-import { GlassCard, GlassPill } from '../../src/components/ui';
+import { Card, Pill } from '../../src/components/ui';
 import type { ContentPlan } from '../../src/types';
 
 export default function StrategyReviewScreen() {
@@ -80,16 +80,16 @@ export default function StrategyReviewScreen() {
         </View>
 
         {loading ? (
-          <GlassCard style={styles.loadingCard}>
+          <Card style={styles.loadingCard}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingText}>Dexter is optimizing your posting strategy…</Text>
-          </GlassCard>
+          </Card>
         ) : (
           <>
-            {/* Frequency Bento Card */}
-            <GlassCard style={styles.card} elevated>
+            {/* Frequency Card */}
+            <Card style={styles.card} elevated>
               <View style={styles.cardHeader}>
-                <Ionicons name="calendar-outline" size={18} color={colors.primaryLight} />
+                <Ionicons name="calendar-outline" size={18} color={colors.primary} />
                 <Text style={styles.cardLabel}>Posting Frequency</Text>
               </View>
               <View style={styles.stepper}>
@@ -110,12 +110,12 @@ export default function StrategyReviewScreen() {
                   <Ionicons name="add" size={18} color={colors.textPrimary} />
                 </Pressable>
               </View>
-            </GlassCard>
+            </Card>
 
-            {/* Content Pillars Bento Card */}
-            <GlassCard style={styles.card}>
+            {/* Content Pillars Card */}
+            <Card style={styles.card}>
               <View style={styles.cardHeader}>
-                <Ionicons name="layers-outline" size={18} color={colors.primaryLight} />
+                <Ionicons name="layers-outline" size={18} color={colors.primary} />
                 <Text style={styles.cardLabel}>Content Pillars</Text>
               </View>
               <View style={styles.pillarList}>
@@ -128,17 +128,17 @@ export default function StrategyReviewScreen() {
                   </View>
                 ))}
               </View>
-            </GlassCard>
+            </Card>
 
             {/* Best Times & Reasoning Card */}
-            <GlassCard style={styles.card}>
+            <Card style={styles.card}>
               <View style={styles.cardHeader}>
-                <Ionicons name="time-outline" size={18} color={colors.primaryLight} />
+                <Ionicons name="time-outline" size={18} color={colors.primary} />
                 <Text style={styles.cardLabel}>Target Windows & Rationale</Text>
               </View>
               <View style={styles.timesRow}>
                 {plan.bestTimes.map((time, idx) => (
-                  <GlassPill key={idx} label={time} variant="primary" icon="time-outline" />
+                  <Pill key={idx} label={time} variant="primary" icon="time-outline" />
                 ))}
               </View>
               <View style={styles.reasonBox}>
@@ -146,10 +146,10 @@ export default function StrategyReviewScreen() {
                   Why: Mid-morning slots (8:30–10:15 AM) yield the highest initial impression velocity and comment rate for executive audiences.
                 </Text>
               </View>
-            </GlassCard>
+            </Card>
 
-            {/* Autonomous Mode Hand-Off Bento Card */}
-            <GlassCard style={styles.autonomyCard} elevated highlighted>
+            {/* Autonomous Mode Hand-Off Card */}
+            <Card style={styles.autonomyCard} elevated highlighted>
               <View style={styles.autonomyHeader}>
                 <View style={styles.autonomyIconWrap}>
                   <Ionicons name="rocket" size={24} color="#FFFFFF" />
@@ -163,11 +163,11 @@ export default function StrategyReviewScreen() {
                 <Switch
                   value={enabled}
                   onValueChange={handleToggle}
-                  trackColor={{ false: colors.glassBorder, true: colors.primary }}
+                  trackColor={{ false: colors.border, true: colors.primary }}
                   thumbColor="#FFFFFF"
                 />
               </View>
-            </GlassCard>
+            </Card>
           </>
         )}
 
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   header: { gap: spacing.xs },
   eyebrow: {
     ...typography.caption,
-    color: colors.primaryLight,
+    color: colors.primary,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     fontWeight: '700',
@@ -211,17 +211,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.glassSurfaceElevated,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     padding: spacing.xs,
   },
   stepBtn: {
     width: 44,
     height: 44,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassSurfaceActive,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -242,7 +244,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: radii.pill,
-    backgroundColor: colors.positiveBg,
+    backgroundColor: colors.positiveSurface,
     borderWidth: 1,
     borderColor: colors.positiveBorder,
     alignItems: 'center',
@@ -251,10 +253,10 @@ const styles = StyleSheet.create({
   pillarText: { ...typography.body, color: colors.textPrimary, flex: 1, fontSize: 14 },
   timesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   reasonBox: {
-    backgroundColor: colors.glassSurfaceElevated,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     padding: spacing.md,
   },
   reasonText: {
@@ -264,7 +266,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   autonomyCard: {
-    borderColor: colors.primaryGlassBorder,
     padding: spacing.xl,
     marginVertical: spacing.xs,
   },
@@ -280,7 +281,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.glow,
+    ...shadows.primaryBtn,
   },
   autonomyBody: { flex: 1 },
   autonomyTitle: { ...typography.subheading, color: colors.textPrimary, fontWeight: '700' },

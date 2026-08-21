@@ -92,7 +92,7 @@ export default function SignupScreen() {
       />
 
       <PrimaryButton title="Get Started" onPress={handleSignup} disabled={loading} />
-      {loading && <ActivityIndicator color={colors.primaryLight} style={{ marginTop: spacing.sm }} />}
+      {loading && <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.sm }} />}
 
       <Divider label="or sign up with" />
       <OutlinedButton title="Continue with LinkedIn" icon="logo-linkedin" onPress={handleLinkedIn} />
@@ -125,5 +125,5 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxl,
   },
   footerText: { ...typography.body, color: colors.textSecondary },
-  footerLink: { ...typography.body, color: colors.primaryLight, fontWeight: '700' },
+  footerLink: { ...typography.body, color: colors.primary, fontWeight: '700' },
 });

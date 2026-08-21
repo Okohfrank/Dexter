@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { transcribeAudio } from '../../src/api/voice';
-import { GlassCard, GlassPill } from '../../src/components/ui';
+import { Card, Pill } from '../../src/components/ui';
 
 const BAR_COUNT = 24;
 
@@ -91,7 +91,7 @@ export default function VoiceInterviewScreen() {
           <Text style={styles.headerTitle}>Voice Interview</Text>
           <Text style={styles.headerSubtitle}>MisoLabs Voice Agent Engine</Text>
         </View>
-        <GlassPill label="BETA" variant="primary" icon="sparkles" />
+        <Pill label="BETA" variant="primary" icon="sparkles" />
       </View>
 
       <View style={styles.body}>
@@ -103,8 +103,8 @@ export default function VoiceInterviewScreen() {
             : 'Tap the microphone to begin your voice onboarding session.'}
         </Text>
 
-        {/* Dynamic Glass Waveform Container */}
-        <GlassCard style={styles.waveformCard} elevated={recording}>
+        {/* Waveform */}
+        <Card style={styles.waveformCard} elevated={recording}>
           <View style={styles.waveform}>
             {anims.map((a, i) => (
               <Animated.View
@@ -117,9 +117,9 @@ export default function VoiceInterviewScreen() {
               />
             ))}
           </View>
-        </GlassCard>
+        </Card>
 
-        {/* Glowing Tactile Mic Button */}
+        {/* Mic Button */}
         <View style={styles.micContainer}>
           <Pressable
             style={[styles.micBtn, recording && styles.micBtnActive]}
@@ -138,9 +138,9 @@ export default function VoiceInterviewScreen() {
           </Pressable>
         </View>
 
-        {/* Live Transcript / Feedback Glass Panel */}
+        {/* Transcript / Switch */}
         {transcriptPreview ? (
-          <GlassCard style={styles.transcriptCard} highlighted>
+          <Card style={styles.transcriptCard} highlighted>
             <View style={styles.transcriptHeader}>
               <Ionicons name="checkmark-circle" size={18} color={colors.positive} />
               <Text style={styles.transcriptTitle}>Interview Transcribed</Text>
@@ -150,7 +150,7 @@ export default function VoiceInterviewScreen() {
               <Text style={styles.proceedBtnText}>Review Business Brain</Text>
               <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
             </Pressable>
-          </GlassCard>
+          </Card>
         ) : (
           <Pressable
             style={styles.switchModeBtn}
@@ -159,7 +159,7 @@ export default function VoiceInterviewScreen() {
               router.replace('/(onboarding)/interview');
             }}
           >
-            <Ionicons name="chatbubbles-outline" size={16} color={colors.primaryLight} />
+            <Ionicons name="chatbubbles-outline" size={16} color={colors.primary} />
             <Text style={styles.switchModeText}>Prefer typing? Switch to text interview</Text>
           </Pressable>
         )}
@@ -181,9 +181,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassSurfaceElevated,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     ...typography.caption,
-    color: colors.primaryLight,
+    color: colors.primary,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     fontWeight: '700',
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     width: 5,
     height: 70,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassBorderHighlight,
+    backgroundColor: colors.border,
   },
   barActive: {
     backgroundColor: colors.primary,
@@ -245,14 +245,14 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     backgroundColor: colors.primary,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderColor: colors.primaryBorder,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.glow,
+    ...shadows.primaryBtn,
   },
   micBtnActive: {
     backgroundColor: colors.negative,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: colors.negativeBorder,
   },
   transcriptCard: {
     width: '100%',
@@ -283,6 +283,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     paddingVertical: spacing.md,
     marginTop: spacing.xs,
+    ...shadows.primaryBtn,
   },
   proceedBtnText: {
     color: '#FFFFFF',
@@ -297,13 +298,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
   },
   switchModeText: {
     ...typography.caption,
-    color: colors.primaryLight,
+    color: colors.primary,
     fontWeight: '600',
   },
 });

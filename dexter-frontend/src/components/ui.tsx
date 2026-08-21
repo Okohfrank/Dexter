@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radii, typography, fonts, shadows } from '../theme';
 
+/* ── Screen Wrapper ─────────────────────────────────── */
 export function AuthScreen({ children }: { children: React.ReactNode }) {
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -35,18 +36,22 @@ export function AuthScreen({ children }: { children: React.ReactNode }) {
   );
 }
 
+/* ── Brand Mark ─────────────────────────────────────── */
 export function BrandMark() {
   return (
     <View style={styles.logo}>
       <View style={styles.logoInner}>
-        <Ionicons name="sparkles" size={16} color={colors.primary} />
+        <View style={styles.logoIcon}>
+          <Ionicons name="sparkles" size={14} color="#FFFFFF" />
+        </View>
         <Text style={styles.logoText}>Dexter</Text>
       </View>
     </View>
   );
 }
 
-export function GlassCard({
+/* ── Card (replaces GlassCard) ──────────────────────── */
+export function Card({
   children,
   style,
   elevated,
@@ -60,9 +65,9 @@ export function GlassCard({
   return (
     <View
       style={[
-        styles.glassCard,
-        elevated && styles.glassCardElevated,
-        highlighted && styles.glassCardHighlighted,
+        styles.card,
+        elevated && styles.cardElevated,
+        highlighted && styles.cardHighlighted,
         style,
       ]}
     >
@@ -71,7 +76,11 @@ export function GlassCard({
   );
 }
 
-export function GlassPill({
+/** Backward-compat alias */
+export const GlassCard = Card;
+
+/* ── Pill Badge (replaces GlassPill) ────────────────── */
+export function Pill({
   label,
   icon,
   variant = 'default',
@@ -81,21 +90,25 @@ export function GlassPill({
   variant?: 'default' | 'positive' | 'primary' | 'warning' | 'negative';
 }) {
   const variantStyles = {
-    default: { bg: colors.glassSurfaceElevated, border: colors.glassBorder, text: colors.textSecondary },
-    positive: { bg: colors.positiveBg, border: colors.positiveBorder, text: colors.positive },
-    primary: { bg: colors.primaryGlass, border: colors.primaryGlassBorder, text: colors.primaryLight },
-    warning: { bg: colors.warningBg, border: 'rgba(245, 158, 11, 0.3)', text: colors.warning },
-    negative: { bg: colors.negativeBg, border: colors.negativeBorder, text: colors.negative },
+    default: { bg: colors.surfaceAlt, border: colors.border, text: colors.textSecondary },
+    positive: { bg: colors.positiveSurface, border: colors.positiveBorder, text: colors.positive },
+    primary: { bg: colors.primarySurface, border: colors.primaryBorder, text: colors.primary },
+    warning: { bg: colors.warningSurface, border: colors.warningBorder, text: colors.warning },
+    negative: { bg: colors.negativeSurface, border: colors.negativeBorder, text: colors.negative },
   }[variant];
 
   return (
-    <View style={[styles.glassPill, { backgroundColor: variantStyles.bg, borderColor: variantStyles.border }]}>
+    <View style={[styles.pill, { backgroundColor: variantStyles.bg, borderColor: variantStyles.border }]}>
       {icon && <Ionicons name={icon} size={12} color={variantStyles.text} />}
-      <Text style={[styles.glassPillText, { color: variantStyles.text }]}>{label}</Text>
+      <Text style={[styles.pillText, { color: variantStyles.text }]}>{label}</Text>
     </View>
   );
 }
 
+/** Backward-compat alias */
+export const GlassPill = Pill;
+
+/* ── Text Input ─────────────────────────────────────── */
 type AuthInputProps = TextInputProps & {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
@@ -113,7 +126,7 @@ export function AuthTextInput({ label, icon, secure, ...props }: AuthInputProps)
         <Ionicons
           name={icon}
           size={18}
-          color={focused ? colors.primaryLight : colors.textSecondary}
+          color={focused ? colors.primary : colors.textMuted}
         />
         <TextInput
           {...props}
@@ -128,7 +141,7 @@ export function AuthTextInput({ label, icon, secure, ...props }: AuthInputProps)
             <Ionicons
               name={hidden ? 'eye-outline' : 'eye-off-outline'}
               size={18}
-              color={colors.textSecondary}
+              color={colors.textMuted}
             />
           </Pressable>
         )}
@@ -137,6 +150,7 @@ export function AuthTextInput({ label, icon, secure, ...props }: AuthInputProps)
   );
 }
 
+/* ── Primary Button ─────────────────────────────────── */
 export function PrimaryButton({
   title,
   onPress,
@@ -155,7 +169,7 @@ export function PrimaryButton({
       style={({ pressed }) => [
         styles.primaryBtn,
         pressed && { transform: [{ scale: 0.98 }], opacity: 0.9 },
-        disabled && { opacity: 0.4 },
+        disabled && { opacity: 0.45 },
       ]}
     >
       {icon && <Ionicons name={icon} size={18} color="#FFFFFF" style={{ marginRight: 6 }} />}
@@ -164,6 +178,7 @@ export function PrimaryButton({
   );
 }
 
+/* ── Outlined Button ────────────────────────────────── */
 export function OutlinedButton({
   title,
   icon,
@@ -178,7 +193,7 @@ export function OutlinedButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.outlinedBtn,
-        pressed && { backgroundColor: colors.glassSurfaceActive },
+        pressed && { backgroundColor: colors.surfacePressed },
       ]}
     >
       <Ionicons name={icon} size={18} color={colors.textPrimary} />
@@ -187,6 +202,7 @@ export function OutlinedButton({
   );
 }
 
+/* ── Divider ────────────────────────────────────────── */
 export function Divider({ label }: { label: string }) {
   return (
     <View style={styles.dividerRow}>
@@ -197,6 +213,7 @@ export function Divider({ label }: { label: string }) {
   );
 }
 
+/* ── Styles ─────────────────────────────────────────── */
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
@@ -206,20 +223,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     paddingVertical: spacing.xxl,
   },
+
+  // Brand
   logo: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.glassSurfaceElevated,
+    backgroundColor: colors.surface,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.glassBorderHighlight,
+    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    ...shadows.card,
+    ...shadows.subtle,
   },
   logoInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  logoIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: radii.pill,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logoText: {
     fontFamily: fonts.extrabold,
@@ -227,23 +254,27 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     color: colors.textPrimary,
   },
-  glassCard: {
-    backgroundColor: colors.glassSurface,
+
+  // Card
+  card: {
+    backgroundColor: colors.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     padding: spacing.lg,
     ...shadows.card,
   },
-  glassCardElevated: {
-    backgroundColor: colors.glassSurfaceElevated,
-    borderColor: colors.glassBorderHighlight,
+  cardElevated: {
+    ...shadows.elevated,
+    borderColor: colors.borderLight,
   },
-  glassCardHighlighted: {
-    borderColor: colors.primaryGlassBorder,
-    backgroundColor: colors.primaryGlass,
+  cardHighlighted: {
+    borderColor: colors.primaryBorder,
+    backgroundColor: colors.primarySurface,
   },
-  glassPill: {
+
+  // Pill
+  pill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -253,11 +284,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     alignSelf: 'flex-start',
   },
-  glassPillText: {
+  pillText: {
     ...typography.caption,
     fontWeight: '600',
     fontSize: 11,
   },
+
+  // Input
   field: { marginBottom: spacing.lg },
   label: {
     ...typography.subheading,
@@ -267,16 +300,16 @@ const styles = StyleSheet.create({
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
   },
   inputWrapFocused: {
     borderColor: colors.primary,
-    backgroundColor: colors.glassSurfaceElevated,
+    backgroundColor: colors.primarySurface,
   },
   input: {
     flex: 1,
@@ -285,15 +318,17 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     paddingVertical: spacing.lg,
   },
+
+  // Primary Button
   primaryBtn: {
     flexDirection: 'row',
     backgroundColor: colors.primary,
     borderRadius: radii.pill,
-    paddingVertical: spacing.lg,
+    paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: spacing.md,
-    ...shadows.glow,
+    ...shadows.primaryBtn,
   },
   primaryBtnText: {
     color: '#FFFFFF',
@@ -302,16 +337,18 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     letterSpacing: 0.2,
   },
+
+  // Outlined Button
   outlinedBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
-    paddingVertical: spacing.lg,
+    borderColor: colors.border,
+    paddingVertical: 14,
   },
   outlinedBtnText: {
     color: colors.textPrimary,
@@ -319,6 +356,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: fonts.semibold,
   },
+
+  // Divider
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -331,7 +370,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.divider,
   },
   dividerLabel: {
-    color: colors.textSecondary,
+    color: colors.textMuted,
     fontSize: 12,
     fontWeight: '500',
   },

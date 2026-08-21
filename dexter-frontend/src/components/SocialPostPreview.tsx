@@ -48,7 +48,7 @@ export function SocialPostPreview({
   };
 
   return (
-    <View style={styles.glassCard}>
+    <View style={styles.card}>
       {/* Platform & Author Header */}
       <View style={styles.header}>
         <View style={styles.authorRow}>
@@ -81,7 +81,7 @@ export function SocialPostPreview({
                     : 'Now')}
               </Text>
               <Text style={styles.timestampDot}>•</Text>
-              <Ionicons name="globe-outline" size={12} color={colors.textSecondary} />
+              <Ionicons name="globe-outline" size={12} color={colors.textMuted} />
             </View>
           </View>
         </View>
@@ -96,7 +96,7 @@ export function SocialPostPreview({
                 : 'musical-notes-outline'
             }
             size={16}
-            color={postPlatform === 'linkedin' ? '#38BDF8' : colors.primaryLight}
+            color={postPlatform === 'linkedin' ? '#0A66C2' : colors.primary}
           />
         </View>
       </View>
@@ -123,7 +123,7 @@ export function SocialPostPreview({
         <>
           <View style={styles.engagementBar}>
             <View style={styles.reactionsCluster}>
-              <View style={[styles.reactionCircle, { backgroundColor: '#0284C7' }]}>
+              <View style={[styles.reactionCircle, { backgroundColor: '#0A66C2' }]}>
                 <Ionicons name="thumbs-up" size={10} color="#FFFFFF" />
               </View>
               <View style={[styles.reactionCircle, { backgroundColor: '#EF4444', marginLeft: -4 }]}>
@@ -171,11 +171,11 @@ export function SocialPostPreview({
 }
 
 const styles = StyleSheet.create({
-  glassCard: {
-    backgroundColor: colors.glassSurface,
+  card: {
+    backgroundColor: colors.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     paddingVertical: spacing.md,
     ...shadows.card,
     overflow: 'hidden',
@@ -197,9 +197,9 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassSurfaceElevated,
+    backgroundColor: colors.primarySurface,
     borderWidth: 1,
-    borderColor: colors.glassBorderHighlight,
+    borderColor: colors.primaryBorder,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   avatarInitial: {
     fontSize: 17,
     fontWeight: '700',
-    color: colors.primaryLight,
+    color: colors.primary,
     fontFamily: fonts.bold,
   },
   authorInfo: {
@@ -256,9 +256,9 @@ const styles = StyleSheet.create({
   platformBadge: {
     padding: 8,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassSurfaceElevated,
+    backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
   },
   contentWrap: {
     paddingHorizontal: spacing.lg,
@@ -271,14 +271,14 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   hashtagText: {
-    color: '#38BDF8',
+    color: '#0A66C2',
     fontWeight: '600',
   },
   mediaContainer: {
     marginTop: spacing.md,
     width: '100%',
     height: 220,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.skeleton,
     position: 'relative',
   },
   mediaImage: {
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   videoOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: radii.pill,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
     alignItems: 'center',

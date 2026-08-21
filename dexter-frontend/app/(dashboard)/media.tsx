@@ -12,19 +12,17 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { listMediaAssets, uploadMediaAsset } from '../../src/api/media';
-import { GlassCard, GlassPill } from '../../src/components/ui';
+import { Card, Pill } from '../../src/components/ui';
 import type { MediaAsset } from '../../src/types';
 
 const PRESET_TAGS = ['All', 'Product', 'Brand', 'Team', 'Event', 'Video'];
 
 export default function MediaLibraryScreen() {
-  const router = useRouter();
   const business = useAppStore((s) => s.business);
 
   const [assets, setAssets] = useState<MediaAsset[]>([]);
@@ -133,15 +131,11 @@ export default function MediaLibraryScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* Header */}
       <View style={styles.header}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-        </Pressable>
         <View style={styles.headerTitle}>
           <Text style={styles.title}>Media Library</Text>
-          <Text style={styles.subtitle}>
-            Dexter auto-selects from here when planning visuals.
-          </Text>
+          <Text style={styles.subtitle}>Dexter auto-selects from here when planning visuals.</Text>
         </View>
         <Pressable style={styles.addBtn} onPress={pickAndUpload} disabled={uploading}>
           {uploading ? (
@@ -152,8 +146,9 @@ export default function MediaLibraryScreen() {
         </Pressable>
       </View>
 
+      {/* Search */}
       <View style={styles.searchRow}>
-        <Ionicons name="search" size={16} color={colors.textSecondary} />
+        <Ionicons name="search" size={16} color={colors.textMuted} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search by filename or tag…"
@@ -163,12 +158,12 @@ export default function MediaLibraryScreen() {
         />
         {search.length > 0 && (
           <Pressable onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
           </Pressable>
         )}
       </View>
 
-      {/* Preset Tag Filter Pills */}
+      {/* Tag Filters */}
       <View style={styles.tagFiltersRow}>
         {PRESET_TAGS.map((tag) => {
           const isSelected = activeTag === tag;
@@ -197,7 +192,7 @@ export default function MediaLibraryScreen() {
           columnWrapperStyle={styles.gridRow}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="images-outline" size={40} color={colors.textSecondary} />
+              <Ionicons name="images-outline" size={40} color={colors.textMuted} />
               <Text style={styles.emptyTitle}>No media found</Text>
               <Text style={styles.emptyText}>
                 {search || activeTag !== 'All'
@@ -228,9 +223,6 @@ export default function MediaLibraryScreen() {
                     <Text style={styles.tagText}>{tag}</Text>
                   </View>
                 ))}
-                <View style={styles.addTagSmallPill}>
-                  <Ionicons name="pricetag-outline" size={10} color={colors.primaryLight} />
-                </View>
               </View>
             </Pressable>
           )}
@@ -259,7 +251,7 @@ export default function MediaLibraryScreen() {
                     <View key={tag} style={styles.modalChip}>
                       <Text style={styles.modalChipText}>{tag}</Text>
                       <Pressable onPress={() => handleRemoveTag(tag)} hitSlop={6}>
-                        <Ionicons name="close-circle" size={14} color={colors.primaryLight} />
+                        <Ionicons name="close-circle" size={14} color={colors.primary} />
                       </Pressable>
                     </View>
                   ))}
@@ -296,16 +288,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     paddingTop: spacing.lg,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.pill,
-    backgroundColor: colors.glassSurfaceElevated,
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   headerTitle: { flex: 1 },
   title: { ...typography.heading, color: colors.textPrimary },
   subtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
@@ -316,7 +298,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.glow,
+    ...shadows.primaryBtn,
   },
   searchRow: {
     flexDirection: 'row',
@@ -325,10 +307,10 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xxl,
     marginTop: spacing.lg,
     paddingHorizontal: spacing.lg,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
   },
   searchInput: {
     flex: 1,
@@ -347,9 +329,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 5,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
   },
   filterChipActive: {
     backgroundColor: colors.primary,
@@ -362,10 +344,10 @@ const styles = StyleSheet.create({
   gridRow: { gap: spacing.md },
   assetCard: {
     flex: 1,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     padding: spacing.sm,
     gap: spacing.sm,
     ...shadows.card,
@@ -375,7 +357,7 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 1,
     borderRadius: radii.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.skeleton,
   },
   videoBadge: {
     position: 'absolute',
@@ -393,42 +375,33 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: radii.pill,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   assetName: { ...typography.caption, color: colors.textPrimary, fontWeight: '600', fontSize: 11 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, alignItems: 'center' },
   tag: {
-    backgroundColor: colors.primaryGlass,
+    backgroundColor: colors.primarySurface,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.primaryGlassBorder,
+    borderColor: colors.primaryBorder,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
-  tagText: { ...typography.caption, color: colors.primaryLight, fontSize: 10 },
-  addTagSmallPill: {
-    padding: 3,
-    backgroundColor: colors.glassSurfaceElevated,
-    borderRadius: radii.pill,
-  },
+  tagText: { ...typography.caption, color: colors.primary, fontSize: 10 },
   empty: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxxl },
   emptyTitle: { ...typography.heading, color: colors.textPrimary },
   emptyText: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    justifyContent: 'flex-end',
-  },
+
+  modalBackdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   modalContent: {
-    backgroundColor: colors.backgroundAlt,
+    backgroundColor: colors.surface,
     borderTopLeftRadius: radii.lg,
     borderTopRightRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
     padding: spacing.xxl,
     gap: spacing.md,
+    ...shadows.elevated,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -440,7 +413,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassSurfaceElevated,
+    backgroundColor: colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -449,24 +422,24 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 140,
     borderRadius: radii.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.skeleton,
   },
   modalAssetName: { ...typography.subheading, color: colors.textPrimary },
-  modalLabel: { ...typography.caption, color: colors.textSecondary, textTransform: 'uppercase' },
+  modalLabel: { ...typography.caption, color: colors.textMuted, textTransform: 'uppercase' },
   modalChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   modalChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.primaryGlass,
+    backgroundColor: colors.primarySurface,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.primaryGlassBorder,
+    borderColor: colors.primaryBorder,
     paddingLeft: spacing.md,
     paddingRight: spacing.sm,
     paddingVertical: spacing.xs,
   },
-  modalChipText: { ...typography.caption, color: colors.primaryLight, fontWeight: '600' },
+  modalChipText: { ...typography.caption, color: colors.primary, fontWeight: '600' },
   addTagInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -475,10 +448,10 @@ const styles = StyleSheet.create({
   },
   addTagInput: {
     flex: 1,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     color: colors.textPrimary,

@@ -48,12 +48,32 @@ async def get_scheduled_posts(
 async def update_scheduled_post(
     post_id: uuid.UUID,
     content_text: str = None,
+    scheduled_for: str = None,
+    platform: str = None,
     publishing_service: PublishingService = Depends(get_publishing_service),
     current_user: User = Depends(get_current_user)
 ):
     """User edit/override of a scheduled post."""
-    updated = await publishing_service.update_scheduled_post(post_id, content_text=content_text)
-    return {"id": updated.id, "content_text": updated.content_text, "status": updated.status}
+    from datetime import datetime
+    parsed_dt = None
+    if scheduled_for:
+        try:
+            parsed_dt = datetime.fromisoformat(scheduled_for.replace("Z", "+00:00"))
+        except Exception:
+            pass
+    updated = await publishing_service.update_scheduled_post(
+        post_id,
+        content_text=content_text,
+        scheduled_for=parsed_dt,
+        platform=platform,
+    )
+    return {
+        "id": updated.id,
+        "content_text": updated.content_text,
+        "scheduled_for": updated.scheduled_for,
+        "platform_post_type": updated.platform_post_type,
+        "status": updated.status,
+    }
 
 @router.post("/{post_id}/publish-now")
 async def publish_now_override(

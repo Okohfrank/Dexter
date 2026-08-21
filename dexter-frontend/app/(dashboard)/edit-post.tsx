@@ -22,7 +22,7 @@ import { colors, spacing, radii, typography, shadows, fonts } from '../../src/th
 import { updateScheduledPost } from '../../src/api/publishing';
 import { listMediaAssets, uploadMediaAsset } from '../../src/api/media';
 import { useAppStore } from '../../src/store/app';
-import { GlassCard, GlassPill } from '../../src/components/ui';
+import { Card, Pill } from '../../src/components/ui';
 import type { ScheduledPost, Platform, MediaAsset } from '../../src/types';
 
 const PLATFORMS: { value: Platform; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -31,9 +31,12 @@ const PLATFORMS: { value: Platform; label: string; icon: keyof typeof Ionicons.g
   { value: 'tiktok', label: 'TikTok', icon: 'musical-notes-outline' },
 ];
 
+const MAX_CHARS = 3000;
+
 export default function EditPostScreen() {
   const router = useRouter();
   const business = useAppStore((s) => s.business);
+  const contentPlan = useAppStore((s) => s.contentPlan);
   const { post: postParam } = useLocalSearchParams<{ post?: string }>();
   const post: ScheduledPost | undefined = postParam ? JSON.parse(postParam) : undefined;
 
@@ -48,6 +51,8 @@ export default function EditPostScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [libraryAssets, setLibraryAssets] = useState<MediaAsset[]>([]);
   const [loadingAssets, setLoadingAssets] = useState(false);
+
+  const pillars = contentPlan?.pillars ?? ['Founder Thought Leadership', 'Product Deep-dives', 'Industry Frameworks', 'Customer Wins'];
 
   useEffect(() => {
     if (modalVisible) {
@@ -119,6 +124,9 @@ export default function EditPostScreen() {
     }
   };
 
+  const charCount = content.length;
+  const isOverLimit = charCount > MAX_CHARS;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -126,13 +134,15 @@ export default function EditPostScreen() {
         behavior={RNPlatform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          {/* Header */}
           <View style={styles.header}>
             <Pressable style={styles.backBtn} onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
             </Pressable>
-            <Text style={styles.title}>Edit post</Text>
+            <Text style={styles.title}>Edit Post</Text>
           </View>
 
+          {/* Platform Selector */}
           <Text style={styles.label}>Target Platform</Text>
           <View style={styles.platformRow}>
             {PLATFORMS.map((p) => {
@@ -156,24 +166,38 @@ export default function EditPostScreen() {
             })}
           </View>
 
+          {/* Caption Variant (Pillar) Selector */}
+          <Text style={styles.label}>Content Pillar</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillarScroll}>
+            <View style={styles.pillarRow}>
+              {pillars.map((p, i) => (
+                <Pill key={i} label={p} variant="primary" />
+              ))}
+            </View>
+          </ScrollView>
+
+          {/* Caption Editor */}
           <Text style={styles.label}>Caption</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, isOverLimit && { borderColor: colors.negative }]}
             multiline
             value={content}
             onChangeText={setContent}
             placeholder="Write your post…"
             placeholderTextColor={colors.textMuted}
           />
+          <Text style={[styles.charCount, isOverLimit && { color: colors.negative }]}>
+            {charCount} / {MAX_CHARS}
+          </Text>
 
-          {/* Media Attachment Section */}
+          {/* Media Attachment */}
           <Text style={styles.label}>Attached Media</Text>
           {mediaUrl ? (
-            <GlassCard style={styles.mediaPreviewCard}>
+            <Card style={styles.mediaPreviewCard}>
               <Image source={{ uri: mediaUrl }} style={styles.mediaPreviewImage} resizeMode="cover" />
               <View style={styles.mediaActionsRow}>
                 <Pressable style={styles.mediaActionBtn} onPress={() => setModalVisible(true)}>
-                  <Ionicons name="swap-horizontal" size={16} color={colors.primaryLight} />
+                  <Ionicons name="swap-horizontal" size={16} color={colors.primary} />
                   <Text style={styles.mediaActionText}>Swap media</Text>
                 </Pressable>
                 <Pressable style={styles.mediaActionBtnDanger} onPress={() => setMediaUrl(null)}>
@@ -181,19 +205,20 @@ export default function EditPostScreen() {
                   <Text style={styles.mediaActionDangerText}>Remove</Text>
                 </Pressable>
               </View>
-            </GlassCard>
+            </Card>
           ) : (
             <Pressable style={styles.attachPlaceholder} onPress={() => setModalVisible(true)}>
               <View style={styles.attachIconWrap}>
-                <Ionicons name="image-outline" size={22} color={colors.primaryLight} />
+                <Ionicons name="image-outline" size={22} color={colors.primary} />
               </View>
               <Text style={styles.attachTitle}>Attach Visual Media</Text>
               <Text style={styles.attachSubtitle}>Choose from Media Library or camera roll</Text>
             </Pressable>
           )}
 
+          {/* Scheduled Time */}
           <Text style={styles.label}>Scheduled Time</Text>
-          <GlassCard style={styles.timeRow}>
+          <Card style={styles.timeRow}>
             <Pressable style={styles.stepBtn} onPress={() => shiftDate(-24)}>
               <Ionicons name="remove" size={18} color={colors.textPrimary} />
             </Pressable>
@@ -201,7 +226,7 @@ export default function EditPostScreen() {
             <Pressable style={styles.stepBtn} onPress={() => shiftDate(24)}>
               <Ionicons name="add" size={18} color={colors.textPrimary} />
             </Pressable>
-          </GlassCard>
+          </Card>
           <View style={styles.quickRow}>
             <Pressable style={styles.quickChip} onPress={() => shiftDate(-1)}>
               <Text style={styles.quickText}>−1 hr</Text>
@@ -215,11 +240,11 @@ export default function EditPostScreen() {
           </View>
 
           <Text style={styles.hint}>
-            Dexter will adjust this scheduled slot while maintaining the remainder of the autonomous strategy.
+            Dexter will adjust this slot while maintaining the rest of the autonomous schedule.
           </Text>
 
-          <Pressable style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-            <Text style={styles.saveText}>{saving ? 'Saving…' : 'Save changes'}</Text>
+          <Pressable style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+            <Text style={styles.saveText}>{saving ? 'Saving…' : 'Save Changes'}</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -246,7 +271,7 @@ export default function EditPostScreen() {
               <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
             ) : libraryAssets.length === 0 ? (
               <View style={styles.emptyLibrary}>
-                <Ionicons name="images-outline" size={32} color={colors.textSecondary} />
+                <Ionicons name="images-outline" size={32} color={colors.textMuted} />
                 <Text style={styles.emptyLibraryText}>No media in library yet</Text>
               </View>
             ) : (
@@ -273,15 +298,15 @@ export default function EditPostScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  scroll: { padding: spacing.xxl, gap: spacing.md, paddingBottom: spacing.xxxl },
+  scroll: { padding: spacing.xxl, gap: spacing.md, paddingBottom: spacing.xxxxl },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassSurfaceElevated,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -295,18 +320,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
   },
   platformChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   platformChipText: { ...typography.caption, color: colors.textSecondary },
   platformChipTextActive: { color: '#FFFFFF', fontWeight: '700' },
+
+  pillarScroll: { marginTop: spacing.xs },
+  pillarRow: { flexDirection: 'row', gap: spacing.sm },
+
   input: {
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
     color: colors.textPrimary,
@@ -315,21 +344,25 @@ const styles = StyleSheet.create({
     minHeight: 120,
     textAlignVertical: 'top',
   },
-  mediaPreviewCard: {
-    padding: 0,
-    overflow: 'hidden',
+  charCount: {
+    ...typography.caption,
+    color: colors.textMuted,
+    textAlign: 'right',
+    marginTop: spacing.xs,
   },
+
+  mediaPreviewCard: { padding: 0, overflow: 'hidden' },
   mediaPreviewImage: {
     width: '100%',
     height: 180,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.skeleton,
   },
   mediaActionsRow: {
     flexDirection: 'row',
     padding: spacing.sm,
     gap: spacing.sm,
     justifyContent: 'flex-end',
-    backgroundColor: colors.glassSurfaceElevated,
+    backgroundColor: colors.surfaceAlt,
   },
   mediaActionBtn: {
     flexDirection: 'row',
@@ -338,11 +371,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: spacing.md,
     borderRadius: radii.pill,
-    backgroundColor: colors.primaryGlass,
+    backgroundColor: colors.primarySurface,
     borderWidth: 1,
-    borderColor: colors.primaryGlassBorder,
+    borderColor: colors.primaryBorder,
   },
-  mediaActionText: { ...typography.caption, color: colors.primaryLight, fontWeight: '600' },
+  mediaActionText: { ...typography.caption, color: colors.primary, fontWeight: '600' },
   mediaActionBtnDanger: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -350,16 +383,16 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: spacing.md,
     borderRadius: radii.pill,
-    backgroundColor: colors.negativeBg,
+    backgroundColor: colors.negativeSurface,
     borderWidth: 1,
     borderColor: colors.negativeBorder,
   },
   mediaActionDangerText: { ...typography.caption, color: colors.negative, fontWeight: '600' },
   attachPlaceholder: {
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     borderRadius: radii.lg,
     borderWidth: 1.5,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     borderStyle: 'dashed',
     padding: spacing.xl,
     alignItems: 'center',
@@ -370,9 +403,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: radii.pill,
-    backgroundColor: colors.primaryGlass,
+    backgroundColor: colors.primarySurface,
     borderWidth: 1,
-    borderColor: colors.primaryGlassBorder,
+    borderColor: colors.primaryBorder,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
@@ -390,7 +423,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassSurfaceActive,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -400,36 +435,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
   },
-  quickText: { ...typography.caption, color: colors.primaryLight },
+  quickText: { ...typography.caption, color: colors.primary },
   timeText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'center' },
   hint: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
   saveBtn: {
     alignItems: 'center',
     backgroundColor: colors.primary,
     borderRadius: radii.pill,
-    paddingVertical: spacing.lg,
+    paddingVertical: 14,
     marginTop: spacing.sm,
-    ...shadows.glow,
+    ...shadows.primaryBtn,
   },
   saveText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', fontFamily: fonts.bold },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'flex-end',
-  },
+
+  modalBackdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   modalContent: {
-    backgroundColor: colors.backgroundAlt,
+    backgroundColor: colors.surface,
     borderTopLeftRadius: radii.lg,
     borderTopRightRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
     padding: spacing.xxl,
     maxHeight: '80%',
     gap: spacing.md,
+    ...shadows.elevated,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -441,7 +472,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: radii.pill,
-    backgroundColor: colors.glassSurfaceElevated,
+    backgroundColor: colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -453,11 +484,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: spacing.md,
     borderRadius: radii.pill,
+    ...shadows.primaryBtn,
   },
   uploadNewText: { ...typography.subheading, color: '#FFFFFF', fontWeight: '700' },
   modalSectionLabel: {
     ...typography.caption,
-    color: colors.textSecondary,
+    color: colors.textMuted,
     textTransform: 'uppercase',
     marginTop: spacing.sm,
   },
@@ -466,7 +498,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xxxl,
     gap: spacing.sm,
   },
-  emptyLibraryText: { ...typography.caption, color: colors.textSecondary },
+  emptyLibraryText: { ...typography.caption, color: colors.textMuted },
   libraryGrid: { gap: spacing.sm, paddingBottom: spacing.xxl },
   libraryRow: { gap: spacing.sm },
   libraryThumb: {
@@ -475,7 +507,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
   },
   thumbImage: { width: '100%', height: '100%' },
 });

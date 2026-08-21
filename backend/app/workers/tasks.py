@@ -1,21 +1,100 @@
 """ARQ background worker tasks module."""
 import uuid
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
-from sqlalchemy import select
+from sqlalchemy import select, and_
+
 from app.core.logging import get_logger
 from app.core.database import async_session_factory
+from app.core.enums import PostStatus
 from app.models.business import Business
 from app.models.post import ScheduledPost, PublishedPost
 from app.services.autonomous_service import AutonomousContentService
 from app.services.analytics_service import AnalyticsService
+from app.services.publishing_service import PublishingService
+from app.events.bus import EventBus
+from app.utils.crypto import TokenEncryptor
+from app.core.config import get_settings
+from app.services.oauth_service import OAuthService
+from app.publishing.registry import PublisherRegistry
 
 logger = get_logger(__name__)
 
 
+def _create_publishing_service(db) -> PublishingService:
+    """Helper to instantiate PublishingService within background worker."""
+    event_bus = EventBus()
+    encryptor = TokenEncryptor(secret_key=get_settings().SECRET_KEY)
+    oauth = OAuthService(db, event_bus, encryptor)
+    registry = PublisherRegistry()
+    return PublishingService(db, registry, event_bus, oauth)
+
+
 async def publish_post_task(ctx: dict, post_id: str) -> dict:
-    """Publish a post to the target platform. Called by ARQ worker."""
+    """
+    Directly publish a specific scheduled post.
+    Called on-demand or queued by workers.
+    """
     logger.info("start_publish_task", post_id=post_id)
-    return {"status": "success", "post_id": post_id}
+    post_uuid = uuid.UUID(post_id)
+    async with async_session_factory() as db:
+        service = _create_publishing_service(db)
+        result = await service.execute_publish(post_uuid)
+        logger.info("finish_publish_task", post_id=post_id, success=result.get("success"))
+        return result
+
+
+async def publish_due_posts_task(ctx: dict) -> dict:
+    """
+    Background worker cron/polling task:
+    Scans for posts where scheduled_for <= NOW and status == QUEUED,
+    then automatically publishes each one.
+    """
+    now = datetime.now(timezone.utc)
+    logger.info("start_publish_due_posts", timestamp=now.isoformat())
+
+    async with async_session_factory() as db:
+        stmt = (
+            select(ScheduledPost)
+            .where(
+                and_(
+                    ScheduledPost.status == PostStatus.QUEUED,
+                    ScheduledPost.scheduled_for <= now,
+                )
+            )
+            .order_by(ScheduledPost.scheduled_for.asc())
+        )
+        result = await db.execute(stmt)
+        due_posts = result.scalars().all()
+
+        if not due_posts:
+            return {"status": "success", "published_count": 0, "failed_count": 0}
+
+        published_count = 0
+        failed_count = 0
+        service = _create_publishing_service(db)
+
+        for post in due_posts:
+            try:
+                res = await service.execute_publish(post.id)
+                if res.get("success"):
+                    published_count += 1
+                else:
+                    failed_count += 1
+            except Exception as e:
+                failed_count += 1
+                logger.error("error_publishing_due_post", post_id=str(post.id), error=str(e))
+
+        logger.info(
+            "publish_due_posts_completed",
+            published=published_count,
+            failed=failed_count,
+        )
+        return {
+            "status": "success",
+            "published_count": published_count,
+            "failed_count": failed_count,
+        }
 
 
 async def autonomous_post_generation_task(ctx: dict, business_id: Optional[str] = None) -> dict:
@@ -52,16 +131,16 @@ async def sync_linkedin_analytics_task(ctx: dict, business_id: Optional[str] = N
     async with async_session_factory() as db:
         service = AnalyticsService(db)
         biz_uuid = uuid.UUID(business_id) if business_id else None
-        posts = await service.get_published_posts_with_metrics(biz_uuid)
+        synced = await service.sync_linkedin_post_metrics(biz_uuid)
         insights = await service.generate_learning_insights(biz_uuid)
 
         logger.info(
             "sync_linkedin_analytics_completed",
-            synced_posts=len(posts),
+            synced_posts=len(synced),
             generated_insights=len(insights),
         )
         return {
             "status": "success",
-            "synced_posts": len(posts),
+            "synced_posts": len(synced),
             "generated_insights": len(insights),
         }

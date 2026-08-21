@@ -1,58 +1,65 @@
 /**
- * Dexter Glassmorphism Design System (No Gradients)
- * Deep obsidian dark theme with frosted glass translucent surfaces,
- * crisp 1px borders, tactile pill buttons, and high-contrast typography.
+ * Dexter Light-First Design System
+ * Warm professional palette with clean surfaces, subtle depth,
+ * and premium typography. Inspired by Buffer, Hootsuite, Publer.
  */
 
 export const colors = {
-  // Base Obsidian canvas
-  background: '#0B0D13',
-  backgroundAlt: '#11141D',
+  // ── Base Canvas ──
+  background: '#F8F9FB',       // Warm snow-white
+  backgroundAlt: '#F1F3F6',    // Slightly cooler for modals/drawers
 
-  // Frosted Glass Surfaces (translucent layering without gradients)
-  glassSurface: 'rgba(255, 255, 255, 0.05)',
-  glassSurfaceElevated: 'rgba(255, 255, 255, 0.09)',
-  glassSurfaceActive: 'rgba(255, 255, 255, 0.14)',
-  glassSurfaceSubtle: 'rgba(255, 255, 255, 0.03)',
+  // ── Card Surfaces ──
+  surface: '#FFFFFF',
+  surfaceAlt: '#F8F9FB',
+  surfacePressed: '#F1F3F6',
+  surfaceHover: '#EEF0F4',
 
-  // Solid Surface fallbacks for high density
-  surface: '#151822',
-  surfaceAlt: '#1D212E',
+  // ── Borders & Dividers ──
+  border: '#E2E8F0',
+  borderLight: '#F1F5F9',
+  borderFocused: '#A5B4FC',
+  divider: '#E2E8F0',
 
-  // Crisp Glass Borders
-  glassBorder: 'rgba(255, 255, 255, 0.12)',
-  glassBorderHighlight: 'rgba(255, 255, 255, 0.24)',
-  glassBorderSubtle: 'rgba(255, 255, 255, 0.07)',
-  border: 'rgba(255, 255, 255, 0.12)',
-  divider: 'rgba(255, 255, 255, 0.08)',
-
-  // Solid Accents (Pure, vivid, no gradient)
-  primary: '#6366F1', // Electric Indigo
-  primaryDark: '#4F46E5',
+  // ── Primary Brand (Deep Indigo) ──
+  primary: '#4F46E5',
+  primaryDark: '#4338CA',
   primaryLight: '#818CF8',
-  primaryGlass: 'rgba(99, 102, 241, 0.15)',
-  primaryGlassBorder: 'rgba(99, 102, 241, 0.35)',
+  primarySurface: '#EEF2FF',   // Very light tint for backgrounds
+  primaryBorder: '#C7D2FE',
 
-  secondary: '#06B6D4', // Cyan
-  secondaryGlass: 'rgba(6, 182, 212, 0.15)',
+  // ── Accent (Warm Coral) ──
+  accent: '#F97066',
+  accentSurface: '#FEF2F2',
+  accentBorder: '#FECACA',
 
-  // Functional Colors
+  // ── Secondary (Teal) ──
+  secondary: '#0D9488',
+  secondarySurface: '#F0FDFA',
+  secondaryBorder: '#99F6E4',
+
+  // ── Functional Colors ──
   positive: '#10B981',
-  positiveBg: 'rgba(16, 185, 129, 0.14)',
-  positiveBorder: 'rgba(16, 185, 129, 0.3)',
+  positiveSurface: '#ECFDF5',
+  positiveBorder: '#A7F3D0',
 
   negative: '#EF4444',
-  negativeBg: 'rgba(239, 68, 68, 0.14)',
-  negativeBorder: 'rgba(239, 68, 68, 0.3)',
+  negativeSurface: '#FEF2F2',
+  negativeBorder: '#FECACA',
 
   warning: '#F59E0B',
-  warningBg: 'rgba(245, 158, 11, 0.14)',
+  warningSurface: '#FFFBEB',
+  warningBorder: '#FDE68A',
 
-  // High-Contrast Typography
-  textPrimary: '#F8FAFC', // Crisp pure white/slate
-  textSecondary: '#94A3B8', // Cool muted silver
-  textMuted: '#64748B',
-  textInverse: '#0B0D13',
+  // ── Typography ──
+  textPrimary: '#1E293B',      // Dark charcoal
+  textSecondary: '#64748B',    // Slate gray
+  textMuted: '#94A3B8',        // Light muted
+  textInverse: '#FFFFFF',
+
+  // ── Misc ──
+  overlay: 'rgba(15, 23, 42, 0.5)',
+  skeleton: '#E2E8F0',
 };
 
 export const spacing = {
@@ -63,13 +70,14 @@ export const spacing = {
   xl: 20,
   xxl: 24,
   xxxl: 32,
+  xxxxl: 48,
 };
 
 export const radii = {
   xs: 6,
   sm: 10,
-  md: 16,
-  lg: 22,
+  md: 14,
+  lg: 20,
   xl: 28,
   pill: 999,
 };
@@ -84,8 +92,8 @@ export const fonts = {
 
 export const typography = {
   display: {
-    fontSize: 30,
-    lineHeight: 36,
+    fontSize: 28,
+    lineHeight: 34,
     fontWeight: '700' as const,
     fontFamily: fonts.extrabold,
     color: colors.textPrimary,
@@ -121,18 +129,36 @@ export const typography = {
 };
 
 export const shadows = {
+  /** Subtle card elevation */
   card: {
-    shadowColor: '#000000',
-    shadowOpacity: 0.45,
-    shadowRadius: 16,
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  /** Slightly stronger elevation for modals/overlays */
+  elevated: {
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
+  },
+  /** Soft inner-glow for primary buttons */
+  primaryBtn: {
+    shadowColor: colors.primary,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
-  glow: {
-    shadowColor: colors.primary,
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
+  /** Very subtle for list items */
+  subtle: {
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
 };
