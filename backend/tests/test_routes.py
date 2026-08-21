@@ -17,4 +17,7 @@ async def test_health_and_api_routes():
         assert "/api/v1/strategy/{business_id}/generate" in paths
         assert "/api/v1/analytics/history" in paths
         assert "/api/v1/analytics/learnings" in paths
+        assert "/api/v1/analytics/summary" in paths
         assert "/api/v1/voice/transcribe" in paths
+        assert "/api/v1/media/generate-visual" in paths
+        assert "/api/v1/notifications/register-token" in paths

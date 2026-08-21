@@ -8,6 +8,8 @@ from app.api.business import router as business_router
 from app.api.strategy import router as strategy_router
 from app.api.analytics import router as analytics_router
 from app.api.voice import router as voice_router
+from app.api.media import router as media_router
+from app.api.notifications import router as notifications_router
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
@@ -18,3 +20,5 @@ api_router.include_router(business_router, prefix="/businesses", tags=["Business
 api_router.include_router(strategy_router, prefix="/strategy", tags=["Strategy & Planning"])
 api_router.include_router(analytics_router, prefix="/analytics", tags=["Analytics & Growth"])
 api_router.include_router(voice_router, prefix="/voice", tags=["Voice Engine"])
+api_router.include_router(media_router, prefix="/media", tags=["Media & Visuals"])
+api_router.include_router(notifications_router, prefix="/notifications", tags=["Push Notifications"])

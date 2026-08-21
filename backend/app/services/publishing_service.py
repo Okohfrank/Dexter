@@ -89,6 +89,41 @@ class PublishingService:
             except Exception as tok_err:
                 self._logger.warning("token_not_found_or_unencrypted", error=str(tok_err))
 
+            # Check if post has attached media asset
+            media_asset = None
+            image_bytes = None
+            mime_type = "image/jpeg"
+
+            if post.media_asset_id:
+                from app.models.media_asset import MediaAsset
+                import httpx
+                import base64
+                import os
+
+                media_res = await self._db.execute(
+                    select(MediaAsset).where(MediaAsset.id == post.media_asset_id)
+                )
+                media_asset = media_res.scalar_one_or_none()
+
+                if media_asset and media_asset.file_url:
+                    mime_type = media_asset.mime_type or "image/jpeg"
+                    url = media_asset.file_url
+
+                    try:
+                        if url.startswith("http://") or url.startswith("https://"):
+                            async with httpx.AsyncClient(timeout=15.0) as http_client:
+                                resp = await http_client.get(url)
+                                if resp.is_success:
+                                    image_bytes = resp.content
+                        elif url.startswith("data:") and ";base64," in url:
+                            b64_data = url.split(";base64,")[1]
+                            image_bytes = base64.b64decode(b64_data)
+                        elif os.path.exists(url):
+                            with open(url, "rb") as f:
+                                image_bytes = f.read()
+                    except Exception as media_err:
+                        self._logger.warning("media_bytes_fetch_failed", error=str(media_err))
+
             # If valid live OAuth token is available, publish via real LinkedIn API
             if token and not token.startswith("simulated_") and token != "mock_linkedin_token":
                 from app.integrations.linkedin.client import LinkedInClient
@@ -100,15 +135,26 @@ class PublishingService:
                     profile = await publisher.get_profile()
                     author_urn = f"urn:li:person:{profile.sub}"
 
-                    platform_post_id = await publisher.publish_text(
-                        author_urn=author_urn,
-                        text=post.content_text
-                    )
+                    if image_bytes:
+                        platform_post_id = await publisher.publish_image(
+                            author_urn=author_urn,
+                            text=post.content_text,
+                            image_data=image_bytes,
+                            image_mime=mime_type,
+                        )
+                    else:
+                        platform_post_id = await publisher.publish_text(
+                            author_urn=author_urn,
+                            text=post.content_text,
+                        )
                 finally:
                     await client.close()
             else:
                 # Sandbox / Test publishing mode
-                platform_post_id = f"urn:li:share:{uuid.uuid4().hex[:12]}"
+                if image_bytes or post.media_asset_id:
+                    platform_post_id = f"urn:li:imageShare:{uuid.uuid4().hex[:12]}"
+                else:
+                    platform_post_id = f"urn:li:share:{uuid.uuid4().hex[:12]}"
 
             published_post = PublishedPost(
                 scheduled_post_id=post.id,

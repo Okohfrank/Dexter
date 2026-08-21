@@ -114,6 +114,20 @@ Topic Focus: {override_topic or 'Founder lessons, scaling insights, or future of
         offset_hours = post_data.get("suggested_time_offset_hours", 36)
         scheduled_for = datetime.now(timezone.utc) + timedelta(hours=offset_hours)
 
+        # Auto-generate branded thought-leadership visual card if no media attached
+        if not selected_media:
+            try:
+                from app.services.image_generation_service import ImageGenerationService
+                img_service = ImageGenerationService(self.db)
+                selected_media = await img_service.generate_thought_leadership_card(
+                    business_id=business.id,
+                    quote_text=post_data["content_text"],
+                    topic=post_data.get("topic", "THOUGHT LEADERSHIP"),
+                    brand_name=business.name,
+                )
+            except Exception as img_err:
+                self._logger.warning("auto_image_generation_skipped", error=str(img_err))
+
         scheduled_post = ScheduledPost(
             business_id=business.id,
             connected_account_id=account.id,
