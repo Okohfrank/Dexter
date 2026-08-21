@@ -27,10 +27,10 @@
     "typescript": "~5.9.2"
   },
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "start": "node ./scripts/start.js",
+    "android": "node ./scripts/start.js --android",
+    "ios": "node ./scripts/start.js --ios",
+    "web": "node ./scripts/start.js --web"
   },
   "private": true
 }
