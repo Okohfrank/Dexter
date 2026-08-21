@@ -15,6 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { useAuthStore } from '../../src/api/client';
 import { useAppStore } from '../../src/store/app';
+import * as WebBrowser from 'expo-web-browser';
+import { getLinkedInAuthorizationUrl } from '../../src/api/auth';
 import { getScheduledPosts, cancelPost, publishNow } from '../../src/api/publishing';
 import { getPublishedPosts, getLearningInsights } from '../../src/api/analytics';
 import { listConnectedAccounts, mockConnectAccount } from '../../src/api/oauth';
@@ -46,41 +48,57 @@ export default function DashboardScreen() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      let biz = business;
+      let biz = useAppStore.getState().business;
       if (!biz) {
         const bList = await listBusinesses().catch(() => []);
         if (bList.length > 0) {
           biz = bList[0];
           setBusiness(biz);
+        } else {
+          biz = {
+            id: 'biz_main',
+            user_id: 'u1',
+            name: 'Dexter AI Studio',
+            industry: 'AI & Growth',
+            is_active: true,
+            created_at: new Date().toISOString(),
+          };
+          setBusiness(biz);
         }
       }
 
-      let accounts = connectedAccounts;
-      if (biz) {
+      let accounts = useAppStore.getState().connectedAccounts;
+      if (biz && accounts.length === 0) {
         accounts = await listConnectedAccounts(biz.id).catch(() => []);
-        setConnectedAccounts(accounts);
+        if (accounts.length > 0) {
+          setConnectedAccounts(accounts);
+        }
       }
 
       const linkedin = accounts.find((a) => a.platform === 'linkedin');
       if (linkedin) {
-        const posts = await getScheduledPosts(linkedin.id);
+        const posts = await getScheduledPosts(linkedin.id).catch(() => []);
         setScheduled(posts || []);
       } else {
         setScheduled([]);
       }
 
-      const pub = await getPublishedPosts(biz?.id);
-      setPublished(pub || []);
+      try {
+        const pub = await getPublishedPosts(biz?.id);
+        setPublished(pub || []);
+      } catch {}
 
-      const lrn = await getLearningInsights(biz?.id);
-      setLearnings(lrn || []);
+      try {
+        const lrn = await getLearningInsights(biz?.id);
+        setLearnings(lrn || []);
+      } catch {}
     } catch {
       // Keep state clean
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [business, connectedAccounts, setBusiness, setConnectedAccounts]);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -95,15 +113,28 @@ export default function DashboardScreen() {
     try {
       let biz = business;
       if (!biz) {
-        biz = await createBusiness({ name: 'Dexter AI Studio' });
-        setBusiness(biz);
+        const bList = await listBusinesses().catch(() => []);
+        if (bList.length > 0) {
+          biz = bList[0];
+          setBusiness(biz);
+        } else {
+          biz = await createBusiness({ name: 'My Company' });
+          setBusiness(biz);
+        }
       }
-      const mockAcc = await mockConnectAccount(biz.id, 'linkedin');
-      setConnectedAccounts([mockAcc]);
-      Alert.alert('LinkedIn Connected', `Connected as ${mockAcc.display_name}.`);
+      const { authorization_url } = await getLinkedInAuthorizationUrl(biz.id);
+      await WebBrowser.openBrowserAsync(authorization_url);
+      const accs = await listConnectedAccounts(biz.id).catch(() => []);
+      setConnectedAccounts(accs);
+      const liveAccount = accs.find((a) => a.platform === 'linkedin');
+      if (liveAccount) {
+        Alert.alert('LinkedIn Connected!', `Successfully linked as ${liveAccount.display_name}.`);
+      } else {
+        Alert.alert('Authorization', 'No LinkedIn profile was authenticated.');
+      }
       await loadData();
     } catch (e: any) {
-      Alert.alert('Connection', e.message);
+      Alert.alert('Connection Error', e.message || 'Could not connect LinkedIn.');
     }
   };
 
@@ -131,8 +162,9 @@ export default function DashboardScreen() {
     }
   };
 
-  const firstName = user?.full_name?.split(' ')[0] ?? 'there';
-  const authorName = user?.full_name ?? 'Founder';
+  const rawName = user?.full_name?.trim() || 'Founder';
+  const firstName = rawName.split(' ')[0] || 'Founder';
+  const authorName = rawName || 'Founder';
   const authorHeadline = business?.name
     ? `Founder & CEO • ${business.name}`
     : 'Founder & CEO';

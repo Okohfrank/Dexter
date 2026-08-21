@@ -156,13 +156,22 @@ class PublishingService:
                 else:
                     platform_post_id = f"urn:li:share:{uuid.uuid4().hex[:12]}"
 
-            published_post = PublishedPost(
-                scheduled_post_id=post.id,
-                platform_post_id=platform_post_id,
-                permalink=f"https://www.linkedin.com/feed/update/{platform_post_id}",
-                published_at=datetime.now(timezone.utc),
+            pub_res = await self._db.execute(
+                select(PublishedPost).where(PublishedPost.scheduled_post_id == post.id)
             )
-            self._db.add(published_post)
+            published_post = pub_res.scalar_one_or_none()
+            if not published_post:
+                published_post = PublishedPost(
+                    scheduled_post_id=post.id,
+                    platform_post_id=platform_post_id,
+                    permalink=f"https://www.linkedin.com/feed/update/{platform_post_id}",
+                    published_at=datetime.now(timezone.utc),
+                )
+                self._db.add(published_post)
+            else:
+                published_post.platform_post_id = platform_post_id
+                published_post.permalink = f"https://www.linkedin.com/feed/update/{platform_post_id}"
+                published_post.published_at = datetime.now(timezone.utc)
             
             post.status = PostStatus.PUBLISHED
             await self._db.commit()
@@ -173,9 +182,16 @@ class PublishingService:
             return {"success": True, "post_id": str(post.id), "platform_post_id": platform_post_id}
             
         except Exception as e:
-            post.status = PostStatus.FAILED
-            post.error_message = str(e)
-            await self._db.commit()
+            await self._db.rollback()
+            try:
+                p_res = await self._db.execute(select(ScheduledPost).where(ScheduledPost.id == post_id))
+                curr_p = p_res.scalar_one_or_none()
+                if curr_p:
+                    curr_p.status = PostStatus.FAILED
+                    curr_p.error_message = str(e)
+                    await self._db.commit()
+            except Exception:
+                pass
             
             await self._event_bus.publish(
                 post_failed_event(actor_id=post.business_id, post_id=post.id, error=str(e), payload={})

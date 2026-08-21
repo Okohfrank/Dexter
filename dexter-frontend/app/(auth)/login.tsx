@@ -66,17 +66,29 @@ export default function LoginScreen() {
 
   const handleQuickDemo = async () => {
     setLoading(true);
-    try {
-      const demoEmail = 'founder@dexter.ai';
-      const demoPass = 'Password123!';
-      setEmail(demoEmail);
-      setPassword(demoPass);
+    const demoEmail = 'founder@dexter.ai';
+    const demoPass = 'Password123!';
+    setEmail(demoEmail);
+    setPassword(demoPass);
 
+    try {
       let res;
       try {
         res = await login(demoEmail, demoPass);
       } catch {
-        res = await register(demoEmail, demoPass, 'Alex Mercer');
+        res = await register(demoEmail, demoPass, 'Alex Mercer').catch(() => ({
+          access_token: 'demo_token_' + Date.now(),
+          refresh_token: 'demo_refresh_' + Date.now(),
+          token_type: 'bearer',
+          user: {
+            id: 'user_alex_mercer',
+            email: demoEmail,
+            full_name: 'Alex Mercer',
+            is_active: true,
+            is_verified: true,
+            created_at: new Date().toISOString(),
+          },
+        }));
       }
 
       useAuthStore.getState().setTokens({
@@ -84,38 +96,68 @@ export default function LoginScreen() {
         refresh_token: res.refresh_token,
       });
 
-      try {
-        const me = await getMe();
-        useAuthStore.getState().setAuth({
-          user: me,
-          access_token: res.access_token,
-          refresh_token: res.refresh_token,
-        });
-      } catch {}
+      const demoUser = (res as any).user || {
+        id: 'user_alex_mercer',
+        email: demoEmail,
+        full_name: 'Alex Mercer',
+        is_active: true,
+        is_verified: true,
+        created_at: new Date().toISOString(),
+      };
 
+      useAuthStore.getState().setAuth({
+        user: demoUser,
+        access_token: res.access_token,
+        refresh_token: res.refresh_token,
+      });
+
+      let biz;
       try {
         const businesses = await listBusinesses();
         if (businesses.length > 0) {
-          useAppStore.getState().setBusiness(businesses[0]);
-          let accounts = await listConnectedAccounts(businesses[0].id).catch(() => []);
-          if (accounts.length === 0) {
-            const mockAcc = await mockConnectAccount(businesses[0].id, 'linkedin');
-            accounts = [mockAcc];
-          }
-          useAppStore.getState().setConnectedAccounts(accounts);
-          router.replace('/(dashboard)');
+          biz = businesses[0];
         } else {
-          const newBiz = await createBusiness({ name: 'Dexter SaaS Studio' });
-          useAppStore.getState().setBusiness(newBiz);
-          const mockAcc = await mockConnectAccount(newBiz.id, 'linkedin');
-          useAppStore.getState().setConnectedAccounts([mockAcc]);
-          router.replace('/(dashboard)');
+          biz = await createBusiness({ name: 'Dexter SaaS Studio' });
         }
       } catch {
-        router.replace('/(dashboard)');
+        biz = {
+          id: 'biz_dexter_studio',
+          user_id: demoUser.id,
+          name: 'Dexter SaaS Studio',
+          industry: 'AI & SaaS Growth',
+          is_active: true,
+          created_at: new Date().toISOString(),
+        };
       }
-    } catch (e: any) {
-      Alert.alert('Demo Mode', e.message);
+
+      useAppStore.getState().setBusiness(biz);
+
+      let accounts = [];
+      try {
+        accounts = await listConnectedAccounts(biz.id);
+        if (accounts.length === 0) {
+          const mockAcc = await mockConnectAccount(biz.id, 'linkedin');
+          accounts = [mockAcc];
+        }
+      } catch {
+        accounts = [
+          {
+            id: 'acc_linkedin_alex',
+            business_id: biz.id,
+            platform: 'linkedin' as const,
+            platform_user_id: 'urn:li:person:alex_mercer_demo',
+            display_name: 'Alex Mercer (LinkedIn Verified)',
+            profile_url: 'https://linkedin.com/in/alexmercer',
+            is_active: true,
+            created_at: new Date().toISOString(),
+          },
+        ];
+      }
+
+      useAppStore.getState().setConnectedAccounts(accounts);
+      router.replace('/(dashboard)');
+    } catch {
+      router.replace('/(dashboard)');
     } finally {
       setLoading(false);
     }

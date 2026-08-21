@@ -57,11 +57,8 @@ export default function CreateScreen() {
       const serverAccs = await listConnectedAccounts(biz.id).catch(() => []);
       if (serverAccs.length > 0) {
         accs = serverAccs;
-      } else {
-        const mockAcc = await mockConnectAccount(biz.id, 'linkedin');
-        accs = [mockAcc];
+        setConnectedAccounts(accs);
       }
-      setConnectedAccounts(accs);
     }
     return biz;
   };
@@ -74,25 +71,22 @@ export default function CreateScreen() {
       const res = await generateNextPost(biz.id, topic.trim() || undefined);
       setResult(res as any);
     } catch (e: any) {
-      Alert.alert('Generation Note', e.message || 'Could not generate post right now.');
+      Alert.alert('Generation Error', e.message || 'Could not generate post from backend.');
     } finally {
       setGenerating(false);
     }
   };
 
   const handlePublishCreatedPost = async () => {
-    if (!result?.id) {
-      router.push('/(dashboard)');
-      return;
-    }
+    if (!result?.id) return;
     setPublishing(true);
     try {
       await publishNow(result.id);
-      Alert.alert('Published', 'Post is now published to LinkedIn.', [
-        { text: 'View Feed', onPress: () => router.push('/(dashboard)') },
+      Alert.alert('Published!', 'Post has been published to your LinkedIn feed.', [
+        { text: 'View Schedule', onPress: () => router.push('/(dashboard)') },
       ]);
     } catch (e: any) {
-      Alert.alert('Publishing', e.message);
+      Alert.alert('Publishing Failed', e.message || 'Could not publish post. Please make sure your LinkedIn account is connected.');
     } finally {
       setPublishing(false);
     }

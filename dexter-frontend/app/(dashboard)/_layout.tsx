@@ -13,6 +13,7 @@ type TabDef = {
 
 const TABS: TabDef[] = [
   { name: 'index', title: 'Home', icon: 'home-outline', iconActive: 'home' },
+  { name: 'ai', title: 'Dexter AI', icon: 'sparkles-outline', iconActive: 'sparkles' },
   { name: 'create', title: 'Create', icon: 'add-circle-outline', iconActive: 'add-circle' },
   { name: 'media', title: 'Library', icon: 'images-outline', iconActive: 'images' },
   { name: 'settings', title: 'Settings', icon: 'settings-outline', iconActive: 'settings' },

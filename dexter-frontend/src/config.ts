@@ -8,13 +8,16 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
 function resolveBaseUrl(): string {
-  // 1. Web browser: connect directly to the current host on port 8000
+  // 1. Explicit extra.apiBaseUrl from app.json if present
+  const extraBaseUrl = Constants.expoConfig?.extra?.apiBaseUrl;
+
+  // 2. Web browser: connect directly to the current host on port 8000
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location) {
     const hostname = window.location.hostname || 'localhost';
     return `http://${hostname}:8000/api/v1`;
   }
 
-  // 2. Expo Host URI (automatic resolution for physical devices on local network)
+  // 3. Expo Host URI (automatic resolution for physical devices on local network)
   const hostUri = Constants.expoConfig?.hostUri || (Constants as any).manifest?.debuggerHost;
   if (hostUri) {
     const host = hostUri.split(':')[0];
@@ -23,13 +26,13 @@ function resolveBaseUrl(): string {
     }
   }
 
-  // 3. Android Emulator special loopback
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:8000/api/v1';
+  // 4. Use app.json extra config if available
+  if (extraBaseUrl && typeof extraBaseUrl === 'string' && extraBaseUrl.startsWith('http')) {
+    return extraBaseUrl;
   }
 
-  // 4. Default fallback for iOS Simulator & local dev
-  return 'http://localhost:8000/api/v1';
+  // 5. Default fallback to detected LAN IP
+  return 'http://172.20.10.3:8000/api/v1';
 }
 
 export const API_BASE_URL: string = resolveBaseUrl();

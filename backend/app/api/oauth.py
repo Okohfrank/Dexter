@@ -1,5 +1,4 @@
-"""OAuth router."""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,6 +53,7 @@ async def callback(
     platform: Platform,
     code: str,
     state: str,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     oauth_service: OAuthService = Depends(get_oauth_service),
 ):
@@ -61,7 +61,8 @@ async def callback(
     the state token (biz_{business_id}) instead of a Bearer header, because
     LinkedIn redirects the browser here with no Authorization header."""
     from fastapi.responses import HTMLResponse
-    account = await oauth_service.handle_callback(platform, code, state, db)
+    redirect_uri = str(request.url).split("?")[0]
+    account = await oauth_service.handle_callback(platform, code, state, db, redirect_uri=redirect_uri)
 
     html_content = f"""
     <!DOCTYPE html>
@@ -121,8 +122,11 @@ async def callback(
       <div class="card">
         <div class="icon">✓</div>
         <h2>LinkedIn Connected!</h2>
-        <p>Linked as <strong>{account.display_name}</strong>. Dexter is now authorized to create and manage posts.</p>
-        <a href="dexter://" class="btn">Return to Dexter App</a>
+        <p>Linked as <strong>{account.display_name}</strong>. Dexter is now authorized with live LinkedIn credentials to create and manage posts.</p>
+        <p style="font-size: 13px; color: #94A3B8; margin-top: -12px; margin-bottom: 20px;">
+          Tap <strong>Done</strong> in the top-left corner (or switch back to Expo Go).
+        </p>
+        <a href="exp://10.62.191.138:8081" class="btn">Open Dexter App</a>
       </div>
     </body>
     </html>

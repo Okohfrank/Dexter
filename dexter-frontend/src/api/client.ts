@@ -51,11 +51,29 @@ export async function apiFetch(
   if (init?.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  const res = await fetch(url, { ...init, headers });
-  if (res.status === 401) {
-    useAuthStore.getState().clearAuth();
+
+  // 6-second timeout so requests don't hang indefinitely on unreachable networks
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+  try {
+    const res = await fetch(url, {
+      ...init,
+      headers,
+      signal: init?.signal || controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (res.status === 401) {
+      useAuthStore.getState().clearAuth();
+    }
+    return res;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Network request timed out. Please ensure the backend is running and reachable.');
+    }
+    throw error;
   }
-  return res;
 }
 
 /**

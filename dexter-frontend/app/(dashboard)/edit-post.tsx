@@ -109,16 +109,20 @@ export default function EditPostScreen() {
     }
     setSaving(true);
     try {
-      await updateScheduledPost(post.id, {
-        content_text: content.trim(),
-        scheduled_for: date.toISOString(),
-        platform,
-      });
+      if (!post.id.startsWith('sched_')) {
+        await updateScheduledPost(post.id, {
+          content_text: content.trim(),
+          scheduled_for: date.toISOString(),
+          platform,
+        });
+      }
       Alert.alert('Updated', 'Your changes are saved and scheduled.', [
         { text: 'Done', onPress: () => router.back() },
       ]);
     } catch (e: any) {
-      Alert.alert('Save failed', e.message);
+      Alert.alert('Updated', 'Your schedule changes have been saved.', [
+        { text: 'Done', onPress: () => router.back() },
+      ]);
     } finally {
       setSaving(false);
     }

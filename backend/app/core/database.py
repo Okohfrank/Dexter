@@ -13,17 +13,29 @@ session_factory = None
 async def init_db() -> None:
     """Initialize the database engine and session factory."""
     global engine, session_factory
+
+    connect_args = {}
+    kwargs = {"echo": settings.DEBUG}
+
+    if settings.DATABASE_URL.startswith("sqlite"):
+        # SQLite needs check_same_thread=False for async
+        connect_args["check_same_thread"] = False
+    else:
+        # PostgreSQL pool settings
+        kwargs["pool_size"] = 20
+        kwargs["max_overflow"] = 10
+
     engine = create_async_engine(
         settings.DATABASE_URL,
-        pool_size=20,
-        max_overflow=10,
-        echo=settings.DEBUG,
+        connect_args=connect_args,
+        **kwargs,
     )
     session_factory = async_sessionmaker(
         bind=engine,
         class_=AsyncSession,
         expire_on_commit=False,
     )
+    # Auto-create tables in development
     if settings.is_development:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)

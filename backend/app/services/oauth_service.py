@@ -30,19 +30,21 @@ class OAuthService:
             redirect_uri=_settings.LINKEDIN_REDIRECT_URI,
         )
     
-    async def get_authorization_url(self, platform: Platform, business_id: uuid.UUID) -> OAuthAuthorizeResponse:
+    async def get_authorization_url(
+        self, platform: Platform, business_id: uuid.UUID, redirect_uri: str | None = None
+    ) -> OAuthAuthorizeResponse:
         """Generate OAuth authorization URL for a platform."""
         self._logger.info("generate_oauth_url", platform=platform, business_id=business_id)
         
         if platform == Platform.LINKEDIN:
             state = f"biz_{business_id}_{uuid.uuid4().hex}"
-            url = self._linkedin_oauth.get_authorization_url(state=state)
+            url = self._linkedin_oauth.get_authorization_url(state=state, redirect_uri=redirect_uri)
             return OAuthAuthorizeResponse(authorization_url=url, state=state)
             
         raise NotImplementedError(f"OAuth not implemented for {platform}")
     
     async def handle_callback(
-        self, platform: Platform, code: str, state: str, db: AsyncSession
+        self, platform: Platform, code: str, state: str, db: AsyncSession, redirect_uri: str | None = None
     ) -> ConnectedAccountResponse:
         """Handle OAuth callback: exchange code, store tokens, create connected account.
 
@@ -74,7 +76,7 @@ class OAuthService:
             platform_user_id = f"li_{uuid.uuid4().hex[:8]}"
 
             try:
-                tokens = await self._linkedin_oauth.exchange_code_for_tokens(code)
+                tokens = await self._linkedin_oauth.exchange_code_for_tokens(code, redirect_uri=redirect_uri)
                 from app.integrations.linkedin.client import LinkedInClient
                 from app.integrations.linkedin.publisher import LinkedInPublisher
                 publisher = LinkedInPublisher(LinkedInClient(tokens.access_token))
@@ -109,18 +111,30 @@ class OAuthService:
                 account.display_name = display_name
                 account.profile_url = profile_url
                 
-            # Store tokens
+            # Store/update tokens
             raw_token = tokens.access_token if tokens else "mock_linkedin_token"
             raw_refresh = (tokens.refresh_token or "") if tokens else "mock_refresh_token"
-            oauth_token = OAuthToken(
-                connected_account_id=account.id,
-                access_token_encrypted=self._encryptor.encrypt(raw_token),
-                refresh_token_encrypted=self._encryptor.encrypt(raw_refresh),
-                token_type="bearer",
-                scopes=tokens.scope if tokens and tokens.scope else "openid profile w_member_social",
-                expires_at=None
+            token_scopes = tokens.scope if tokens and tokens.scope else "openid profile w_member_social"
+            
+            token_result = await self._db.execute(
+                select(OAuthToken).where(OAuthToken.connected_account_id == account.id)
             )
-            self._db.add(oauth_token)
+            oauth_token = token_result.scalar_one_or_none()
+            if not oauth_token:
+                oauth_token = OAuthToken(
+                    connected_account_id=account.id,
+                    access_token_encrypted=self._encryptor.encrypt(raw_token),
+                    refresh_token_encrypted=self._encryptor.encrypt(raw_refresh),
+                    token_type="bearer",
+                    scopes=token_scopes,
+                    expires_at=None
+                )
+                self._db.add(oauth_token)
+            else:
+                oauth_token.access_token_encrypted = self._encryptor.encrypt(raw_token)
+                oauth_token.refresh_token_encrypted = self._encryptor.encrypt(raw_refresh)
+                oauth_token.scopes = token_scopes
+                
             await self._db.commit()
             await self._db.refresh(account)
             

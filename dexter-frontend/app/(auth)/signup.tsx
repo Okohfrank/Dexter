@@ -22,33 +22,31 @@ export default function SignupScreen() {
   const router = useRouter();
 
   const handleSignup = async () => {
-    if (!email || !password) {
-      Alert.alert('Missing info', 'Please enter your email and password.');
+    if (!email || !password || !fullName.trim()) {
+      Alert.alert('Missing info', 'Please enter your full name, email, and password.');
       return;
     }
     setLoading(true);
     try {
-      const res = await register(email.trim(), password, fullName.trim() || 'Founder');
-      useAuthStore.getState().setTokens({
+      const res = await register(email.trim(), password, fullName.trim());
+      useAuthStore.getState().setAuth({
+        user: res.user,
         access_token: res.access_token,
         refresh_token: res.refresh_token,
       });
       router.replace('/(onboarding)');
     } catch (e: any) {
-      Alert.alert('Sign up failed', e.message);
+      Alert.alert('Sign up failed', e.message || 'Could not connect to backend server. Please check your backend terminal.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleLinkedIn = async () => {
-    try {
-      const businessId = '00000000-0000-0000-0000-000000000000';
-      const { authorization_url } = await getLinkedInAuthorizationUrl(businessId);
-      await WebBrowser.openBrowserAsync(authorization_url);
-    } catch (e: any) {
-      Alert.alert('LinkedIn', e.message);
-    }
+    Alert.alert(
+      'LinkedIn Sign Up',
+      'Please sign up with your name and email first, then link your LinkedIn account inside the onboarding channel setup!',
+    );
   };
 
   return (

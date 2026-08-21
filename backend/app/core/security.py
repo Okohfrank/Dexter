@@ -13,7 +13,8 @@ from app.core.exceptions import DexterAuthError
 
 settings = get_settings()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
+
 ALGORITHM = "HS256"
 
 
@@ -25,13 +26,21 @@ class TokenPayload(BaseModel):
 
 
 def hash_password(password: str) -> str:
-    """Hash a plain text password."""
-    return pwd_context.hash(password)
+    """Hash a plain text password using bcrypt directly."""
+    pwd_bytes = password.encode("utf-8")[:72]
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain text password against a hashed password."""
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8")[:72],
+            hashed_password.encode("utf-8")
+        )
+    except Exception:
+        return False
 
 
 def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:

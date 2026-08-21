@@ -215,9 +215,9 @@ async def main():
 
     # ── Step 4: Publish a test post ──
     test_message = (
-        "Testing Dexter — our autonomous AI social media engine. "
-        "This post was published programmatically via the LinkedIn API. "
-        f"🤖 #{datetime.now().strftime('%Y%m%d')}"
+        "Dexter — your autonomous AI social media engine. "
+        "This post was published programmatically via the LinkedIn API. Let's go! "
+        f" #{datetime.now().strftime('%Y%m%d')}"
     )
 
     print("[5/5] Publishing test post to LinkedIn...")

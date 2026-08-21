@@ -25,24 +25,26 @@ class LinkedInOAuth:
         self._http = httpx.AsyncClient(timeout=DEFAULT_TIMEOUT_SECONDS)
         self._logger = get_logger(__name__)
     
-    def get_authorization_url(self, state: str) -> str:
+    def get_authorization_url(self, state: str, redirect_uri: str | None = None) -> str:
         """Generate LinkedIn OAuth authorization URL."""
+        used_redirect = redirect_uri or self._redirect_uri
         params = {
             "response_type": "code",
             "client_id": self._client_id,
-            "redirect_uri": self._redirect_uri,
+            "redirect_uri": used_redirect,
             "state": state,
             "scope": " ".join(DEFAULT_SCOPES),
         }
         url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
         return url
     
-    async def exchange_code_for_tokens(self, code: str) -> LinkedInTokenResponse:
+    async def exchange_code_for_tokens(self, code: str, redirect_uri: str | None = None) -> LinkedInTokenResponse:
         """Exchange authorization code for access/refresh tokens."""
+        used_redirect = redirect_uri or self._redirect_uri
         data = {
             "grant_type": "authorization_code",
             "code": code,
-            "redirect_uri": self._redirect_uri,
+            "redirect_uri": used_redirect,
             "client_id": self._client_id,
             "client_secret": self._client_secret,
         }

@@ -1,15 +1,22 @@
-# Auto-updates apiBaseUrl with the current LAN IP, then starts Expo.
-# Run this instead of `npx expo start` so the phone never hits a stale IP.
-$ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.254*" } | Select-Object -First 1).IPAddress
+# Auto-updates apiBaseUrl with the current LAN IP, then starts Expo with LAN host.
+$ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.254*" } | Select-Object -First 1 -ExpandProperty IPAddress)
 if (-not $ip) {
-    Write-Host "ERROR: Could not detect LAN IP." -ForegroundColor Red
-    exit 1
+    $ip = "172.20.10.3"
 }
 
 $appJson = "app.json"
-$content = Get-Content $appJson -Raw
-$content = $content -replace '"apiBaseUrl": "http://[^"]+"', "`"apiBaseUrl`": `"http://$ip`:8000/api/v1`""
-Set-Content $appJson $content -NoNewline
+if (Test-Path $appJson) {
+    $content = Get-Content $appJson -Raw
+    $content = $content -replace '"apiBaseUrl": "http://[^"]+"', "`"apiBaseUrl`": `"http://$ip`:8000/api/v1`""
+    Set-Content $appJson $content -NoNewline
+}
 
-Write-Host "apiBaseUrl -> http://$ip`:8000/api/v1" -ForegroundColor Green
-npx expo start
+$env:REACT_NATIVE_PACKAGER_HOSTNAME = $ip
+$env:EXPO_DEVTOOLS_LISTEN_ADDRESS = "0.0.0.0"
+
+Write-Host "==============================================" -ForegroundColor Cyan
+Write-Host "  Dexter Expo Host -> $ip" -ForegroundColor Green
+Write-Host "  Backend API URL  -> http://$ip`:8000/api/v1" -ForegroundColor Green
+Write-Host "==============================================" -ForegroundColor Cyan
+
+npx expo start --host lan --clear
