@@ -15,9 +15,10 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { sendChatMessage } from '../../src/api/chat';
+import { connectVoiceStream } from '../../src/api/voice';
 import { useAppStore } from '../../src/store/app';
 import { Card, Pill } from '../../src/components/ui';
-import type { ChatMessage, ChatBrief } from '../../src/types';
+import type { ChatMessage, ChatBrief, BusinessBrain } from '../../src/types';
 
 const OPENING: ChatMessage = {
   role: 'assistant',
@@ -28,17 +29,72 @@ const OPENING: ChatMessage = {
 export default function InterviewScreen() {
   const router = useRouter();
   const business = useAppStore((s) => s.business);
+  const setBusiness = useAppStore((s) => s.setBusiness);
+  const setBrain = useAppStore((s) => s.setBrain);
   const connectedAccounts = useAppStore((s) => s.connectedAccounts);
 
   const [messages, setMessages] = useState<ChatMessage[]>([OPENING]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [voiceActive, setVoiceActive] = useState(false);
+  const [voiceState, setVoiceState] = useState<'listening' | 'processing' | 'speaking'>('listening');
   const [brief, setBrief] = useState<ChatBrief | null>(null);
+  const [hasBrainReady, setHasBrainReady] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const voiceStreamRef = useRef<ReturnType<typeof connectVoiceStream> | null>(null);
 
   useEffect(() => {
     listRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
+
+  const toggleVoiceMode = () => {
+    if (voiceActive) {
+      voiceStreamRef.current?.close();
+      voiceStreamRef.current = null;
+      setVoiceActive(false);
+      return;
+    }
+
+    setVoiceActive(true);
+    setVoiceState('listening');
+
+    voiceStreamRef.current = connectVoiceStream({
+      onOpen: () => {
+        setVoiceState('listening');
+      },
+      onAssistantReply: (text, state) => {
+        if (text) {
+          setMessages((prev) => [...prev, { role: 'assistant', content: text }]);
+        }
+        setVoiceState(state);
+      },
+      onBrainDistilled: (brainData) => {
+        if (brainData) {
+          const distilledBrain: BusinessBrain = {
+            industry: brainData.industry || 'Technology & Growth',
+            products: Array.isArray(brainData.products) ? brainData.products : ['AI Automation'],
+            audience: Array.isArray(brainData.audience) ? brainData.audience : ['Founders & Marketers'],
+            goals: Array.isArray(brainData.goals) ? brainData.goals : ['Brand Authority', 'Lead Gen'],
+            brandVoice: brainData.brandVoice || 'Direct & Insightful',
+            restrictions: Array.isArray(brainData.restrictions) ? brainData.restrictions : [],
+            writingStyle: brainData.writingStyle || 'Punchy, actionable paragraphs',
+            visualStyle: brainData.visualStyle || 'Modern minimalist light mode',
+            preferredHashtags: Array.isArray(brainData.preferredHashtags) ? brainData.preferredHashtags : ['#AI', '#Founders'],
+            preferredCtas: Array.isArray(brainData.preferredCtas) ? brainData.preferredCtas : ['Follow for weekly breakdown'],
+          };
+          setBrain(distilledBrain);
+          setHasBrainReady(true);
+        }
+      },
+      onError: () => {
+        setVoiceActive(false);
+      },
+      onClose: () => {
+        setVoiceActive(false);
+      },
+    });
+  };
+
 
   const handleSend = async () => {
     const text = input.trim();
@@ -48,6 +104,13 @@ export default function InterviewScreen() {
     setMessages(history);
     setInput('');
     setSending(true);
+
+    if (voiceActive && voiceStreamRef.current) {
+      voiceStreamRef.current.sendSpeechText(text);
+      setSending(false);
+      return;
+    }
+
     try {
       const linkedin = connectedAccounts.find((a) => a.platform === 'linkedin');
       const res = await sendChatMessage(
@@ -71,6 +134,7 @@ export default function InterviewScreen() {
       setSending(false);
     }
   };
+
 
   const renderBubble = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
@@ -102,8 +166,35 @@ export default function InterviewScreen() {
               {business ? `Configuring profile for ${business.name}` : 'Answer naturally as Dexter asks questions.'}
             </Text>
           </View>
-          <Pill label="LIVE" variant="primary" icon="radio" />
+          <Pressable onPress={toggleVoiceMode} style={styles.voiceModeToggle}>
+            <Pill
+              label={voiceActive ? 'VOICE ON' : 'VOICE AI'}
+              variant={voiceActive ? 'positive' : 'primary'}
+              icon={voiceActive ? 'mic' : 'mic-outline'}
+            />
+          </Pressable>
         </View>
+
+        {voiceActive && (
+          <View style={styles.voiceBanner}>
+            <View style={[styles.voiceIndicator, voiceState === 'speaking' && styles.voiceSpeaking, voiceState === 'processing' && styles.voiceProcessing]}>
+              <Ionicons
+                name={voiceState === 'speaking' ? 'volume-high' : voiceState === 'processing' ? 'sync' : 'mic'}
+                size={16}
+                color="#FFFFFF"
+              />
+            </View>
+            <View style={styles.voiceBannerTextWrap}>
+              <Text style={styles.voiceBannerTitle}>
+                {voiceState === 'speaking' ? 'Dexter is speaking…' : voiceState === 'processing' ? 'Thinking…' : 'Listening… speak or type freely'}
+              </Text>
+              <Text style={styles.voiceBannerSub}>Real-time MisoLabs Voice Stream active</Text>
+            </View>
+            <Pressable onPress={toggleVoiceMode} style={styles.voiceEndBtn}>
+              <Text style={styles.voiceEndText}>Mute</Text>
+            </Pressable>
+          </View>
+        )}
 
         <FlatList
           ref={listRef}
@@ -121,7 +212,7 @@ export default function InterviewScreen() {
           </View>
         )}
 
-        {brief && (
+        {(brief || hasBrainReady) && (
           <Pressable style={styles.finalizeWrap} onPress={() => router.push('/(onboarding)/brain')}>
             <Card style={styles.finalizeCard} highlighted>
               <Ionicons name="checkmark-circle" size={20} color={colors.positive} />
@@ -134,10 +225,20 @@ export default function InterviewScreen() {
         )}
 
         <View style={styles.inputRow}>
+          <Pressable
+            style={[styles.micBtn, voiceActive && styles.micBtnActive]}
+            onPress={toggleVoiceMode}
+          >
+            <Ionicons
+              name={voiceActive ? 'mic' : 'mic-outline'}
+              size={20}
+              color={voiceActive ? '#FFFFFF' : colors.primary}
+            />
+          </Pressable>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Type your response to Dexter…"
+              placeholder={voiceActive ? "Speak or type your answer…" : "Type your response to Dexter…"}
               placeholderTextColor={colors.textMuted}
               value={input}
               onChangeText={setInput}
@@ -171,6 +272,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.divider,
   },
   headerTitleWrap: { flex: 1 },
+  voiceModeToggle: { marginLeft: spacing.sm },
   eyebrow: {
     ...typography.caption,
     color: colors.primary,
@@ -180,6 +282,38 @@ const styles = StyleSheet.create({
   },
   title: { ...typography.heading, color: colors.textPrimary, marginTop: 2 },
   subtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  voiceBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primarySurface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.primaryBorder,
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  voiceIndicator: {
+    width: 28,
+    height: 28,
+    borderRadius: radii.pill,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  voiceSpeaking: { backgroundColor: colors.positive },
+  voiceProcessing: { backgroundColor: colors.warning },
+  voiceBannerTextWrap: { flex: 1 },
+  voiceBannerTitle: { ...typography.caption, color: colors.textPrimary, fontWeight: '700' },
+  voiceBannerSub: { ...typography.caption, color: colors.textSecondary, fontSize: 11 },
+  voiceEndBtn: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  voiceEndText: { ...typography.caption, color: colors.textSecondary, fontWeight: '600', fontSize: 11 },
   list: { paddingHorizontal: spacing.xxl, paddingVertical: spacing.lg, gap: spacing.md },
   bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, maxWidth: '100%' },
   userRow: { justifyContent: 'flex-end' },
@@ -238,6 +372,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     paddingBottom: spacing.lg,
     paddingTop: spacing.xs,
+  },
+  micBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.subtle,
+  },
+  micBtnActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    ...shadows.primaryBtn,
   },
   inputContainer: {
     flex: 1,
