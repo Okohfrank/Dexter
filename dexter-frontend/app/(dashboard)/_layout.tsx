@@ -86,3 +86,33 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
 });
+    borderRadius: radii.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    ...shadows.lg,
+  },
+  tabItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: radii.full,
+  },
+  tabItemActive: {
+    backgroundColor: colors.primary,
+    ...shadows.primaryBtn,
+  },
+  tabLabel: {
+    fontSize: 12,
+    fontFamily: fonts.bold,
+    color: '#FFFFFF',
+  },
+});
