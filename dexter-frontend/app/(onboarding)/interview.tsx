@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
 import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { sendChatMessage } from '../../src/api/chat';
 import { connectVoiceStream } from '../../src/api/voice';
@@ -43,12 +44,28 @@ export default function InterviewScreen() {
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const voiceStreamRef = useRef<ReturnType<typeof connectVoiceStream> | null>(null);
 
+  const speak = (text: string) => {
+    try {
+      Speech.stop();
+      Speech.speak(text, {
+        language: 'en-US',
+        pitch: 1.0,
+        rate: 1.0,
+        onStart: () => setVoiceState('speaking'),
+        onDone: () => setVoiceState('listening'),
+        onStopped: () => setVoiceState('listening'),
+        onError: () => setVoiceState('listening'),
+      });
+    } catch {}
+  };
+
   useEffect(() => {
     listRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
   const toggleVoiceMode = () => {
     if (voiceActive) {
+      Speech.stop();
       voiceStreamRef.current?.close();
       voiceStreamRef.current = null;
       setVoiceActive(false);
@@ -57,6 +74,7 @@ export default function InterviewScreen() {
 
     setVoiceActive(true);
     setVoiceState('listening');
+    speak(OPENING.content);
 
     voiceStreamRef.current = connectVoiceStream({
       onOpen: () => {
@@ -65,6 +83,7 @@ export default function InterviewScreen() {
       onAssistantReply: (text, state) => {
         if (text) {
           setMessages((prev) => [...prev, { role: 'assistant', content: text }]);
+          speak(text);
         }
         setVoiceState(state);
       },
@@ -95,7 +114,6 @@ export default function InterviewScreen() {
     });
   };
 
-
   const handleSend = async () => {
     const text = input.trim();
     if (!text || sending) return;
@@ -122,6 +140,9 @@ export default function InterviewScreen() {
       );
       const assistantMsg: ChatMessage = { role: 'assistant', content: res.reply };
       setMessages((prev) => [...prev, assistantMsg]);
+      if (voiceActive) {
+        speak(res.reply);
+      }
       if (res.is_finalized && res.brief) {
         setBrief(res.brief);
       }
@@ -135,7 +156,6 @@ export default function InterviewScreen() {
     }
   };
 
-
   const renderBubble = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
     return (
@@ -147,6 +167,11 @@ export default function InterviewScreen() {
         )}
         <View style={[styles.bubble, isUser ? styles.userBubble : styles.assistantBubble]}>
           <Text style={[styles.bubbleText, isUser && styles.userBubbleText]}>{item.content}</Text>
+          {!isUser && (
+            <Pressable style={styles.bubbleSpeakBtn} hitSlop={8} onPress={() => speak(item.content)}>
+              <Ionicons name="volume-medium-outline" size={14} color={colors.primary} />
+            </Pressable>
+          )}
         </View>
       </View>
     );
@@ -346,6 +371,11 @@ const styles = StyleSheet.create({
   },
   bubbleText: { ...typography.body, color: colors.textPrimary, fontSize: 14, lineHeight: 21 },
   userBubbleText: { color: '#FFFFFF', fontWeight: '500' },
+  bubbleSpeakBtn: {
+    alignSelf: 'flex-end',
+    marginTop: 4,
+    padding: 2,
+  },
   typingRow: {
     flexDirection: 'row',
     alignItems: 'center',

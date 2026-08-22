@@ -107,32 +107,38 @@ class LLMGateway:
     # ── Provider Specific Callers ─────────────────────────────
 
     async def _call_groq_chat(self, messages: List[ChatMessage], system_prompt: str) -> str:
-        """Call Groq API (Llama 3.3 70B)."""
+        """Call Groq API with robust model failover."""
         formatted_messages = [{"role": "system", "content": system_prompt}]
         for msg in messages:
             formatted_messages.append({"role": msg.role, "content": msg.content})
 
-        payload = {
-            "model": "llama-3.3-70b-versatile",
-            "messages": formatted_messages,
-            "temperature": 0.7,
-        }
         headers = {
             "Authorization": f"Bearer {self._settings.GROQ_API_KEY}",
             "Content-Type": "application/json",
         }
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                json=payload,
-                headers=headers,
-            )
-            resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]["content"]
+        for model_name in ["openai/gpt-oss-120b", "qwen/qwen3.6-27b", "llama-3.3-70b-versatile"]:
+            try:
+                payload = {
+                    "model": model_name,
+                    "messages": formatted_messages,
+                    "temperature": 0.7,
+                }
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    resp = await client.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        json=payload,
+                        headers=headers,
+                    )
+                    if resp.is_success:
+                        return resp.json()["choices"][0]["message"]["content"]
+            except Exception as e:
+                self._logger.debug(f"Groq model {model_name} failed: {e}")
+
+        raise ValueError("All Groq model attempts failed.")
 
     async def _call_gemini_text(self, messages: List[ChatMessage], system_prompt: str) -> str:
-        """Call Google Gemini 2.0 Flash Text API."""
+        """Call Google Gemini Flash Text API."""
         contents = []
         for msg in messages:
             role = "user" if msg.role == "user" else "model"
@@ -143,16 +149,22 @@ class LLMGateway:
             "contents": contents,
         }
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self._settings.GEMINI_API_KEY}"
-        
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(url, json=payload)
-            resp.raise_for_status()
-            data = resp.json()
-            return data["candidates"][0]["content"]["parts"][0]["text"]
+        for model_name in ["gemini-flash-latest", "gemini-3.5-flash", "gemini-3.7-flash"]:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self._settings.GEMINI_API_KEY}"
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    resp = await client.post(url, json=payload)
+                    if resp.is_success:
+                        data = resp.json()
+                        return data["candidates"][0]["content"]["parts"][0]["text"]
+            except Exception as e:
+                self._logger.debug(f"Gemini model {model_name} failed: {e}")
+
+        raise ValueError("All Gemini text model attempts failed.")
 
     async def _call_gemini_vision(self, messages: List[ChatMessage], system_prompt: str) -> str:
-        """Call Google Gemini 2.0 Flash Vision API for analyzing uploaded images."""
+        """Call Google Gemini Flash Vision API for analyzing uploaded images."""
+        import base64
         last_msg = messages[-1]
         
         contents = []
@@ -161,14 +173,33 @@ class LLMGateway:
             contents.append({"role": role, "parts": [{"text": msg.content}]})
 
         # Final message with image
-        parts = [{"text": last_msg.content}]
+        parts = [{"text": last_msg.content or "Analyze this image and provide insights for LinkedIn."}]
         if last_msg.image_url:
-            parts.append({
-                "file_data": {
-                    "mime_type": "image/jpeg",
-                    "file_uri": last_msg.image_url
-                }
-            })
+            img_url = last_msg.image_url
+            b64_bytes = None
+            mime_type = "image/jpeg"
+
+            try:
+                if img_url.startswith("data:"):
+                    header, b64_str = img_url.split(";base64,")
+                    mime_type = header.replace("data:", "")
+                    b64_bytes = b64_str
+                elif img_url.startswith("http://") or img_url.startswith("https://"):
+                    async with httpx.AsyncClient(timeout=15.0) as img_client:
+                        r = await img_client.get(img_url)
+                        if r.is_success:
+                            b64_bytes = base64.b64encode(r.content).decode("utf-8")
+                            mime_type = r.headers.get("content-type", "image/jpeg").split(";")[0]
+
+                if b64_bytes:
+                    parts.append({
+                        "inline_data": {
+                            "mime_type": mime_type,
+                            "data": b64_bytes,
+                        }
+                    })
+            except Exception as e:
+                self._logger.warning("gemini_vision_image_parse_failed", error=str(e))
             
         contents.append({"role": "user", "parts": parts})
 
@@ -177,13 +208,18 @@ class LLMGateway:
             "contents": contents,
         }
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self._settings.GEMINI_API_KEY}"
+        for model_name in ["gemini-flash-latest", "gemini-3.5-flash", "gemini-3.7-flash"]:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self._settings.GEMINI_API_KEY}"
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    resp = await client.post(url, json=payload)
+                    if resp.is_success:
+                        data = resp.json()
+                        return data["candidates"][0]["content"]["parts"][0]["text"]
+            except Exception as e:
+                self._logger.debug(f"Gemini vision model {model_name} failed: {e}")
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(url, json=payload)
-            resp.raise_for_status()
-            data = resp.json()
-            return data["candidates"][0]["content"]["parts"][0]["text"]
+        raise ValueError("All Gemini vision model attempts failed.")
 
     def _generate_simulated_chat_reply(self, messages: List[ChatMessage]) -> str:
         """Fallback simulation for offline testing."""
