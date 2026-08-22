@@ -121,6 +121,7 @@ export type LearningInsight = {
 export type ChatMessage = {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  image_url?: string | null;
 };
 
 export type ChatBrief = {
