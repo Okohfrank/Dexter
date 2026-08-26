@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
+import { Audio } from 'expo-av';
 import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { sendChatMessage } from '../../src/api/chat';
 import { connectVoiceStream, transcribeAudio } from '../../src/api/voice';
