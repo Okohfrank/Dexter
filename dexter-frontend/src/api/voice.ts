@@ -75,33 +75,25 @@ export function connectVoiceStream(callbacks: VoiceStreamCallbacks) {
 }
 
 export async function transcribeAudio(audioUri: string, businessId?: string): Promise<TranscriptionResult> {
-  try {
-    const formData = new FormData();
-    formData.append('audio', {
-      uri: audioUri,
-      name: 'interview_audio.m4a',
-      type: 'audio/m4a',
-    } as any);
-    if (businessId) {
-      formData.append('business_id', businessId);
-    }
-
-    const res = await apiFetch('/voice/transcribe', {
-      method: 'POST',
-      body: formData as any,
-    });
-
-    if (res.ok) {
-      return (await res.json()) as TranscriptionResult;
-    }
-  } catch {
-    // Graceful fallback for mock MisoLabs voice distillation
+  const formData = new FormData();
+  formData.append('audio', {
+    uri: audioUri,
+    name: 'interview_audio.m4a',
+    type: 'audio/m4a',
+  } as any);
+  if (businessId) {
+    formData.append('business_id', businessId);
   }
 
-  // Simulated MisoLabs Voice response fallback
-  return {
-    transcript:
-      'We run an autonomous AI social assistant helping founders build authentic brand presence without spending 10 hours a week writing posts. Our target audience is B2B founders and creators.',
-    is_final: true,
-  };
+  const res = await apiFetch('/voice/transcribe', {
+    method: 'POST',
+    body: formData as any,
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => 'Server error');
+    throw new Error(`Speech transcription failed (${res.status}): ${errorText}`);
+  }
+
+  return (await res.json()) as TranscriptionResult;
 }

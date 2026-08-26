@@ -46,15 +46,16 @@ export async function apiFetch(
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
-  // React Native's fetch defaults string bodies to text/plain, which
-  // FastAPI won't parse as JSON. Force application/json for JSON bodies.
-  if (init?.body && !headers.has('Content-Type')) {
+
+  // Force application/json ONLY for JSON/string bodies, NEVER for FormData multipart uploads
+  const isFormData = typeof FormData !== 'undefined' && init?.body instanceof FormData;
+  if (init?.body && !isFormData && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
-  // 6-second timeout so requests don't hang indefinitely on unreachable networks
+  // 25-second timeout for mobile networks and AI / Whisper processing
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  const timeoutId = setTimeout(() => controller.abort(), 25000);
 
   try {
     const res = await fetch(url, {
@@ -70,7 +71,7 @@ export async function apiFetch(
   } catch (error: any) {
     clearTimeout(timeoutId);
     if (error.name === 'AbortError') {
-      throw new Error('Network request timed out. Please ensure the backend is running and reachable.');
+      throw new Error('Network request timed out. Please ensure the backend server is reachable.');
     }
     throw error;
   }

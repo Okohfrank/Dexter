@@ -72,23 +72,28 @@ export default function InterviewScreen() {
       Speech.stop();
       const perm = await Audio.requestPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Microphone Access', 'Please allow microphone access to speak with Dexter.');
+        Alert.alert('Microphone Access', 'Please allow microphone access in settings to speak with Dexter.');
         return;
       }
 
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+        staysActiveInBackground: false,
       });
 
-      const recording = new Audio.Recording();
-      await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-      await recording.startAsync();
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
       recordingRef.current = recording;
       setIsRecording(true);
       setVoiceState('listening');
     } catch (e: any) {
-      Alert.alert('Microphone Error', `Could not access microphone: ${e.message}`);
+      Alert.alert('Microphone Error', `Could not access microphone: ${e.message || 'Audio hardware error'}`);
+      setIsRecording(false);
+      setVoiceState('listening');
     }
   };
 
@@ -98,9 +103,11 @@ export default function InterviewScreen() {
     setVoiceState('processing');
 
     try {
-      await recordingRef.current.stopAndUnloadAsync();
-      const uri = recordingRef.current.getURI();
+      const rec = recordingRef.current;
       recordingRef.current = null;
+      await rec.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+      const uri = rec.getURI();
 
       if (uri) {
         const res = await transcribeAudio(uri, business?.id);
@@ -112,7 +119,7 @@ export default function InterviewScreen() {
         }
       }
     } catch (err: any) {
-      Alert.alert('Voice Error', `Transcription error: ${err.message}`);
+      Alert.alert('Voice Error', `Transcription error: ${err.message || 'Microphone error'}`);
       setVoiceState('listening');
     }
   };

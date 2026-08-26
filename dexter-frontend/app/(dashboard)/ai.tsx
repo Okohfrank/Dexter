@@ -176,9 +176,11 @@ export default function AICopilotScreen() {
 
       try {
         if (recordingRef.current) {
-          await recordingRef.current.stopAndUnloadAsync();
-          const uri = recordingRef.current.getURI();
+          const rec = recordingRef.current;
           recordingRef.current = null;
+          await rec.stopAndUnloadAsync();
+          await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+          const uri = rec.getURI();
 
           if (uri) {
             const transResult = await transcribeAudio(uri, business?.id);
@@ -191,7 +193,7 @@ export default function AICopilotScreen() {
           }
         }
       } catch (err: any) {
-        Alert.alert('Recording Error', `Voice processing failed: ${err.message || 'Microphone error'}`);
+        Alert.alert('Voice Recording Error', `Voice processing failed: ${err.message || 'Microphone error'}`);
       } finally {
         setAiState('idle');
       }
@@ -201,19 +203,22 @@ export default function AICopilotScreen() {
         Speech.stop();
         const perm = await Audio.requestPermissionsAsync();
         if (!perm.granted) {
-          Alert.alert('Microphone Permission', 'Please allow microphone access to talk directly with Dexter.');
+          Alert.alert('Microphone Permission', 'Please allow microphone access in settings to speak with Dexter.');
           return;
         }
 
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: true,
           playsInSilentModeIOS: true,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+          staysActiveInBackground: false,
         });
 
-        const newRecording = new Audio.Recording();
-        await newRecording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-        await newRecording.startAsync();
-        recordingRef.current = newRecording;
+        const { recording } = await Audio.Recording.createAsync(
+          Audio.RecordingOptionsPresets.HIGH_QUALITY
+        );
+        recordingRef.current = recording;
 
         setIsVoiceActive(true);
         setAiState('listening');

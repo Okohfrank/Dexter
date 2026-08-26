@@ -237,29 +237,24 @@ async def transcribe_audio(
             logger.warning("audio_transcribe_exception", error=str(trans_err))
 
     if not transcript_text:
-        transcript_text = "Autonomous AI social employee platform for founders and growth teams."
+        raise HTTPException(
+            status_code=400,
+            detail="No clear speech detected in the audio recording. Please hold the phone closer or speak clearly.",
+        )
 
     prompt = VOICE_DISTILLATION_PROMPT.format(transcript=transcript_text)
     messages = [ChatMessage(role="user", content=prompt)]
 
-    distilled = {
-        "industry": "Technology / SaaS",
-        "products": ["Autonomous AI Social Employee", "Content Optimization Platform"],
-        "audience": ["Founders", "CEOs", "Tech Executives"],
-        "goals": ["Reach 1,000 LinkedIn followers in 90 days", "Drive qualified inbound demo pipeline"],
-        "brandVoice": "Candid, authoritative, founder-first",
-        "restrictions": ["No hype or clickbait", "No political discussions"],
-        "writingStyle": "Short punchy paragraphs, strong hooks",
-        "visualStyle": "Modern light aesthetic",
-        "preferredHashtags": ["#AI", "#Founders", "#Automation"],
-        "preferredCtas": ["Follow for weekly breakdowns"],
-    }
-
+    distilled = {}
     try:
         reply = await llm_gateway.generate_chat_reply(messages, "You are a JSON profile extraction agent.")
         if "```json" in reply:
             json_str = reply.split("```json")[1].split("```")[0].strip()
             distilled = json.loads(json_str)
+        elif "{" in reply and "}" in reply:
+            start = reply.find("{")
+            end = reply.rfind("}") + 1
+            distilled = json.loads(reply[start:end])
     except Exception as e:
         logger.warning("voice_distillation_fallback", error=str(e))
 
