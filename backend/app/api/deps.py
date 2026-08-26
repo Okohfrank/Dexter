@@ -17,6 +17,7 @@ from app.publishing.registry import PublisherRegistry
 from sqlalchemy import select
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> User:
     """Extract and validate current user from JWT."""
@@ -31,6 +32,24 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     if not user or not user.is_active:
         raise DexterAuthError(detail="Inactive or non-existent user")
     return user
+
+
+async def get_optional_current_user(
+    token: str | None = Depends(oauth2_scheme_optional),
+    db: AsyncSession = Depends(get_db)
+) -> User | None:
+    """Extract optional current user from JWT without failing if unauthenticated."""
+    if not token:
+        return None
+    try:
+        payload = verify_token(token)
+        result = await db.execute(select(User).where(User.id == payload.sub))
+        user = result.scalar_one_or_none()
+        if user and user.is_active:
+            return user
+    except Exception:
+        pass
+    return None
 
 _event_bus: EventBus | None = None
 

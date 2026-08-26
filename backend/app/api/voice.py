@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_optional_current_user
 from app.models.user import User
 from app.core.llm import LLMGateway
 from app.core.logging import get_logger
@@ -219,7 +219,7 @@ async def transcribe_audio(
     raw_transcript: Optional[str] = Form(None),
     business_id: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """
     Transcribe speech audio via Whisper AI or process raw transcript, distilling the Business Brain in real-time.
