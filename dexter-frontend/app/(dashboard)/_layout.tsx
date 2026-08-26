@@ -3,7 +3,7 @@ import { StyleSheet, Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii } from '../../src/theme';
+import { colors, spacing } from '../../src/theme';
 
 type TabDef = {
   name: string;
@@ -45,7 +45,7 @@ export default function DashboardLayout() {
           name={tab.name}
           options={{
             title: tab.title,
-            tabBarIcon: ({ focused, color }) => (
+            tabBarIcon: ({ focused }) => (
               <Ionicons
                 name={focused ? tab.iconActive : tab.icon}
                 size={22}

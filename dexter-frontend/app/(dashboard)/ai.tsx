@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -11,28 +11,35 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
-import * as Speech from 'expo-speech';
-import { Audio } from 'expo-av';
-import * as ImagePicker from 'expo-image-picker';
-import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
-import { useAppStore } from '../../src/store/app';
-import { useAuthStore } from '../../src/api/client';
-import { sendChatMessage } from '../../src/api/chat';
-import { publishPost, publishNow } from '../../src/api/publishing';
-import { transcribeAudio } from '../../src/api/voice';
-import type { ChatMessage, ChatBrief } from '../../src/types';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { BlurView } from "expo-blur";
+import { Ionicons } from "@expo/vector-icons";
+import * as Speech from "expo-speech";
+import { Audio } from "expo-av";
+import * as ImagePicker from "expo-image-picker";
+import {
+  colors,
+  spacing,
+  radii,
+  typography,
+  shadows,
+  fonts,
+} from "../../src/theme";
+import { useAppStore } from "../../src/store/app";
+import { useAuthStore } from "../../src/api/client";
+import { sendChatMessage } from "../../src/api/chat";
+import { publishPost, publishNow } from "../../src/api/publishing";
+import { transcribeAudio } from "../../src/api/voice";
+import type { ChatMessage, ChatBrief } from "../../src/types";
 
-type AIState = 'idle' | 'listening' | 'thinking' | 'speaking';
+type AIState = "idle" | "listening" | "thinking" | "speaking";
 
 const QUICK_SUGGESTIONS = [
-  '🚀 Draft a thought-leadership post about AI agents',
-  '📸 Write a post based on my attached graphic',
-  '💡 Brainstorm 3 growth frameworks for B2B founders',
-  '✍️ Rewrite my next post to be punchier',
+  "🚀 Draft a thought-leadership post about AI agents",
+  "📸 Write a post based on my attached graphic",
+  "💡 Brainstorm 3 growth frameworks for B2B founders",
+  "✍️ Rewrite my next post to be punchier",
 ];
 
 export default function AICopilotScreen() {
@@ -40,14 +47,14 @@ export default function AICopilotScreen() {
   const business = useAppStore((s) => s.business);
   const connectedAccounts = useAppStore((s) => s.connectedAccounts);
 
-  const [aiState, setAiState] = useState<AIState>('idle');
-  const [inputText, setInputText] = useState('');
+  const [aiState, setAiState] = useState<AIState>("idle");
+  const [inputText, setInputText] = useState("");
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [isAutoSpeak, setIsAutoSpeak] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      role: 'assistant',
-      content: `Hello ${user?.full_name?.split(' ')[0] || 'there'}! I'm Dexter, your AI Social Media copilot. Ask me to draft a LinkedIn post, analyze a graphic, or refine your content strategy.`,
+      role: "assistant",
+      content: `Hello ${user?.full_name?.split(" ")[0] || "there"}! I'm Dexter, your AI Social Media copilot. Ask me to draft a LinkedIn post, analyze a graphic, or refine your content strategy.`,
     },
   ]);
   const [activeBrief, setActiveBrief] = useState<ChatBrief | null>(null);
@@ -61,29 +68,33 @@ export default function AICopilotScreen() {
     try {
       Speech.stop();
       Speech.speak(text, {
-        language: 'en-US',
+        language: "en-US",
         pitch: 1.0,
         rate: 1.0,
-        onStart: () => setAiState('speaking'),
-        onDone: () => setAiState('idle'),
-        onStopped: () => setAiState('idle'),
-        onError: () => setAiState('idle'),
+        onStart: () => setAiState("speaking"),
+        onDone: () => setAiState("idle"),
+        onStopped: () => setAiState("idle"),
+        onError: () => setAiState("idle"),
       });
     } catch {
-      setAiState('idle');
+      setAiState("idle");
     }
   };
 
   const handlePickImage = async () => {
     try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Permission Required', 'Please allow gallery access to attach images.');
+        Alert.alert(
+          "Permission Required",
+          "Please allow gallery access to attach images.",
+        );
         return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ["images"],
         allowsEditing: true,
         quality: 0.8,
         base64: true,
@@ -92,14 +103,14 @@ export default function AICopilotScreen() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
         if (asset.base64) {
-          const mimeType = asset.mimeType || 'image/jpeg';
+          const mimeType = asset.mimeType || "image/jpeg";
           setAttachedImage(`data:${mimeType};base64,${asset.base64}`);
         } else if (asset.uri) {
           setAttachedImage(asset.uri);
         }
       }
     } catch (e: any) {
-      Alert.alert('Image Selection Error', e.message || 'Could not pick image');
+      Alert.alert("Image Selection Error", e.message || "Could not pick image");
     }
   };
 
@@ -107,25 +118,27 @@ export default function AICopilotScreen() {
     const query = (textToSend ?? inputText).trim();
     if (!query && !attachedImage) return;
 
-    setInputText('');
+    setInputText("");
     const currentImg = attachedImage;
     setAttachedImage(null);
 
     const userMessage: ChatMessage = {
-      role: 'user',
-      content: query || 'Analyze this attached image and create an engaging LinkedIn post about it.',
+      role: "user",
+      content:
+        query ||
+        "Analyze this attached image and create an engaging LinkedIn post about it.",
       image_url: currentImg,
     };
 
     const newHistory: ChatMessage[] = [...messages, userMessage];
     setMessages(newHistory);
-    setAiState('thinking');
+    setAiState("thinking");
 
     setTimeout(() => {
       scrollRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
-    const linkedin = connectedAccounts.find((a) => a.platform === 'linkedin');
+    const linkedin = connectedAccounts.find((a) => a.platform === "linkedin");
 
     try {
       const res = await sendChatMessage(newHistory, {
@@ -133,9 +146,12 @@ export default function AICopilotScreen() {
         connectedAccountId: linkedin?.id,
       });
 
-      const assistantMsg: ChatMessage = { role: 'assistant', content: res.reply };
+      const assistantMsg: ChatMessage = {
+        role: "assistant",
+        content: res.reply,
+      };
       setMessages([...newHistory, assistantMsg]);
-      
+
       if (res.brief) {
         setActiveBrief(res.brief);
       }
@@ -143,19 +159,22 @@ export default function AICopilotScreen() {
       if (isAutoSpeak) {
         speakText(res.reply);
       } else {
-        setAiState('idle');
+        setAiState("idle");
       }
     } catch (e: any) {
-      const errorMsg = e.message || 'Backend connection failed';
-      Alert.alert('AI Communication Error', `Could not get a response from Dexter: ${errorMsg}`);
+      const errorMsg = e.message || "Backend connection failed";
+      Alert.alert(
+        "AI Communication Error",
+        `Could not get a response from Dexter: ${errorMsg}`,
+      );
       setMessages([
         ...newHistory,
         {
-          role: 'assistant',
+          role: "assistant",
           content: `⚠️ Error communicating with AI: ${errorMsg}. Please check your backend connection.`,
         },
       ]);
-      setAiState('idle');
+      setAiState("idle");
     } finally {
       setTimeout(() => {
         scrollRef.current?.scrollToEnd({ animated: true });
@@ -164,16 +183,16 @@ export default function AICopilotScreen() {
   };
 
   const handleVoiceToggle = async () => {
-    if (aiState === 'speaking') {
+    if (aiState === "speaking") {
       Speech.stop();
-      setAiState('idle');
+      setAiState("idle");
       return;
     }
 
     if (isVoiceActive) {
       // User tapped to stop recording and send
       setIsVoiceActive(false);
-      setAiState('thinking');
+      setAiState("thinking");
 
       try {
         if (recordingRef.current) {
@@ -189,39 +208,48 @@ export default function AICopilotScreen() {
               await handleSend(transResult.transcript);
               return;
             } else {
-              Alert.alert('Voice Recognition', 'Could not detect clear speech. Please try speaking again.');
+              Alert.alert(
+                "Voice Recognition",
+                "Could not detect clear speech. Please try speaking again.",
+              );
             }
           }
         }
       } catch (err: any) {
-        Alert.alert('Voice Recording Error', `Voice processing failed: ${err.message || 'Microphone error'}`);
+        Alert.alert(
+          "Voice Recording Error",
+          `Voice processing failed: ${err.message || "Microphone error"}`,
+        );
       } finally {
-        setAiState('idle');
+        setAiState("idle");
       }
     } else {
       setIsVoiceActive(true);
-      setAiState('listening');
+      setAiState("listening");
       // Speak a brief prompt to open the voice turn
-      Speech.speak('I am listening. What would you like to post or update?', {
+      Speech.speak("I am listening. What would you like to post or update?", {
         onDone: () => {
-          setAiState('listening');
-        }
+          setAiState("listening");
+        },
       });
     }
   };
 
   const handlePublishBrief = async () => {
     if (!activeBrief) return;
-    const linkedin = connectedAccounts.find((a) => a.platform === 'linkedin');
+    const linkedin = connectedAccounts.find((a) => a.platform === "linkedin");
     if (!linkedin) {
-      Alert.alert('LinkedIn Not Connected', 'Please connect your LinkedIn account first before publishing.');
+      Alert.alert(
+        "LinkedIn Not Connected",
+        "Please connect your LinkedIn account first before publishing.",
+      );
       return;
     }
 
     setPublishing(true);
     try {
       const pubRes = await publishPost({
-        platform: 'linkedin',
+        platform: "linkedin",
         content_text: activeBrief.content_text,
         connected_account_id: linkedin.id,
       });
@@ -229,12 +257,12 @@ export default function AICopilotScreen() {
       await publishNow(pubRes.post_id);
 
       Alert.alert(
-        '🎉 Post is Live!',
-        'Your post was successfully published to your live LinkedIn feed!',
-        [{ text: 'Awesome!', onPress: () => setActiveBrief(null) }]
+        "🎉 Post is Live!",
+        "Your post was successfully published to your live LinkedIn feed!",
+        [{ text: "Awesome!", onPress: () => setActiveBrief(null) }],
       );
     } catch (e: any) {
-      Alert.alert('Publish Failed', e.message || 'Could not publish post.');
+      Alert.alert("Publish Failed", e.message || "Could not publish post.");
     } finally {
       setPublishing(false);
     }
@@ -244,7 +272,7 @@ export default function AICopilotScreen() {
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         {/* Header */}
         <View style={styles.headerOuter}>
@@ -256,28 +284,36 @@ export default function AICopilotScreen() {
               </View>
               <View style={styles.headerActions}>
                 <Pressable
-                  style={[styles.audioToggleBtn, isAutoSpeak && styles.audioToggleActive]}
+                  style={[
+                    styles.audioToggleBtn,
+                    isAutoSpeak && styles.audioToggleActive,
+                  ]}
                   onPress={() => {
-                    if (aiState === 'speaking') Speech.stop();
+                    if (aiState === "speaking") Speech.stop();
                     setIsAutoSpeak(!isAutoSpeak);
                   }}
                 >
                   <Ionicons
-                    name={isAutoSpeak ? 'volume-high' : 'volume-mute-outline'}
+                    name={isAutoSpeak ? "volume-high" : "volume-mute-outline"}
                     size={18}
                     color={isAutoSpeak ? colors.primary : colors.labelTertiary}
                   />
                 </Pressable>
                 <View style={styles.statusPill}>
-                  <View style={[styles.statusDot, aiState !== 'idle' && styles.statusDotActive]} />
+                  <View
+                    style={[
+                      styles.statusDot,
+                      aiState !== "idle" && styles.statusDotActive,
+                    ]}
+                  />
                   <Text style={styles.statusText}>
-                    {aiState === 'listening'
-                      ? 'Listening…'
-                      : aiState === 'thinking'
-                      ? 'Thinking…'
-                      : aiState === 'speaking'
-                      ? 'Speaking…'
-                      : 'Ready'}
+                    {aiState === "listening"
+                      ? "Listening…"
+                      : aiState === "thinking"
+                        ? "Thinking…"
+                        : aiState === "speaking"
+                          ? "Speaking…"
+                          : "Ready"}
                   </Text>
                 </View>
               </View>
@@ -293,7 +329,7 @@ export default function AICopilotScreen() {
           showsVerticalScrollIndicator={false}
         >
           {messages.map((m, idx) => {
-            const isUser = m.role === 'user';
+            const isUser = m.role === "user";
             return (
               <View
                 key={idx}
@@ -304,7 +340,11 @@ export default function AICopilotScreen() {
               >
                 {!isUser && (
                   <View style={styles.assistantAvatar}>
-                    <Ionicons name="sparkles" size={14} color={colors.primary} />
+                    <Ionicons
+                      name="sparkles"
+                      size={14}
+                      color={colors.primary}
+                    />
                   </View>
                 )}
                 <View
@@ -323,7 +363,9 @@ export default function AICopilotScreen() {
                   <Text
                     style={[
                       styles.messageText,
-                      isUser ? styles.userMessageText : styles.assistantMessageText,
+                      isUser
+                        ? styles.userMessageText
+                        : styles.assistantMessageText,
                     ]}
                   >
                     {m.content}
@@ -334,7 +376,11 @@ export default function AICopilotScreen() {
                       hitSlop={8}
                       onPress={() => speakText(m.content)}
                     >
-                      <Ionicons name="volume-medium-outline" size={15} color={colors.primary} />
+                      <Ionicons
+                        name="volume-medium-outline"
+                        size={15}
+                        color={colors.primary}
+                      />
                     </Pressable>
                   )}
                 </View>
@@ -349,9 +395,13 @@ export default function AICopilotScreen() {
                 <View style={styles.briefCardContent}>
                   <View style={styles.briefHeader}>
                     <Ionicons name="logo-linkedin" size={18} color="#0A66C2" />
-                    <Text style={styles.briefTitle}>Generated LinkedIn Post Draft</Text>
+                    <Text style={styles.briefTitle}>
+                      Generated LinkedIn Post Draft
+                    </Text>
                   </View>
-                  <Text style={styles.briefBody}>{activeBrief.content_text}</Text>
+                  <Text style={styles.briefBody}>
+                    {activeBrief.content_text}
+                  </Text>
                   <Pressable
                     style={styles.briefPublishBtn}
                     onPress={handlePublishBrief}
@@ -361,8 +411,14 @@ export default function AICopilotScreen() {
                       <ActivityIndicator color="#FFFFFF" size="small" />
                     ) : (
                       <>
-                        <Ionicons name="paper-plane" size={16} color="#FFFFFF" />
-                        <Text style={styles.briefPublishBtnText}>Publish to LinkedIn Now</Text>
+                        <Ionicons
+                          name="paper-plane"
+                          size={16}
+                          color="#FFFFFF"
+                        />
+                        <Text style={styles.briefPublishBtnText}>
+                          Publish to LinkedIn Now
+                        </Text>
                       </>
                     )}
                   </Pressable>
@@ -375,10 +431,17 @@ export default function AICopilotScreen() {
         {/* Attached Image Preview */}
         {attachedImage && (
           <View style={styles.attachedPreviewRow}>
-            <Image source={{ uri: attachedImage }} style={styles.attachedThumbnail} />
+            <Image
+              source={{ uri: attachedImage }}
+              style={styles.attachedThumbnail}
+            />
             <View style={styles.attachedTextWrap}>
-              <Text style={styles.attachedTitle}>Image Attached (Gemini Vision)</Text>
-              <Text style={styles.attachedSub}>Dexter will analyze this visual graphic</Text>
+              <Text style={styles.attachedTitle}>
+                Image Attached (Gemini Vision)
+              </Text>
+              <Text style={styles.attachedSub}>
+                Dexter will analyze this visual graphic
+              </Text>
             </View>
             <Pressable
               style={styles.removeAttachedBtn}
@@ -412,7 +475,11 @@ export default function AICopilotScreen() {
           <BlurView intensity={60} tint="dark" style={styles.inputBarBlur}>
             <View style={styles.inputBar}>
               <Pressable style={styles.attachmentBtn} onPress={handlePickImage}>
-                <Ionicons name="image-outline" size={20} color={colors.primary} />
+                <Ionicons
+                  name="image-outline"
+                  size={20}
+                  color={colors.primary}
+                />
               </Pressable>
               <TextInput
                 style={styles.textInput}
@@ -424,17 +491,34 @@ export default function AICopilotScreen() {
                 returnKeyType="send"
               />
               <Pressable
-                style={[styles.actionBtn, (isVoiceActive || aiState === 'speaking') && styles.actionBtnActive]}
+                style={[
+                  styles.actionBtn,
+                  (isVoiceActive || aiState === "speaking") &&
+                    styles.actionBtnActive,
+                ]}
                 onPress={handleVoiceToggle}
               >
                 <Ionicons
-                  name={aiState === 'speaking' ? 'volume-high' : isVoiceActive ? 'mic' : 'mic-outline'}
+                  name={
+                    aiState === "speaking"
+                      ? "volume-high"
+                      : isVoiceActive
+                        ? "mic"
+                        : "mic-outline"
+                  }
                   size={20}
-                  color={(isVoiceActive || aiState === 'speaking') ? '#FFFFFF' : colors.primary}
+                  color={
+                    isVoiceActive || aiState === "speaking"
+                      ? "#FFFFFF"
+                      : colors.primary
+                  }
                 />
               </Pressable>
               <Pressable
-                style={[styles.sendBtn, (!inputText.trim() && !attachedImage) && styles.sendBtnDisabled]}
+                style={[
+                  styles.sendBtn,
+                  !inputText.trim() && !attachedImage && styles.sendBtnDisabled,
+                ]}
                 onPress={() => handleSend()}
                 disabled={!inputText.trim() && !attachedImage}
               >
@@ -455,26 +539,26 @@ const styles = StyleSheet.create({
   headerOuter: { borderBottomWidth: 0.5, borderBottomColor: colors.separator },
   headerBlur: {},
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
   },
   headerEyebrow: {
     fontSize: 11,
     color: colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: 0.5,
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.labelPrimary,
   },
   headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   audioToggleBtn: {
@@ -482,15 +566,15 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: colors.glass,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   audioToggleActive: {
     backgroundColor: colors.primarySurface,
   },
   statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     backgroundColor: colors.glass,
     paddingHorizontal: 12,
@@ -499,26 +583,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorderLight,
   },
-  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.positive },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.positive,
+  },
   statusDotActive: { backgroundColor: colors.primary },
-  statusText: { fontSize: 12, color: colors.primary, fontWeight: '500' },
+  statusText: { fontSize: 12, color: colors.primary, fontWeight: "500" },
 
   chatScroll: { flex: 1 },
-  chatContent: { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg, paddingBottom: 20 },
-  messageBubbleWrap: {
-    flexDirection: 'row',
-    marginVertical: 6,
-    maxWidth: '85%',
+  chatContent: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    paddingBottom: 20,
   },
-  userBubbleWrap: { alignSelf: 'flex-end' },
-  assistantBubbleWrap: { alignSelf: 'flex-start', alignItems: 'flex-end', gap: 6 },
+  messageBubbleWrap: {
+    flexDirection: "row",
+    marginVertical: 6,
+    maxWidth: "85%",
+  },
+  userBubbleWrap: { alignSelf: "flex-end" },
+  assistantBubbleWrap: {
+    alignSelf: "flex-start",
+    alignItems: "flex-end",
+    gap: 6,
+  },
   assistantAvatar: {
     width: 28,
     height: 28,
     borderRadius: 14,
     backgroundColor: colors.primarySurface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 4,
   },
   messageBubble: {
@@ -543,41 +640,46 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   speakBubbleBtn: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     marginTop: 4,
     paddingTop: 2,
   },
   messageText: { fontSize: 15, lineHeight: 21 },
-  userMessageText: { color: '#FFFFFF' },
+  userMessageText: { color: "#FFFFFF" },
   assistantMessageText: { color: colors.labelPrimary },
 
   briefCardOuter: {
     borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: colors.glassBorder,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginTop: spacing.sm,
   },
-  briefCardBlur: { overflow: 'hidden' },
+  briefCardBlur: { overflow: "hidden" },
   briefCardContent: { padding: spacing.md },
-  briefHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  briefTitle: { fontSize: 13, color: colors.labelPrimary, fontWeight: '600' },
+  briefHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  briefTitle: { fontSize: 13, color: colors.labelPrimary, fontWeight: "600" },
   briefBody: { fontSize: 13, color: colors.labelSecondary, lineHeight: 19 },
   briefPublishBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 6,
-    backgroundColor: '#0A66C2',
+    backgroundColor: "#0A66C2",
     paddingVertical: 10,
     borderRadius: radii.md,
     marginTop: 12,
   },
-  briefPublishBtnText: { fontSize: 13, color: '#FFFFFF', fontWeight: '700' },
+  briefPublishBtnText: { fontSize: 13, color: "#FFFFFF", fontWeight: "700" },
 
   attachedPreviewRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.glass,
     borderWidth: 1,
     borderColor: colors.glassBorder,
@@ -593,7 +695,11 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
   },
   attachedTextWrap: { flex: 1 },
-  attachedTitle: { fontSize: 12, color: colors.labelPrimary, fontWeight: '600' },
+  attachedTitle: {
+    fontSize: 12,
+    color: colors.labelPrimary,
+    fontWeight: "600",
+  },
   attachedSub: { fontSize: 11, color: colors.labelSecondary },
   removeAttachedBtn: { padding: 4 },
 
@@ -607,13 +713,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  suggestionText: { fontSize: 12, color: colors.labelSecondary, fontWeight: '500' },
+  suggestionText: {
+    fontSize: 12,
+    color: colors.labelSecondary,
+    fontWeight: "500",
+  },
 
   inputBarOuter: { borderTopWidth: 0.5, borderTopColor: colors.separator },
   inputBarBlur: {},
   inputBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     gap: 8,
@@ -623,8 +733,8 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     backgroundColor: colors.primarySurface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   textInput: {
     flex: 1,
@@ -642,8 +752,8 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 19,
     backgroundColor: colors.primarySurface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   actionBtnActive: {
     backgroundColor: colors.primary,
@@ -653,8 +763,8 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 19,
     backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   sendBtnDisabled: {
     backgroundColor: colors.backgroundTertiary,
