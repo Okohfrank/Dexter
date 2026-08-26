@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_optional_current_user
 from app.models.user import User
 from app.core.llm import LLMGateway
 from app.core.logging import get_logger
@@ -77,23 +77,43 @@ async def voice_realtime_stream(websocket: WebSocket):
 
     conversation_history: List[ChatMessage] = []
     accumulated_transcript: List[str] = []
+    is_closed = False
+
+    async def safe_send(payload: dict) -> bool:
+        nonlocal is_closed
+        if is_closed:
+            return False
+        try:
+            await websocket.send_json(payload)
+            return True
+        except Exception:
+            is_closed = True
+            return False
 
     try:
         # Initial greeting from Dexter
         initial_greeting = "Hi, I'm Dexter! I'm ready to learn about your brand. What does your company do and who is your target audience?"
-        await websocket.send_json({
+        await safe_send({
             "type": "assistant_reply",
             "text": initial_greeting,
             "state": "speaking",
         })
         conversation_history.append(ChatMessage(role="assistant", content=initial_greeting))
 
-        while True:
-            data = await websocket.receive_json()
+        while not is_closed:
+            try:
+                data = await websocket.receive_json()
+            except WebSocketDisconnect:
+                is_closed = True
+                break
+            except Exception:
+                is_closed = True
+                break
+
             msg_type = data.get("type")
 
             if msg_type == "ping":
-                await websocket.send_json({"type": "pong"})
+                await safe_send({"type": "pong"})
                 continue
 
             elif msg_type in ("user_speech", "transcript_chunk"):
@@ -105,7 +125,7 @@ async def voice_realtime_stream(websocket: WebSocket):
                 conversation_history.append(ChatMessage(role="user", content=user_text))
 
                 # Notify client that Dexter is processing
-                await websocket.send_json({"type": "state", "status": "processing"})
+                await safe_send({"type": "state", "status": "processing"})
 
                 # Generate AI conversational response
                 try:
@@ -126,7 +146,7 @@ async def voice_realtime_stream(websocket: WebSocket):
                             pass
 
                     # Stream text chunk
-                    await websocket.send_json({
+                    await safe_send({
                         "type": "assistant_reply",
                         "text": clean_reply,
                         "state": "speaking",
@@ -134,7 +154,7 @@ async def voice_realtime_stream(websocket: WebSocket):
                     conversation_history.append(ChatMessage(role="assistant", content=clean_reply))
 
                     if distilled_brain and distilled_brain.get("is_complete"):
-                        await websocket.send_json({
+                        await safe_send({
                             "type": "distilled_brain",
                             "brain": distilled_brain,
                         })
@@ -142,7 +162,7 @@ async def voice_realtime_stream(websocket: WebSocket):
                 except Exception as llm_err:
                     logger.error("voice_stream_llm_error", error=str(llm_err))
                     fallback_msg = "I got that. Could you tell me about your primary business goals for LinkedIn?"
-                    await websocket.send_json({
+                    await safe_send({
                         "type": "assistant_reply",
                         "text": fallback_msg,
                         "state": "speaking",
@@ -162,7 +182,7 @@ async def voice_realtime_stream(websocket: WebSocket):
                         json_str = distill_reply.split("```json")[1].split("```")[0].strip()
                         brain_data = json.loads(json_str)
 
-                    await websocket.send_json({
+                    await safe_send({
                         "type": "distilled_brain",
                         "brain": brain_data or {
                             "industry": "Technology / SaaS",
@@ -185,6 +205,8 @@ async def voice_realtime_stream(websocket: WebSocket):
         logger.info("voice_websocket_disconnected")
     except Exception as e:
         logger.error("voice_websocket_error", error=str(e))
+    finally:
+        is_closed = True
         try:
             await websocket.close()
         except Exception:
@@ -197,45 +219,42 @@ async def transcribe_audio(
     raw_transcript: Optional[str] = Form(None),
     business_id: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """
-    Transcribe speech audio or process raw transcript, distilling the Business Brain in real-time.
+    Transcribe speech audio via Whisper AI or process raw transcript, distilling the Business Brain in real-time.
     """
     transcript_text = raw_transcript
     if not transcript_text and audio:
-        content = await audio.read()
-        logger.info("audio_received_for_transcription", size_bytes=len(content))
-        transcript_text = (
-            "We build an autonomous AI social employee for founders and startups. "
-            "Our primary goal is to grow our executive presence on LinkedIn to 1,000 followers and generate inbound leads."
-        )
-    elif not transcript_text:
-        transcript_text = (
-            "We are a high-growth B2B SaaS platform helping founders automate their social presence."
+        try:
+            content = await audio.read()
+            logger.info("audio_received_for_transcription", size_bytes=len(content), filename=audio.filename)
+            whisper_result = await llm_gateway.transcribe_audio(content, audio.filename or "audio.m4a")
+            if whisper_result:
+                transcript_text = whisper_result
+                logger.info("whisper_transcription_success", transcript=transcript_text)
+        except Exception as trans_err:
+            logger.warning("audio_transcribe_exception", error=str(trans_err))
+
+    if not transcript_text:
+        raise HTTPException(
+            status_code=400,
+            detail="No clear speech detected in the audio recording. Please hold the phone closer or speak clearly.",
         )
 
     prompt = VOICE_DISTILLATION_PROMPT.format(transcript=transcript_text)
     messages = [ChatMessage(role="user", content=prompt)]
 
-    distilled = {
-        "industry": "Technology / SaaS",
-        "products": ["Autonomous AI Social Employee", "Content Optimization Platform"],
-        "audience": ["Founders", "CEOs", "Tech Executives"],
-        "goals": ["Reach 1,000 LinkedIn followers in 90 days", "Drive qualified inbound demo pipeline"],
-        "brandVoice": "Candid, authoritative, founder-first",
-        "restrictions": ["No hype or clickbait", "No political discussions"],
-        "writingStyle": "Short punchy paragraphs, strong hooks",
-        "visualStyle": "Modern light aesthetic",
-        "preferredHashtags": ["#AI", "#Founders", "#Automation"],
-        "preferredCtas": ["Follow for weekly breakdowns"],
-    }
-
+    distilled = {}
     try:
         reply = await llm_gateway.generate_chat_reply(messages, "You are a JSON profile extraction agent.")
         if "```json" in reply:
             json_str = reply.split("```json")[1].split("```")[0].strip()
             distilled = json.loads(json_str)
+        elif "{" in reply and "}" in reply:
+            start = reply.find("{")
+            end = reply.rfind("}") + 1
+            distilled = json.loads(reply[start:end])
     except Exception as e:
         logger.warning("voice_distillation_fallback", error=str(e))
 

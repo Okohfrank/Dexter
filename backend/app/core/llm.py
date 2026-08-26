@@ -221,6 +221,29 @@ class LLMGateway:
 
         raise ValueError("All Gemini vision model attempts failed.")
 
+    async def transcribe_audio(self, audio_bytes: bytes, filename: str = "audio.m4a") -> str:
+        """Transcribe audio using Groq Whisper API (whisper-large-v3-turbo) or fallback."""
+        if self._settings.GROQ_API_KEY:
+            try:
+                headers = {"Authorization": f"Bearer {self._settings.GROQ_API_KEY}"}
+                files = {"file": (filename, audio_bytes, "audio/m4a")}
+                data = {"model": "whisper-large-v3-turbo"}
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    resp = await client.post(
+                        "https://api.groq.com/openai/v1/audio/transcriptions",
+                        files=files,
+                        data=data,
+                        headers=headers,
+                    )
+                    if resp.is_success:
+                        result = resp.json()
+                        text = result.get("text", "").strip()
+                        if text:
+                            return text
+            except Exception as e:
+                self._logger.warning("groq_whisper_transcription_failed", error=str(e))
+        return ""
+
     def _generate_simulated_chat_reply(self, messages: List[ChatMessage]) -> str:
         """Fallback simulation for offline testing."""
         last_msg = messages[-1] if messages else ChatMessage(role="user", content="")

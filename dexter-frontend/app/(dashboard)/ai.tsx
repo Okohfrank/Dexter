@@ -17,11 +17,12 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import * as ImagePicker from 'expo-image-picker';
-import { colors, spacing, radii, typography, shadows } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { useAuthStore } from '../../src/api/client';
 import { sendChatMessage } from '../../src/api/chat';
 import { publishPost, publishNow } from '../../src/api/publishing';
+import { transcribeAudio } from '../../src/api/voice';
 import type { ChatMessage, ChatBrief } from '../../src/types';
 
 type AIState = 'idle' | 'listening' | 'thinking' | 'speaking';
@@ -53,6 +54,7 @@ export default function AICopilotScreen() {
   const [isVoiceActive, setIsVoiceActive] = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
+  const recordingRef = useRef<Audio.Recording | null>(null);
 
   const speakText = (text: string) => {
     try {
@@ -73,10 +75,16 @@ export default function AICopilotScreen() {
 
   const handlePickImage = async () => {
     try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Permission Required', 'Please allow gallery access to attach images.');
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
-        quality: 0.7,
+        quality: 0.8,
         base64: true,
       });
 
@@ -137,11 +145,13 @@ export default function AICopilotScreen() {
         setAiState('idle');
       }
     } catch (e: any) {
+      const errorMsg = e.message || 'Backend connection failed';
+      Alert.alert('AI Communication Error', `Could not get a response from Dexter: ${errorMsg}`);
       setMessages([
         ...newHistory,
         {
           role: 'assistant',
-          content: `Error communicating with AI: ${e.message || 'Please ensure backend is running.'}`,
+          content: `⚠️ Error communicating with AI: ${errorMsg}. Please check your backend connection.`,
         },
       ]);
       setAiState('idle');
@@ -152,7 +162,7 @@ export default function AICopilotScreen() {
     }
   };
 
-  const handleVoiceToggle = () => {
+  const handleVoiceToggle = async () => {
     if (aiState === 'speaking') {
       Speech.stop();
       setAiState('idle');
@@ -160,11 +170,37 @@ export default function AICopilotScreen() {
     }
 
     if (isVoiceActive) {
+      // User tapped to stop recording and send
       setIsVoiceActive(false);
-      setAiState('idle');
+      setAiState('thinking');
+
+      try {
+        if (recordingRef.current) {
+          const rec = recordingRef.current;
+          recordingRef.current = null;
+          await rec.stopAndUnloadAsync();
+          await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+          const uri = rec.getURI();
+
+          if (uri) {
+            const transResult = await transcribeAudio(uri, business?.id);
+            if (transResult && transResult.transcript) {
+              await handleSend(transResult.transcript);
+              return;
+            } else {
+              Alert.alert('Voice Recognition', 'Could not detect clear speech. Please try speaking again.');
+            }
+          }
+        }
+      } catch (err: any) {
+        Alert.alert('Voice Recording Error', `Voice processing failed: ${err.message || 'Microphone error'}`);
+      } finally {
+        setAiState('idle');
+      }
     } else {
       setIsVoiceActive(true);
       setAiState('listening');
+      // Speak a brief prompt to open the voice turn
       Speech.speak('I am listening. What would you like to post or update?', {
         onDone: () => {
           setAiState('listening');

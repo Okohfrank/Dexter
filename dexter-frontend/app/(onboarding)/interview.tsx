@@ -9,14 +9,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
-import { colors, spacing, radii, typography, shadows } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
 import { sendChatMessage } from '../../src/api/chat';
-import { connectVoiceStream } from '../../src/api/voice';
+import { connectVoiceStream, transcribeAudio } from '../../src/api/voice';
 import { useAppStore } from '../../src/store/app';
 import { GlassCard, GlassPill } from '../../src/components/ui';
 import type { ChatMessage, ChatBrief, BusinessBrain } from '../../src/types';
@@ -37,11 +38,13 @@ export default function InterviewScreen() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [voiceActive, setVoiceActive] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [voiceState, setVoiceState] = useState<'listening' | 'processing' | 'speaking'>('listening');
   const [brief, setBrief] = useState<ChatBrief | null>(null);
   const [hasBrainReady, setHasBrainReady] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const voiceStreamRef = useRef<ReturnType<typeof connectVoiceStream> | null>(null);
+  const recordingRef = useRef<Audio.Recording | null>(null);
 
   const speak = (text: string) => {
     try {
@@ -62,9 +65,69 @@ export default function InterviewScreen() {
     listRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
-  const toggleVoiceMode = () => {
+  const startMicRecording = async () => {
+    try {
+      Speech.stop();
+      const perm = await Audio.requestPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Microphone Access', 'Please allow microphone access in settings to speak with Dexter.');
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+        staysActiveInBackground: false,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      recordingRef.current = recording;
+      setIsRecording(true);
+      setVoiceState('listening');
+    } catch (e: any) {
+      Alert.alert('Microphone Error', `Could not access microphone: ${e.message || 'Audio hardware error'}`);
+      setIsRecording(false);
+      setVoiceState('listening');
+    }
+  };
+
+  const stopMicRecording = async () => {
+    if (!recordingRef.current) return;
+    setIsRecording(false);
+    setVoiceState('processing');
+
+    try {
+      const rec = recordingRef.current;
+      recordingRef.current = null;
+      await rec.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+      const uri = rec.getURI();
+
+      if (uri) {
+        const res = await transcribeAudio(uri, business?.id);
+        if (res && res.transcript) {
+          await handleSendText(res.transcript);
+        } else {
+          Alert.alert('Speech Recognition', 'Could not detect speech. Please try speaking again or type.');
+          setVoiceState('listening');
+        }
+      }
+    } catch (err: any) {
+      Alert.alert('Voice Error', `Transcription error: ${err.message || 'Microphone error'}`);
+      setVoiceState('listening');
+    }
+  };
+
+  const toggleVoiceMode = async () => {
     if (voiceActive) {
       Speech.stop();
+      if (isRecording) {
+        await stopMicRecording();
+      }
       voiceStreamRef.current?.close();
       voiceStreamRef.current = null;
       setVoiceActive(false);
@@ -104,7 +167,8 @@ export default function InterviewScreen() {
           setHasBrainReady(true);
         }
       },
-      onError: () => {
+      onError: (err) => {
+        Alert.alert('Voice Server Notice', 'Real-time voice stream disconnected. You can continue speaking via mic or text.');
         setVoiceActive(false);
       },
       onClose: () => {
@@ -113,8 +177,8 @@ export default function InterviewScreen() {
     });
   };
 
-  const handleSend = async () => {
-    const text = input.trim();
+  const handleSendText = async (textToSend: string) => {
+    const text = textToSend.trim();
     if (!text || sending) return;
     const userMsg: ChatMessage = { role: 'user', content: text };
     const history = [...messages, userMsg];
@@ -146,13 +210,19 @@ export default function InterviewScreen() {
         setBrief(res.brief);
       }
     } catch (e: any) {
+      const errorMsg = e.message || 'Server unreachable';
+      Alert.alert('Communication Error', `Could not reach Dexter: ${errorMsg}`);
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: `I encountered an issue: ${e.message}. Could you try rephrasing?` },
+        { role: 'assistant', content: `⚠️ I encountered an issue: ${errorMsg}. Could you try rephrasing?` },
       ]);
     } finally {
       setSending(false);
     }
+  };
+
+  const handleSend = () => {
+    handleSendText(input);
   };
 
   const renderBubble = ({ item }: { item: ChatMessage }) => {
@@ -260,20 +330,20 @@ export default function InterviewScreen() {
 
         <View style={styles.inputRow}>
           <Pressable
-            style={[styles.micBtn, voiceActive && styles.micBtnActive]}
-            onPress={toggleVoiceMode}
+            style={[styles.micBtn, (voiceActive || isRecording) && styles.micBtnActive]}
+            onPress={isRecording ? stopMicRecording : startMicRecording}
           >
             <Ionicons
-              name={voiceActive ? 'mic' : 'mic-outline'}
+              name={isRecording ? 'stop-circle' : voiceActive ? 'mic' : 'mic-outline'}
               size={20}
-              color={voiceActive ? '#FFFFFF' : colors.primary}
+              color={(voiceActive || isRecording) ? '#FFFFFF' : colors.primary}
             />
           </Pressable>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder={voiceActive ? 'Speak or type your answer…' : 'Type your response to Dexter…'}
-              placeholderTextColor={colors.labelTertiary}
+              placeholder={voiceActive ? "Speak or type your answer…" : "Type your response to Dexter…"}
+              placeholderTextColor={colors.textMuted}
               value={input}
               onChangeText={setInput}
               multiline
