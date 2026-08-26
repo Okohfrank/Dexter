@@ -9,7 +9,7 @@ import {
   OutlinedButton,
   Divider,
 } from '../../src/components/ui';
-import { colors, spacing, typography, fonts, radii } from '../../src/theme';
+import { colors, spacing, typography, radii } from '../../src/theme';
 import { login, register, getMe } from '../../src/api/auth';
 import { listBusinesses, createBusiness } from '../../src/api/business';
 import { listConnectedAccounts, mockConnectAccount } from '../../src/api/oauth';
@@ -132,7 +132,7 @@ export default function LoginScreen() {
 
       useAppStore.getState().setBusiness(biz);
 
-      let accounts = [];
+      let accounts: any[] = [];
       try {
         accounts = await listConnectedAccounts(biz.id);
         if (accounts.length === 0) {
@@ -224,10 +224,10 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   header: { marginTop: spacing.xl, marginBottom: spacing.xxl },
-  title: { ...typography.display, color: colors.textPrimary },
+  title: { ...typography.display, color: colors.labelPrimary },
   subtitle: {
     ...typography.body,
-    color: colors.textSecondary,
+    color: colors.labelSecondary,
     marginTop: spacing.sm,
     lineHeight: 22,
   },
@@ -239,217 +239,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.xxl,
   },
-  footerText: { ...typography.body, color: colors.textSecondary },
+  footerText: { ...typography.body, color: colors.labelSecondary },
   footerLink: { ...typography.body, color: colors.primary, fontWeight: '700' },
-});           {!isLogin && (
-                <Input
-                  icon="business-outline"
-                  placeholder="Company / Brand Name"
-                  value={phoneOrBrand}
-                  onChangeText={setPhoneOrBrand}
-                  autoCapitalize="words"
-                />
-              )}
-
-              {/* Options Row (Remember me + Forgot Password) */}
-              {isLogin && (
-                <View style={styles.optionsRow}>
-                  <Checkbox
-                    checked={rememberMe}
-                    onChange={setRememberMe}
-                    label="Remember me"
-                  />
-                  <Pressable
-                    onPress={() => router.push('/(auth)/forgot-password')}
-                    hitSlop={8}
-                  >
-                    <Text style={styles.forgotLink}>Forget Password?</Text>
-                  </Pressable>
-                </View>
-              )}
-
-              {/* Primary Action Button (Royal Blue #2563EB) */}
-              <Button
-                title={isLogin ? 'Login' : 'Register'}
-                onPress={isLogin ? handleLogin : handleRegister}
-                loading={loading}
-                disabled={loading}
-                variant="primary"
-                style={styles.actionBtn}
-              />
-
-              {/* Divider */}
-              <View style={styles.dividerRow}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerLabel}>
-                  {isLogin ? 'Or login with' : 'Or register with'}
-                </Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              {/* Social Login Row */}
-              <View style={styles.socialRow}>
-                <Pressable
-                  style={styles.socialBtn}
-                  onPress={handleQuickDemo}
-                >
-                  <Ionicons name="flash" size={16} color={colors.primary} />
-                  <Text style={styles.socialBtnText}>1-Tap Demo</Text>
-                </Pressable>
-
-                <Pressable
-                  style={styles.socialBtn}
-                  onPress={() => {
-                    Alert.alert(
-                      'Google Login',
-                      'Tap "1-Tap Demo" to explore instantly with Alex Mercer, or use email login.'
-                    );
-                  }}
-                >
-                  <Ionicons name="logo-google" size={16} color="#EA4335" />
-                  <Text style={styles.socialBtnText}>Google</Text>
-                </Pressable>
-
-                <Pressable
-                  style={styles.socialBtn}
-                  onPress={() => {
-                    Alert.alert(
-                      'Apple Sign In',
-                      'Tap "1-Tap Demo" to explore instantly with Alex Mercer, or use email login.'
-                    );
-                  }}
-                >
-                  <Ionicons name="logo-apple" size={16} color={colors.textPrimary} />
-                  <Text style={styles.socialBtnText}>Apple</Text>
-                </Pressable>
-              </View>
-            </View>
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.canvasDark,
-  },
-  topHeader: {
-    paddingHorizontal: spacing[5],
-    paddingTop: spacing[3],
-    paddingBottom: spacing[6],
-  },
-  topNavRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing[4],
-  },
-  backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: radii.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: colors.borderDark,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroText: {
-    gap: spacing[2],
-  },
-  heroTitle: {
-    fontSize: 26,
-    lineHeight: 32,
-    fontFamily: fonts.displayBold,
-    color: colors.textDark,
-    letterSpacing: -0.4,
-  },
-  heroSubtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontFamily: fonts.regular,
-    color: colors.textDarkMuted,
-  },
-
-  // Bottom Sheet Card
-  sheetWrapper: {
-    flex: 1,
-  },
-  sheetCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    ...shadows.lg,
-  },
-  sheetScroll: {
-    paddingHorizontal: spacing[5],
-    paddingTop: spacing[5],
-    paddingBottom: spacing[8],
-  },
-  segmentedControl: {
-    marginBottom: spacing[5],
-  },
-  form: {
-    gap: spacing[1],
-  },
-  optionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginVertical: spacing[2],
-    paddingHorizontal: 2,
-  },
-  forgotLink: {
-    fontSize: 13,
-    fontFamily: fonts.semibold,
-    color: colors.primary,
-  },
-  actionBtn: {
-    marginTop: spacing[3],
-  },
-
-  // Divider
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[3],
-    marginVertical: spacing[5],
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  dividerLabel: {
-    fontSize: 12,
-    fontFamily: fonts.medium,
-    color: colors.textMuted,
-  },
-
-  // Social Row
-  socialRow: {
-    flexDirection: 'row',
-    gap: spacing[2],
-  },
-  socialBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.full,
-    paddingVertical: 12,
-    ...shadows.sm,
-  },
-  socialBtnText: {
-    fontSize: 12,
-    fontFamily: fonts.semibold,
-    color: colors.textPrimary,
-  },
 });

@@ -13,10 +13,11 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import * as ImagePicker from 'expo-image-picker';
-import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { useAuthStore } from '../../src/api/client';
 import { sendChatMessage } from '../../src/api/chat';
@@ -164,7 +165,6 @@ export default function AICopilotScreen() {
     } else {
       setIsVoiceActive(true);
       setAiState('listening');
-      // Speak a brief prompt to open the voice turn
       Speech.speak('I am listening. What would you like to post or update?', {
         onDone: () => {
           setAiState('listening');
@@ -183,14 +183,12 @@ export default function AICopilotScreen() {
 
     setPublishing(true);
     try {
-      // 1. Create scheduled post
       const pubRes = await publishPost({
         platform: 'linkedin',
         content_text: activeBrief.content_text,
         connected_account_id: linkedin.id,
       });
 
-      // 2. Publish immediately to live LinkedIn feed
       await publishNow(pubRes.post_id);
 
       Alert.alert(
@@ -211,39 +209,43 @@ export default function AICopilotScreen() {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Sleek Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.headerEyebrow}>DEXTER COPILOT</Text>
-            <Text style={styles.headerTitle}>AI Assistant</Text>
-          </View>
-          <View style={styles.headerActions}>
-            <Pressable
-              style={[styles.audioToggleBtn, isAutoSpeak && styles.audioToggleActive]}
-              onPress={() => {
-                if (aiState === 'speaking') Speech.stop();
-                setIsAutoSpeak(!isAutoSpeak);
-              }}
-            >
-              <Ionicons
-                name={isAutoSpeak ? 'volume-high' : 'volume-mute-outline'}
-                size={18}
-                color={isAutoSpeak ? '#4F46E5' : '#94A3B8'}
-              />
-            </Pressable>
-            <View style={styles.statusPill}>
-              <View style={[styles.statusDot, aiState !== 'idle' && styles.statusDotActive]} />
-              <Text style={styles.statusText}>
-                {aiState === 'listening'
-                  ? 'Listening…'
-                  : aiState === 'thinking'
-                  ? 'Thinking…'
-                  : aiState === 'speaking'
-                  ? 'Speaking…'
-                  : 'Ready'}
-              </Text>
+        {/* Header */}
+        <View style={styles.headerOuter}>
+          <BlurView intensity={60} tint="dark" style={styles.headerBlur}>
+            <View style={styles.header}>
+              <View>
+                <Text style={styles.headerEyebrow}>DEXTER COPILOT</Text>
+                <Text style={styles.headerTitle}>AI Assistant</Text>
+              </View>
+              <View style={styles.headerActions}>
+                <Pressable
+                  style={[styles.audioToggleBtn, isAutoSpeak && styles.audioToggleActive]}
+                  onPress={() => {
+                    if (aiState === 'speaking') Speech.stop();
+                    setIsAutoSpeak(!isAutoSpeak);
+                  }}
+                >
+                  <Ionicons
+                    name={isAutoSpeak ? 'volume-high' : 'volume-mute-outline'}
+                    size={18}
+                    color={isAutoSpeak ? colors.primary : colors.labelTertiary}
+                  />
+                </Pressable>
+                <View style={styles.statusPill}>
+                  <View style={[styles.statusDot, aiState !== 'idle' && styles.statusDotActive]} />
+                  <Text style={styles.statusText}>
+                    {aiState === 'listening'
+                      ? 'Listening…'
+                      : aiState === 'thinking'
+                      ? 'Thinking…'
+                      : aiState === 'speaking'
+                      ? 'Speaking…'
+                      : 'Ready'}
+                  </Text>
+                </View>
+              </View>
             </View>
-          </View>
+          </BlurView>
         </View>
 
         {/* Chat History */}
@@ -265,7 +267,7 @@ export default function AICopilotScreen() {
               >
                 {!isUser && (
                   <View style={styles.assistantAvatar}>
-                    <Ionicons name="sparkles" size={14} color="#4F46E5" />
+                    <Ionicons name="sparkles" size={14} color={colors.primary} />
                   </View>
                 )}
                 <View
@@ -295,7 +297,7 @@ export default function AICopilotScreen() {
                       hitSlop={8}
                       onPress={() => speakText(m.content)}
                     >
-                      <Ionicons name="volume-medium-outline" size={15} color="#6366F1" />
+                      <Ionicons name="volume-medium-outline" size={15} color={colors.primary} />
                     </Pressable>
                   )}
                 </View>
@@ -305,26 +307,30 @@ export default function AICopilotScreen() {
 
           {/* Active Post Draft Card */}
           {activeBrief && (
-            <View style={styles.briefCard}>
-              <View style={styles.briefHeader}>
-                <Ionicons name="logo-linkedin" size={18} color="#0A66C2" />
-                <Text style={styles.briefTitle}>Generated LinkedIn Post Draft</Text>
-              </View>
-              <Text style={styles.briefBody}>{activeBrief.content_text}</Text>
-              <Pressable
-                style={styles.briefPublishBtn}
-                onPress={handlePublishBrief}
-                disabled={publishing}
-              >
-                {publishing ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <>
-                    <Ionicons name="paper-plane" size={16} color="#FFFFFF" />
-                    <Text style={styles.briefPublishBtnText}>Publish to LinkedIn Now</Text>
-                  </>
-                )}
-              </Pressable>
+            <View style={styles.briefCardOuter}>
+              <BlurView intensity={20} tint="dark" style={styles.briefCardBlur}>
+                <View style={styles.briefCardContent}>
+                  <View style={styles.briefHeader}>
+                    <Ionicons name="logo-linkedin" size={18} color="#0A66C2" />
+                    <Text style={styles.briefTitle}>Generated LinkedIn Post Draft</Text>
+                  </View>
+                  <Text style={styles.briefBody}>{activeBrief.content_text}</Text>
+                  <Pressable
+                    style={styles.briefPublishBtn}
+                    onPress={handlePublishBrief}
+                    disabled={publishing}
+                  >
+                    {publishing ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <>
+                        <Ionicons name="paper-plane" size={16} color="#FFFFFF" />
+                        <Text style={styles.briefPublishBtnText}>Publish to LinkedIn Now</Text>
+                      </>
+                    )}
+                  </Pressable>
+                </View>
+              </BlurView>
             </View>
           )}
         </ScrollView>
@@ -341,7 +347,7 @@ export default function AICopilotScreen() {
               style={styles.removeAttachedBtn}
               onPress={() => setAttachedImage(null)}
             >
-              <Ionicons name="close-circle" size={20} color="#EF4444" />
+              <Ionicons name="close-circle" size={20} color={colors.negative} />
             </Pressable>
           </View>
         )}
@@ -365,36 +371,40 @@ export default function AICopilotScreen() {
         </ScrollView>
 
         {/* Input Bar */}
-        <View style={styles.inputBar}>
-          <Pressable style={styles.attachmentBtn} onPress={handlePickImage}>
-            <Ionicons name="image-outline" size={20} color="#6366F1" />
-          </Pressable>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Ask Dexter to draft, edit, or schedule…"
-            placeholderTextColor={colors.textMuted}
-            value={inputText}
-            onChangeText={setInputText}
-            onSubmitEditing={() => handleSend()}
-            returnKeyType="send"
-          />
-          <Pressable
-            style={[styles.actionBtn, (isVoiceActive || aiState === 'speaking') && styles.actionBtnActive]}
-            onPress={handleVoiceToggle}
-          >
-            <Ionicons
-              name={aiState === 'speaking' ? 'volume-high' : isVoiceActive ? 'mic' : 'mic-outline'}
-              size={20}
-              color={(isVoiceActive || aiState === 'speaking') ? '#FFFFFF' : colors.primary}
-            />
-          </Pressable>
-          <Pressable
-            style={[styles.sendBtn, (!inputText.trim() && !attachedImage) && styles.sendBtnDisabled]}
-            onPress={() => handleSend()}
-            disabled={!inputText.trim() && !attachedImage}
-          >
-            <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
-          </Pressable>
+        <View style={styles.inputBarOuter}>
+          <BlurView intensity={60} tint="dark" style={styles.inputBarBlur}>
+            <View style={styles.inputBar}>
+              <Pressable style={styles.attachmentBtn} onPress={handlePickImage}>
+                <Ionicons name="image-outline" size={20} color={colors.primary} />
+              </Pressable>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Ask Dexter to draft, edit, or schedule…"
+                placeholderTextColor={colors.labelTertiary}
+                value={inputText}
+                onChangeText={setInputText}
+                onSubmitEditing={() => handleSend()}
+                returnKeyType="send"
+              />
+              <Pressable
+                style={[styles.actionBtn, (isVoiceActive || aiState === 'speaking') && styles.actionBtnActive]}
+                onPress={handleVoiceToggle}
+              >
+                <Ionicons
+                  name={aiState === 'speaking' ? 'volume-high' : isVoiceActive ? 'mic' : 'mic-outline'}
+                  size={20}
+                  color={(isVoiceActive || aiState === 'speaking') ? '#FFFFFF' : colors.primary}
+                />
+              </Pressable>
+              <Pressable
+                style={[styles.sendBtn, (!inputText.trim() && !attachedImage) && styles.sendBtnDisabled]}
+                onPress={() => handleSend()}
+                disabled={!inputText.trim() && !attachedImage}
+              >
+                <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+              </Pressable>
+            </View>
+          </BlurView>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -402,28 +412,28 @@ export default function AICopilotScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F8F9FD' },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1 },
+
+  headerOuter: { borderBottomWidth: 0.5, borderBottomColor: colors.separator },
+  headerBlur: {},
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEF2F6',
   },
   headerEyebrow: {
-    fontFamily: fonts.semibold,
     fontSize: 11,
-    color: '#6366F1',
+    color: colors.primary,
+    fontWeight: '600',
     letterSpacing: 0.5,
   },
   headerTitle: {
-    fontFamily: fonts.bold,
     fontSize: 20,
-    color: '#1E293B',
+    fontWeight: '700',
+    color: colors.labelPrimary,
   },
   headerActions: {
     flexDirection: 'row',
@@ -434,28 +444,30 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.glass,
     alignItems: 'center',
     justifyContent: 'center',
   },
   audioToggleActive: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: colors.primarySurface,
   },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: colors.glass,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.glassBorderLight,
   },
-  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#10B981' },
-  statusDotActive: { backgroundColor: '#6366F1' },
-  statusText: { fontFamily: fonts.medium, fontSize: 12, color: '#4F46E5' },
+  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.positive },
+  statusDotActive: { backgroundColor: colors.primary },
+  statusText: { fontSize: 12, color: colors.primary, fontWeight: '500' },
 
   chatScroll: { flex: 1 },
-  chatContent: { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg },
+  chatContent: { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg, paddingBottom: 20 },
   messageBubbleWrap: {
     flexDirection: 'row',
     marginVertical: 6,
@@ -467,7 +479,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: colors.primarySurface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
@@ -478,14 +490,14 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   userBubble: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: colors.primary,
     borderBottomRightRadius: 4,
   },
   assistantBubble: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.glassHeavy,
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.glassBorder,
   },
   bubbleAttachedImage: {
     width: 200,
@@ -498,22 +510,22 @@ const styles = StyleSheet.create({
     marginTop: 4,
     paddingTop: 2,
   },
-  messageText: { fontSize: 14, lineHeight: 21 },
-  userMessageText: { color: '#FFFFFF', fontFamily: fonts.regular },
-  assistantMessageText: { color: '#1E293B', fontFamily: fonts.regular },
+  messageText: { fontSize: 15, lineHeight: 21 },
+  userMessageText: { color: '#FFFFFF' },
+  assistantMessageText: { color: colors.labelPrimary },
 
-  briefCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    marginTop: spacing.sm,
+  briefCardOuter: {
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    ...shadows.subtle,
+    borderColor: colors.glassBorder,
+    overflow: 'hidden',
+    marginTop: spacing.sm,
   },
+  briefCardBlur: { overflow: 'hidden' },
+  briefCardContent: { padding: spacing.md },
   briefHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  briefTitle: { fontFamily: fonts.semibold, fontSize: 13, color: '#1E293B' },
-  briefBody: { fontFamily: fonts.regular, fontSize: 13, color: '#334155', lineHeight: 19 },
+  briefTitle: { fontSize: 13, color: colors.labelPrimary, fontWeight: '600' },
+  briefBody: { fontSize: 13, color: colors.labelSecondary, lineHeight: 19 },
   briefPublishBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -521,17 +533,17 @@ const styles = StyleSheet.create({
     gap: 6,
     backgroundColor: '#0A66C2',
     paddingVertical: 10,
-    borderRadius: radii.pill,
+    borderRadius: radii.md,
     marginTop: 12,
   },
-  briefPublishBtnText: { fontFamily: fonts.bold, fontSize: 13, color: '#FFFFFF' },
+  briefPublishBtnText: { fontSize: 13, color: '#FFFFFF', fontWeight: '700' },
 
   attachedPreviewRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.glassBorder,
     borderRadius: radii.md,
     marginHorizontal: spacing.lg,
     padding: 8,
@@ -544,71 +556,70 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
   },
   attachedTextWrap: { flex: 1 },
-  attachedTitle: { fontFamily: fonts.semibold, fontSize: 12, color: '#1E293B' },
-  attachedSub: { fontFamily: fonts.regular, fontSize: 11, color: '#64748B' },
+  attachedTitle: { fontSize: 12, color: colors.labelPrimary, fontWeight: '600' },
+  attachedSub: { fontSize: 11, color: colors.labelSecondary },
   removeAttachedBtn: { padding: 4 },
 
   suggestionScroll: { maxHeight: 42, marginVertical: 4 },
   suggestionContent: { paddingHorizontal: spacing.lg, gap: 8 },
   suggestionChip: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.glass,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.glassBorder,
   },
-  suggestionText: { fontFamily: fonts.medium, fontSize: 12, color: '#475569' },
+  suggestionText: { fontSize: 12, color: colors.labelSecondary, fontWeight: '500' },
 
+  inputBarOuter: { borderTopWidth: 0.5, borderTopColor: colors.separator },
+  inputBarBlur: {},
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
     gap: 8,
   },
   attachmentBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: colors.primarySurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   textInput: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.glass,
     borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.glassBorderLight,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 14,
-    fontFamily: fonts.regular,
-    color: '#0F172A',
+    color: colors.labelPrimary,
   },
   actionBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: colors.primarySurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionBtnActive: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: colors.primary,
   },
   sendBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#4F46E5',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendBtnDisabled: {
-    backgroundColor: '#CBD5E1',
+    backgroundColor: colors.backgroundTertiary,
   },
 });
-

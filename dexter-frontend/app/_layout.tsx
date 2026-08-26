@@ -1,31 +1,31 @@
-import { Stack } from 'expo-router';
-import {
-  useFonts,
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-} from '@expo-google-fonts/inter';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { useEffect } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { useAuthStore } from '../src/api/client';
+import '../global.css';
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-  });
+  const router = useRouter();
+  const segments = useSegments();
+  const accessToken = useAuthStore((s) => s.accessToken);
 
-  if (!fontsLoaded) {
-    return null;
-  }
+  useEffect(() => {
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!accessToken && !inAuthGroup) {
+      // Not authenticated and not on auth screen → redirect to login
+      router.replace('/(auth)/login');
+    }
+  }, [accessToken, segments]);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(onboarding)" />
-      <Stack.Screen name="(dashboard)" />
-    </Stack>
+    <>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(onboarding)" />
+        <Stack.Screen name="(dashboard)" />
+      </Stack>
+    </>
   );
 }

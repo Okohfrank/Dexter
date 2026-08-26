@@ -12,10 +12,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { generateContentStrategy, FALLBACK_STRATEGY } from '../../src/api/strategy';
-import { Card, Pill } from '../../src/components/ui';
+import { GlassCard, GlassPill } from '../../src/components/ui';
 import type { ContentPlan } from '../../src/types';
 
 export default function StrategyReviewScreen() {
@@ -80,14 +80,14 @@ export default function StrategyReviewScreen() {
         </View>
 
         {loading ? (
-          <Card style={styles.loadingCard}>
+          <GlassCard style={styles.loadingCard}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingText}>Dexter is optimizing your posting strategy…</Text>
-          </Card>
+          </GlassCard>
         ) : (
           <>
             {/* Frequency Card */}
-            <Card style={styles.card} elevated>
+            <GlassCard style={styles.card} elevated>
               <View style={styles.cardHeader}>
                 <Ionicons name="calendar-outline" size={18} color={colors.primary} />
                 <Text style={styles.cardLabel}>Posting Frequency</Text>
@@ -97,7 +97,7 @@ export default function StrategyReviewScreen() {
                   style={styles.stepBtn}
                   onPress={() => setFrequency((f) => Math.max(1, f - 1))}
                 >
-                  <Ionicons name="remove" size={18} color={colors.textPrimary} />
+                  <Ionicons name="remove" size={18} color={colors.labelPrimary} />
                 </Pressable>
                 <View style={styles.stepValueWrap}>
                   <Text style={styles.stepValueNumber}>{frequency}</Text>
@@ -107,13 +107,13 @@ export default function StrategyReviewScreen() {
                   style={styles.stepBtn}
                   onPress={() => setFrequency((f) => Math.min(21, f + 1))}
                 >
-                  <Ionicons name="add" size={18} color={colors.textPrimary} />
+                  <Ionicons name="add" size={18} color={colors.labelPrimary} />
                 </Pressable>
               </View>
-            </Card>
+            </GlassCard>
 
             {/* Content Pillars Card */}
-            <Card style={styles.card}>
+            <GlassCard style={styles.card}>
               <View style={styles.cardHeader}>
                 <Ionicons name="layers-outline" size={18} color={colors.primary} />
                 <Text style={styles.cardLabel}>Content Pillars</Text>
@@ -128,17 +128,17 @@ export default function StrategyReviewScreen() {
                   </View>
                 ))}
               </View>
-            </Card>
+            </GlassCard>
 
             {/* Best Times & Reasoning Card */}
-            <Card style={styles.card}>
+            <GlassCard style={styles.card}>
               <View style={styles.cardHeader}>
                 <Ionicons name="time-outline" size={18} color={colors.primary} />
                 <Text style={styles.cardLabel}>Target Windows & Rationale</Text>
               </View>
               <View style={styles.timesRow}>
                 {plan.bestTimes.map((time, idx) => (
-                  <Pill key={idx} label={time} variant="primary" icon="time-outline" />
+                  <GlassPill key={idx} label={time} variant="primary" icon="time-outline" />
                 ))}
               </View>
               <View style={styles.reasonBox}>
@@ -146,10 +146,10 @@ export default function StrategyReviewScreen() {
                   Why: Mid-morning slots (8:30–10:15 AM) yield the highest initial impression velocity and comment rate for executive audiences.
                 </Text>
               </View>
-            </Card>
+            </GlassCard>
 
             {/* Autonomous Mode Hand-Off Card */}
-            <Card style={styles.autonomyCard} elevated highlighted>
+            <GlassCard style={styles.autonomyCard} elevated highlighted>
               <View style={styles.autonomyHeader}>
                 <View style={styles.autonomyIconWrap}>
                   <Ionicons name="rocket" size={24} color="#FFFFFF" />
@@ -163,11 +163,12 @@ export default function StrategyReviewScreen() {
                 <Switch
                   value={enabled}
                   onValueChange={handleToggle}
-                  trackColor={{ false: colors.border, true: colors.primary }}
+                  trackColor={{ false: colors.backgroundTertiary, true: colors.primary }}
                   thumbColor="#FFFFFF"
+                  ios_backgroundColor={colors.backgroundTertiary}
                 />
               </View>
-            </Card>
+            </GlassCard>
           </>
         )}
 
@@ -184,14 +185,14 @@ const styles = StyleSheet.create({
   scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxl },
   header: { gap: spacing.xs },
   eyebrow: {
-    ...typography.caption,
+    ...typography.caption2,
     color: colors.primary,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     fontWeight: '700',
   },
-  title: { ...typography.display, color: colors.textPrimary },
-  subtitle: { ...typography.body, color: colors.textSecondary },
+  title: { ...typography.display, color: colors.labelPrimary },
+  subtitle: { ...typography.body, color: colors.labelSecondary },
   loadingCard: {
     padding: spacing.xxxl,
     alignItems: 'center',
@@ -201,41 +202,41 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...typography.caption,
-    color: colors.textSecondary,
+    color: colors.labelSecondary,
     textAlign: 'center',
   },
   card: { gap: spacing.md },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  cardLabel: { ...typography.subheading, color: colors.textPrimary, fontWeight: '700' },
+  cardLabel: { ...typography.subheading, color: colors.labelPrimary, fontWeight: '700' },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.glass,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     padding: spacing.xs,
   },
   stepBtn: {
     width: 44,
     height: 44,
     borderRadius: radii.pill,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepValueWrap: { alignItems: 'center' },
   stepValueNumber: {
-    fontFamily: fonts.bold,
     fontSize: 22,
-    color: colors.textPrimary,
+    fontWeight: '700',
+    color: colors.labelPrimary,
   },
   stepValueUnit: {
-    ...typography.caption,
-    color: colors.textSecondary,
+    ...typography.caption2,
+    color: colors.labelSecondary,
     fontSize: 11,
   },
   pillarList: { gap: spacing.sm },
@@ -250,18 +251,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pillarText: { ...typography.body, color: colors.textPrimary, flex: 1, fontSize: 14 },
+  pillarText: { ...typography.body, color: colors.labelPrimary, flex: 1, fontSize: 14 },
   timesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   reasonBox: {
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.glass,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     padding: spacing.md,
   },
   reasonText: {
     ...typography.caption,
-    color: colors.textSecondary,
+    color: colors.labelSecondary,
     lineHeight: 18,
     fontStyle: 'italic',
   },
@@ -284,11 +285,11 @@ const styles = StyleSheet.create({
     ...shadows.primaryBtn,
   },
   autonomyBody: { flex: 1 },
-  autonomyTitle: { ...typography.subheading, color: colors.textPrimary, fontWeight: '700' },
-  autonomySubtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  autonomyTitle: { ...typography.subheading, color: colors.labelPrimary, fontWeight: '700' },
+  autonomySubtitle: { ...typography.caption2, color: colors.labelSecondary, marginTop: 2 },
   hint: {
-    ...typography.caption,
-    color: colors.textMuted,
+    ...typography.caption2,
+    color: colors.labelTertiary,
     textAlign: 'center',
     paddingHorizontal: spacing.lg,
   },

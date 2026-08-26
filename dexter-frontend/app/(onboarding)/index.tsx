@@ -1,25 +1,56 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, Pressable, StyleSheet, ScrollView, TextInput, Alert, ActivityIndicator,
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { createBusiness, listBusinesses } from '../../src/api/business';
 import { getLinkedInAuthorizationUrl } from '../../src/api/auth';
-import { listConnectedAccounts, mockConnectAccount } from '../../src/api/oauth';
+import { listConnectedAccounts } from '../../src/api/oauth';
 import { useAppStore } from '../../src/store/app';
-import { Card, Pill } from '../../src/components/ui';
+import { GlassCard, GlassPill } from '../../src/components/ui';
 import type { Platform } from '../../src/types';
 
-type PlatformCard = { platform: Platform; title: string; icon: keyof typeof Ionicons.glyphMap; available: boolean; blurb: string };
+type PlatformCard = {
+  platform: Platform;
+  title: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  available: boolean;
+  blurb: string;
+};
 
 const PLATFORMS: PlatformCard[] = [
-  { platform: 'linkedin', title: 'LinkedIn', icon: 'logo-linkedin', available: true, blurb: 'Executive network. Dexter posts thought-leadership and industry frameworks.' },
-  { platform: 'instagram', title: 'Instagram', icon: 'logo-instagram', available: false, blurb: 'Visual brand storytelling & carousels. Adapter in progress.' },
-  { platform: 'tiktok', title: 'TikTok', icon: 'musical-notes-outline', available: false, blurb: 'Short-form high-velocity video clips. Adapter in progress.' },
+  {
+    platform: 'linkedin',
+    title: 'LinkedIn',
+    icon: 'logo-linkedin',
+    available: true,
+    blurb: 'Executive network. Dexter posts thought-leadership and industry frameworks.',
+  },
+  {
+    platform: 'instagram',
+    title: 'Instagram',
+    icon: 'logo-instagram',
+    available: false,
+    blurb: 'Visual brand storytelling & carousels. Adapter in progress.',
+  },
+  {
+    platform: 'tiktok',
+    title: 'TikTok',
+    icon: 'musical-notes-outline',
+    available: false,
+    blurb: 'Short-form high-velocity video clips. Adapter in progress.',
+  },
 ];
 
 export default function ConnectScreen() {
@@ -42,7 +73,10 @@ export default function ConnectScreen() {
           const accounts = await listConnectedAccounts(list[0].id);
           setConnectedAccounts(accounts);
         }
-      } catch {} finally { setLoading(false); }
+      } catch {
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [setBusiness, setConnectedAccounts]);
 
@@ -86,7 +120,10 @@ export default function ConnectScreen() {
       const accs = await refreshAccounts(biz.id);
       const liveAccount = accs.find((a) => a.platform === 'linkedin');
       if (liveAccount) {
-        Alert.alert('LinkedIn Connected!', `Successfully authenticated as ${liveAccount.display_name || 'LinkedIn User'}. Dexter is now authorized to create and manage posts.`);
+        Alert.alert(
+          'LinkedIn Connected!',
+          `Successfully authenticated as ${liveAccount.display_name || 'LinkedIn User'}. Dexter is now authorized to create and manage posts.`,
+        );
       } else {
         Alert.alert(
           'Authorization Note',
@@ -100,12 +137,8 @@ export default function ConnectScreen() {
     }
   };
 
-  const handleConnect = () => {
-    handleConnectLive();
-  };
-
   const linkedinAccount = connectedAccounts.find((a) => a.platform === 'linkedin');
-  const linkedinConnected = !!linkedinAccount;
+  const linkedinConnected = !linkedinAccount;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -113,7 +146,9 @@ export default function ConnectScreen() {
         <View style={styles.header}>
           <Text style={styles.eyebrow}>Step 1 of 5</Text>
           <Text style={styles.title}>Connect your channels</Text>
-          <Text style={styles.subtitle}>Dexter operates as your autonomous brand agent and publishes on your behalf.</Text>
+          <Text style={styles.subtitle}>
+            Dexter operates as your autonomous brand agent and publishes on your behalf.
+          </Text>
         </View>
 
         <View style={styles.field}>
@@ -121,7 +156,7 @@ export default function ConnectScreen() {
           <TextInput
             style={styles.input}
             placeholder="e.g. Acme SaaS Studio"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.labelTertiary}
             value={businessName}
             onChangeText={setBusinessName}
           />
@@ -133,28 +168,81 @@ export default function ConnectScreen() {
             const isConnected = card.available && !!account;
             const tokenExpired = card.available && account?.token_status === 'expired';
             return (
-              <Card key={card.platform} style={[styles.card, !card.available && styles.cardDisabled]} elevated={isConnected}>
-                <View style={[styles.cardIcon, isConnected && !tokenExpired && styles.cardIconConnected, tokenExpired && styles.cardIconWarning]}>
-                  <Ionicons name={tokenExpired ? 'warning' : isConnected ? 'checkmark-circle' : card.icon} size={22} color={tokenExpired ? colors.negative : isConnected ? colors.positive : colors.primary} />
+              <GlassCard
+                key={card.platform}
+                style={[styles.card, !card.available && styles.cardDisabled]}
+                elevated={isConnected}
+                highlighted={isConnected}
+              >
+                <View
+                  style={[
+                    styles.cardIcon,
+                    isConnected && !tokenExpired && styles.cardIconConnected,
+                    tokenExpired && styles.cardIconWarning,
+                  ]}
+                >
+                  <Ionicons
+                    name={tokenExpired ? 'warning' : isConnected ? 'checkmark-circle' : card.icon}
+                    size={22}
+                    color={
+                      tokenExpired
+                        ? colors.negative
+                        : isConnected
+                        ? colors.positive
+                        : card.platform === 'linkedin'
+                        ? '#0A66C2'
+                        : colors.primary
+                    }
+                  />
                 </View>
                 <View style={styles.cardBody}>
                   <View style={styles.cardTitleRow}>
                     <Text style={styles.cardTitle}>{card.title}</Text>
-                    {isConnected && <Pill label={account?.display_name ? `CONNECTED: ${account.display_name.split(' ')[0]}` : 'CONNECTED'} variant="positive" />}
+                    {isConnected && (
+                      <GlassPill
+                        label={
+                          account?.display_name
+                            ? `CONNECTED: ${account.display_name.split(' ')[0]}`
+                            : 'CONNECTED'
+                        }
+                        variant="positive"
+                      />
+                    )}
                   </View>
                   <Text style={styles.cardSubtitle}>{card.blurb}</Text>
-                  {tokenExpired && <Text style={styles.expiredText}>Token expired — reconnect to resume autonomous posting.</Text>}
+                  {tokenExpired && (
+                    <Text style={styles.expiredText}>
+                      Token expired — reconnect to resume autonomous posting.
+                    </Text>
+                  )}
                 </View>
                 {card.available ? (
-                  <Pressable style={[styles.connectBtn, isConnected && !tokenExpired && styles.connectedBtn, tokenExpired && styles.reconnectBtn]} onPress={handleConnect} disabled={connecting}>
-                    {connecting ? <ActivityIndicator size="small" color="#FFFFFF" /> : (
-                      <Text style={[styles.connectBtnText, isConnected && !tokenExpired && styles.connectedBtnText]}>
+                  <Pressable
+                    style={[
+                      styles.connectBtn,
+                      isConnected && !tokenExpired && styles.connectedBtn,
+                      tokenExpired && styles.reconnectBtn,
+                    ]}
+                    onPress={handleConnectLive}
+                    disabled={connecting}
+                  >
+                    {connecting ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text
+                        style={[
+                          styles.connectBtnText,
+                          isConnected && !tokenExpired && styles.connectedBtnText,
+                        ]}
+                      >
                         {tokenExpired ? 'Reconnect' : isConnected ? 'Manage' : 'Connect'}
                       </Text>
                     )}
                   </Pressable>
-                ) : <Pill label="SOON" variant="default" />}
-              </Card>
+                ) : (
+                  <GlassPill label="SOON" variant="default" />
+                )}
+              </GlassCard>
             );
           })}
         </View>
@@ -162,10 +250,14 @@ export default function ConnectScreen() {
         {linkedinConnected ? (
           <View style={styles.successNoteWrap}>
             <Ionicons name="shield-checkmark" size={16} color={colors.positive} />
-            <Text style={styles.successNoteText}>LinkedIn channel is authenticated & ready for autonomous posting.</Text>
+            <Text style={styles.successNoteText}>
+              LinkedIn channel is authenticated & ready for autonomous posting.
+            </Text>
           </View>
         ) : (
-          <Text style={styles.hint}>You can also connect later from Dashboard Settings if you prefer to proceed first.</Text>
+          <Text style={styles.hint}>
+            You can also connect later from Dashboard Settings if you prefer to proceed first.
+          </Text>
         )}
 
         <Pressable
@@ -187,41 +279,115 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxxl },
   header: { gap: spacing.xs },
-  eyebrow: { ...typography.caption, color: colors.primary, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: '700' },
-  title: { ...typography.display, color: colors.textPrimary },
-  subtitle: { ...typography.body, color: colors.textSecondary },
+  eyebrow: {
+    ...typography.caption2,
+    color: colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    fontWeight: '700',
+  },
+  title: { ...typography.display, color: colors.labelPrimary },
+  subtitle: { ...typography.body, color: colors.labelSecondary },
   field: { marginTop: spacing.xs },
-  label: { ...typography.subheading, color: colors.textPrimary, marginBottom: spacing.sm },
+  label: {
+    ...typography.caption,
+    color: colors.labelSecondary,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.sm,
+  },
   input: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
-    color: colors.textPrimary,
+    color: colors.labelPrimary,
     fontSize: 15,
-    fontFamily: fonts.regular,
   },
   platformList: { gap: spacing.md },
-  card: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.lg,
+  },
   cardDisabled: { opacity: 0.5 },
-  cardIcon: { width: 44, height: 44, borderRadius: radii.pill, backgroundColor: colors.primarySurface, borderWidth: 1, borderColor: colors.primaryBorder, alignItems: 'center', justifyContent: 'center' },
-  cardIconConnected: { backgroundColor: colors.positiveSurface, borderColor: colors.positiveBorder },
-  cardIconWarning: { backgroundColor: colors.negativeSurface, borderColor: colors.negativeBorder },
+  cardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.pill,
+    backgroundColor: colors.glass,
+    borderWidth: 1,
+    borderColor: colors.glassBorderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardIconConnected: {
+    backgroundColor: colors.positiveSurface,
+    borderColor: colors.positiveBorder,
+  },
+  cardIconWarning: {
+    backgroundColor: colors.negativeSurface,
+    borderColor: colors.negativeBorder,
+  },
   cardBody: { flex: 1 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  cardTitle: { ...typography.subheading, color: colors.textPrimary, fontWeight: '700' },
-  cardSubtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2, fontSize: 12 },
-  expiredText: { ...typography.caption, color: colors.negative, marginTop: 4, fontWeight: '600' },
-  connectBtn: { backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, minWidth: 84, alignItems: 'center', ...shadows.primaryBtn },
-  connectedBtn: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.positiveBorder, elevation: 0, shadowOpacity: 0 },
+  cardTitle: { ...typography.subheading, color: colors.labelPrimary, fontWeight: '700' },
+  cardSubtitle: {
+    ...typography.caption2,
+    color: colors.labelSecondary,
+    marginTop: 2,
+  },
+  expiredText: { ...typography.caption2, color: colors.negative, marginTop: 4, fontWeight: '600' },
+  connectBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    minWidth: 84,
+    alignItems: 'center',
+    ...shadows.primaryBtn,
+  },
+  connectedBtn: {
+    backgroundColor: colors.glass,
+    borderWidth: 1,
+    borderColor: colors.positiveBorder,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
   connectBtnText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
   connectedBtnText: { color: colors.positive },
   reconnectBtn: { backgroundColor: colors.negative },
-  successNoteWrap: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.positiveSurface, padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.positiveBorder },
-  successNoteText: { ...typography.caption, color: colors.positive, fontWeight: '600', flex: 1 },
-  hint: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
-  continueBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: colors.primary, borderRadius: radii.pill, paddingVertical: 14, marginTop: spacing.md, ...shadows.primaryBtn },
-  continueText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', fontFamily: fonts.bold },
+  successNoteWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.positiveSurface,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.positiveBorder,
+  },
+  successNoteText: {
+    ...typography.caption,
+    color: colors.positive,
+    fontWeight: '600',
+    flex: 1,
+  },
+  hint: { ...typography.caption, color: colors.labelTertiary, textAlign: 'center' },
+  continueBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    borderRadius: radii.md,
+    paddingVertical: 15,
+    marginTop: spacing.md,
+    ...shadows.primaryBtn,
+  },
+  continueText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });

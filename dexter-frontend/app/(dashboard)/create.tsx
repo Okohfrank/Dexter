@@ -12,13 +12,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { generateNextPost } from '../../src/api/strategy';
 import { listBusinesses, createBusiness } from '../../src/api/business';
 import { listConnectedAccounts, mockConnectAccount } from '../../src/api/oauth';
 import { publishNow } from '../../src/api/publishing';
-import { Card, Pill } from '../../src/components/ui';
+import { GlassCard, GlassPill } from '../../src/components/ui';
 
 export default function CreateScreen() {
   const router = useRouter();
@@ -104,7 +104,7 @@ export default function CreateScreen() {
         </View>
 
         {/* Topic Input */}
-        <Card style={styles.topicCard} elevated>
+        <GlassCard style={styles.topicCard} elevated>
           <View style={styles.sectionHeader}>
             <Ionicons name="sparkles" size={18} color={colors.primary} />
             <Text style={styles.sectionTitle}>Custom Topic or Angle (Optional)</Text>
@@ -112,15 +112,15 @@ export default function CreateScreen() {
           <TextInput
             style={styles.topicInput}
             placeholder="e.g. 'Why founders should build in public in 2026' or leave empty for AI-chosen topic…"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.labelTertiary}
             value={topic}
             onChangeText={setTopic}
             multiline
           />
-        </Card>
+        </GlassCard>
 
         {/* Content Pillars */}
-        <Card style={styles.pillarsCard}>
+        <GlassCard style={styles.pillarsCard}>
           <View style={styles.sectionHeader}>
             <Ionicons name="layers-outline" size={18} color={colors.primary} />
             <Text style={styles.sectionTitle}>Active Content Pillars</Text>
@@ -128,12 +128,12 @@ export default function CreateScreen() {
           <View style={styles.pillarChips}>
             {pillars.map((p, i) => (
               <Pressable key={i} onPress={() => setTopic(p)}>
-                <Pill label={p} variant="primary" />
+                <GlassPill label={p} variant="primary" />
               </Pressable>
             ))}
           </View>
           <Text style={styles.hintText}>Tap any pillar to apply as the prompt</Text>
-        </Card>
+        </GlassCard>
 
         {/* Generate Button */}
         <Pressable
@@ -153,7 +153,7 @@ export default function CreateScreen() {
 
         {/* Generated Result Card */}
         {result && (
-          <Card style={styles.resultCard} elevated highlighted>
+          <GlassCard style={styles.resultCard} elevated highlighted>
             <View style={styles.sectionHeader}>
               <Ionicons name="checkmark-circle" size={20} color={colors.positive} />
               <Text style={styles.sectionTitle}>Post Drafted & Scheduled</Text>
@@ -187,7 +187,7 @@ export default function CreateScreen() {
                 <Text style={styles.viewFeedText}>View in Upcoming Feed</Text>
               </Pressable>
             </View>
-          </Card>
+          </GlassCard>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -196,31 +196,30 @@ export default function CreateScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxxl },
+  scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxxl + 60 },
   header: { gap: spacing.xs },
-  title: { ...typography.display, color: colors.textPrimary },
-  subtitle: { ...typography.body, color: colors.textSecondary },
+  title: { ...typography.display, color: colors.labelPrimary },
+  subtitle: { ...typography.callout, color: colors.labelSecondary },
 
   topicCard: { gap: spacing.md },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  sectionTitle: { ...typography.subheading, color: colors.textPrimary, fontWeight: '700' },
+  sectionTitle: { ...typography.subheading, color: colors.labelPrimary, fontWeight: '700' },
   topicInput: {
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.glass,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontFamily: fonts.regular,
+    color: colors.labelPrimary,
+    fontSize: 15,
     minHeight: 80,
     textAlignVertical: 'top',
   },
 
   pillarsCard: { gap: spacing.md },
   pillarChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  hintText: { ...typography.caption, color: colors.textMuted, fontStyle: 'italic' },
+  hintText: { ...typography.caption2, color: colors.labelTertiary, fontStyle: 'italic' },
 
   generateBtn: {
     flexDirection: 'row',
@@ -228,7 +227,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     backgroundColor: colors.primary,
-    borderRadius: radii.pill,
+    borderRadius: radii.md,
     paddingVertical: 16,
     ...shadows.primaryBtn,
   },
@@ -236,14 +235,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
-    fontFamily: fonts.bold,
   },
 
-  resultCard: { gap: spacing.md, padding: spacing.xl },
+  resultCard: { gap: spacing.md },
   resultText: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontSize: 14,
+    ...typography.callout,
+    color: colors.labelPrimary,
     lineHeight: 22,
   },
   scheduleRow: {
@@ -266,7 +263,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     backgroundColor: colors.primary,
-    borderRadius: radii.pill,
+    borderRadius: radii.md,
     paddingVertical: 12,
     ...shadows.primaryBtn,
   },
@@ -278,15 +275,15 @@ const styles = StyleSheet.create({
   viewFeedBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radii.pill,
+    backgroundColor: colors.glass,
+    borderRadius: radii.md,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
   viewFeedText: {
-    color: colors.textPrimary,
+    color: colors.labelPrimary,
     fontWeight: '600',
-    fontSize: 13,
+    fontSize: 14,
   },
 });

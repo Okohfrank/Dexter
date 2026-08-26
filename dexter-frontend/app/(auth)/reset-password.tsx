@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { Link, useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import {
   AuthScreen,
   BrandMark,
@@ -57,13 +58,17 @@ export default function ResetPasswordScreen() {
       </View>
 
       {success ? (
-        <View style={styles.successCard}>
-          <Ionicons name="checkmark-circle" size={28} color={colors.positive} />
-          <Text style={styles.successTitle}>Password updated</Text>
-          <Text style={styles.successText}>
-            Your password has been changed successfully. You can now sign in.
-          </Text>
-          <PrimaryButton title="Sign In Now" onPress={() => router.replace('/login')} />
+        <View style={styles.successCardOuter}>
+          <BlurView intensity={25} tint="dark" style={styles.successCardBlur}>
+            <View style={styles.successCardContent}>
+              <Ionicons name="checkmark-circle" size={28} color={colors.positive} />
+              <Text style={styles.successTitle}>Password updated</Text>
+              <Text style={styles.successText}>
+                Your password has been changed successfully. You can now sign in.
+              </Text>
+              <PrimaryButton title="Sign In Now" onPress={() => router.replace('/login')} />
+            </View>
+          </BlurView>
         </View>
       ) : (
         <>
@@ -115,24 +120,29 @@ export default function ResetPasswordScreen() {
 
 const styles = StyleSheet.create({
   header: { marginTop: spacing.xl, marginBottom: spacing.xxl },
-  title: { ...typography.display, color: colors.textPrimary },
+  title: { ...typography.display, color: colors.labelPrimary },
   subtitle: {
     ...typography.body,
-    color: colors.textSecondary,
+    color: colors.labelSecondary,
     marginTop: spacing.sm,
     lineHeight: 22,
   },
-  successCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
+  successCardOuter: {
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
+    overflow: 'hidden',
+  },
+  successCardBlur: {
+    overflow: 'hidden',
+  },
+  successCardContent: {
     padding: spacing.xl,
     alignItems: 'center',
     gap: spacing.sm,
   },
-  successTitle: { ...typography.heading, color: colors.textPrimary, marginTop: 4 },
-  successText: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
+  successTitle: { ...typography.heading, color: colors.labelPrimary, marginTop: 4 },
+  successText: { ...typography.body, color: colors.labelSecondary, textAlign: 'center' },
   footer: {
     alignItems: 'center',
     marginTop: spacing.xxl,

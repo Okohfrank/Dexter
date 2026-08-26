@@ -1,67 +1,96 @@
 /**
- * Dexter Light-First Design System
- * Warm professional palette with clean surfaces, subtle depth,
- * and premium typography. Inspired by Buffer, Hootsuite, Publer.
+ * Dexter — Apple Human Interface Guidelines Design System
+ * Dark-mode-first palette with glassmorphism, system fonts (SF Pro / Roboto),
+ * continuous corner radii, and Apple's 8pt spacing grid.
  */
 
+/* ── Color Palette ────────────────────────────────────── */
 export const colors = {
-  // ── Base Canvas ──
-  background: '#F8F9FB',       // Warm snow-white
-  backgroundAlt: '#F1F3F6',    // Slightly cooler for modals/drawers
+  // ── Apple System Colors ──
+  systemBlue: '#007AFF',
+  systemGreen: '#34C759',
+  systemRed: '#FF3B30',
+  systemOrange: '#FF9500',
+  systemYellow: '#FFCC00',
+  systemPurple: '#AF52DE',
+  systemPink: '#FF2D55',
+  systemTeal: '#5AC8FA',
+  systemIndigo: '#5856D6',
 
-  // ── Card Surfaces ──
-  surface: '#FFFFFF',
-  surfaceAlt: '#F8F9FB',
-  surfacePressed: '#F1F3F6',
-  surfaceHover: '#EEF0F4',
+  // ── Dark Backgrounds ──
+  background: '#000000',
+  backgroundPrimary: '#1C1C1E',
+  backgroundSecondary: '#2C2C2E',
+  backgroundTertiary: '#3A3A3C',
+  backgroundElevated: '#1C1C1E',
 
-  // ── Borders & Dividers ──
-  border: '#E2E8F0',
-  borderLight: '#F1F5F9',
-  borderFocused: '#A5B4FC',
-  divider: '#E2E8F0',
+  // ── Glass Surfaces ──
+  glass: 'rgba(255, 255, 255, 0.08)',
+  glassLight: 'rgba(255, 255, 255, 0.12)',
+  glassHeavy: 'rgba(255, 255, 255, 0.18)',
+  glassBorder: 'rgba(255, 255, 255, 0.15)',
+  glassBorderLight: 'rgba(255, 255, 255, 0.08)',
+  glassBorderFocused: 'rgba(0, 122, 255, 0.50)',
 
-  // ── Primary Brand (Deep Indigo) ──
-  primary: '#4F46E5',
-  primaryDark: '#4338CA',
-  primaryLight: '#818CF8',
-  primarySurface: '#EEF2FF',   // Very light tint for backgrounds
-  primaryBorder: '#C7D2FE',
+  // ── Glass surface presets ──
+  surface: 'rgba(255, 255, 255, 0.08)',
+  surfaceAlt: 'rgba(255, 255, 255, 0.05)',
+  surfacePressed: 'rgba(255, 255, 255, 0.15)',
+  surfaceHover: 'rgba(255, 255, 255, 0.12)',
 
-  // ── Accent (Warm Coral) ──
-  accent: '#F97066',
-  accentSurface: '#FEF2F2',
-  accentBorder: '#FECACA',
+  // ── Labels (Apple's dark-mode text) ──
+  labelPrimary: '#FFFFFF',
+  labelSecondary: 'rgba(235, 235, 245, 0.60)',
+  labelTertiary: 'rgba(235, 235, 245, 0.30)',
+  labelQuaternary: 'rgba(235, 235, 245, 0.18)',
 
-  // ── Secondary (Teal) ──
-  secondary: '#0D9488',
-  secondarySurface: '#F0FDFA',
-  secondaryBorder: '#99F6E4',
+  // ── Backward compatibility aliases ──
+  textPrimary: '#FFFFFF',
+  textSecondary: 'rgba(235, 235, 245, 0.60)',
+  textMuted: 'rgba(235, 235, 245, 0.30)',
+  textInverse: '#000000',
+
+  // ── Separators ──
+  separator: 'rgba(84, 84, 88, 0.65)',
+  separatorOpaque: '#38383A',
+  border: 'rgba(255, 255, 255, 0.15)',
+  borderLight: 'rgba(255, 255, 255, 0.08)',
+  borderFocused: 'rgba(0, 122, 255, 0.50)',
+  divider: 'rgba(84, 84, 88, 0.65)',
 
   // ── Functional Colors ──
-  positive: '#10B981',
-  positiveSurface: '#ECFDF5',
-  positiveBorder: '#A7F3D0',
+  primary: '#007AFF',
+  primaryDark: '#0056CC',
+  primaryLight: '#5AC8FA',
+  primarySurface: 'rgba(0, 122, 255, 0.15)',
+  primaryBorder: 'rgba(0, 122, 255, 0.30)',
 
-  negative: '#EF4444',
-  negativeSurface: '#FEF2F2',
-  negativeBorder: '#FECACA',
+  accent: '#FF9500',
+  accentSurface: 'rgba(255, 149, 0, 0.15)',
+  accentBorder: 'rgba(255, 149, 0, 0.30)',
 
-  warning: '#F59E0B',
-  warningSurface: '#FFFBEB',
-  warningBorder: '#FDE68A',
+  secondary: '#5AC8FA',
+  secondarySurface: 'rgba(90, 200, 250, 0.15)',
+  secondaryBorder: 'rgba(90, 200, 250, 0.30)',
 
-  // ── Typography ──
-  textPrimary: '#1E293B',      // Dark charcoal
-  textSecondary: '#64748B',    // Slate gray
-  textMuted: '#94A3B8',        // Light muted
-  textInverse: '#FFFFFF',
+  positive: '#34C759',
+  positiveSurface: 'rgba(52, 199, 89, 0.15)',
+  positiveBorder: 'rgba(52, 199, 89, 0.30)',
+
+  negative: '#FF3B30',
+  negativeSurface: 'rgba(255, 59, 48, 0.15)',
+  negativeBorder: 'rgba(255, 59, 48, 0.30)',
+
+  warning: '#FF9500',
+  warningSurface: 'rgba(255, 149, 0, 0.15)',
+  warningBorder: 'rgba(255, 149, 0, 0.30)',
 
   // ── Misc ──
-  overlay: 'rgba(15, 23, 42, 0.5)',
-  skeleton: '#E2E8F0',
+  overlay: 'rgba(0, 0, 0, 0.60)',
+  skeleton: 'rgba(255, 255, 255, 0.06)',
 };
 
+/* ── Spacing (Apple 8pt Grid) ─────────────────────────── */
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -73,92 +102,173 @@ export const spacing = {
   xxxxl: 48,
 };
 
+/* ── Corner Radii (Apple Continuous Corners) ──────────── */
 export const radii = {
-  xs: 6,
+  xs: 8,
   sm: 10,
-  md: 14,
-  lg: 20,
-  xl: 28,
+  md: 13,
+  lg: 16,
+  xl: 22,
+  xxl: 28,
+  xxxl: 39,
   pill: 999,
 };
 
+/* ── System Fonts ─────────────────────────────────────── */
 export const fonts = {
-  regular: 'Inter_400Regular',
-  medium: 'Inter_500Medium',
-  semibold: 'Inter_600SemiBold',
-  bold: 'Inter_700Bold',
-  extrabold: 'Inter_800ExtraBold',
+  regular: 'System',
+  medium: 'System',
+  semibold: 'System',
+  bold: 'System',
+  extrabold: 'System',
 };
 
+/* ── Typography Presets (Apple HIG) ───────────────────── */
 export const typography = {
+  largeTitle: {
+    fontSize: 34,
+    lineHeight: 41,
+    fontWeight: '700' as const,
+    letterSpacing: 0.37,
+    color: colors.labelPrimary,
+  },
   display: {
     fontSize: 28,
     lineHeight: 34,
     fontWeight: '700' as const,
-    fontFamily: fonts.extrabold,
-    color: colors.textPrimary,
+    letterSpacing: 0.36,
+    color: colors.labelPrimary,
   },
   heading: {
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: '700' as const,
-    fontFamily: fonts.bold,
-    color: colors.textPrimary,
+    letterSpacing: 0.35,
+    color: colors.labelPrimary,
+  },
+  title3: {
+    fontSize: 20,
+    lineHeight: 25,
+    fontWeight: '600' as const,
+    letterSpacing: 0.38,
+    color: colors.labelPrimary,
   },
   subheading: {
-    fontSize: 15,
+    fontSize: 17,
     lineHeight: 22,
     fontWeight: '600' as const,
-    fontFamily: fonts.semibold,
-    color: colors.textPrimary,
+    letterSpacing: -0.41,
+    color: colors.labelPrimary,
   },
   body: {
-    fontSize: 14,
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '400' as const,
+    letterSpacing: -0.41,
+    color: colors.labelSecondary,
+  },
+  callout: {
+    fontSize: 16,
     lineHeight: 21,
     fontWeight: '400' as const,
-    fontFamily: fonts.regular,
-    color: colors.textSecondary,
+    letterSpacing: -0.32,
+    color: colors.labelSecondary,
   },
   caption: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: '500' as const,
-    fontFamily: fonts.medium,
-    color: colors.textSecondary,
+    letterSpacing: -0.08,
+    color: colors.labelSecondary,
+  },
+  caption2: {
+    fontSize: 11,
+    lineHeight: 13,
+    fontWeight: '500' as const,
+    letterSpacing: 0.07,
+    color: colors.labelTertiary,
+  },
+  footnote: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '400' as const,
+    letterSpacing: -0.08,
+    color: colors.labelTertiary,
   },
 };
 
+/* ── Shadow Presets (Apple Diffused Shadows) ──────────── */
 export const shadows = {
-  /** Subtle card elevation */
   card: {
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-  /** Slightly stronger elevation for modals/overlays */
-  elevated: {
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.1,
+    shadowColor: '#000000',
+    shadowOpacity: 0.35,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
+  elevated: {
+    shadowColor: '#000000',
+    shadowOpacity: 0.45,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 12,
+  },
+  primaryBtn: {
+    shadowColor: '#007AFF',
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 6,
   },
-  /** Soft inner-glow for primary buttons */
-  primaryBtn: {
-    shadowColor: colors.primary,
+  subtle: {
+    shadowColor: '#000000',
     shadowOpacity: 0.25,
-    shadowRadius: 12,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
-  /** Very subtle for list items */
-  subtle: {
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+  glow: {
+    shadowColor: '#007AFF',
+    shadowOpacity: 0.20,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
+  },
+};
+
+/* ── Glass Style Presets ──────────────────────────────── */
+export const glass = {
+  card: {
+    backgroundColor: colors.glass,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    overflow: 'hidden' as const,
+  },
+  cardLight: {
+    backgroundColor: colors.glassLight,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    overflow: 'hidden' as const,
+  },
+  cardHeavy: {
+    backgroundColor: colors.glassHeavy,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    overflow: 'hidden' as const,
+  },
+  pill: {
+    backgroundColor: colors.glass,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.glassBorderLight,
+  },
+  input: {
+    backgroundColor: colors.glass,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
   },
 };

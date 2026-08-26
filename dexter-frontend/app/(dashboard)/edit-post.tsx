@@ -16,13 +16,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { updateScheduledPost } from '../../src/api/publishing';
 import { listMediaAssets, uploadMediaAsset } from '../../src/api/media';
 import { useAppStore } from '../../src/store/app';
-import { Card, Pill } from '../../src/components/ui';
+import { GlassCard, GlassPill } from '../../src/components/ui';
 import type { ScheduledPost, Platform, MediaAsset } from '../../src/types';
 
 const PLATFORMS: { value: Platform; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -141,7 +142,7 @@ export default function EditPostScreen() {
           {/* Header */}
           <View style={styles.header}>
             <Pressable style={styles.backBtn} onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
+              <Ionicons name="arrow-back" size={20} color={colors.labelPrimary} />
             </Pressable>
             <Text style={styles.title}>Edit Post</Text>
           </View>
@@ -160,7 +161,7 @@ export default function EditPostScreen() {
                   <Ionicons
                     name={p.icon}
                     size={16}
-                    color={selected ? '#FFFFFF' : colors.textSecondary}
+                    color={selected ? '#FFFFFF' : colors.labelSecondary}
                   />
                   <Text style={[styles.platformChipText, selected && styles.platformChipTextActive]}>
                     {p.label}
@@ -170,12 +171,12 @@ export default function EditPostScreen() {
             })}
           </View>
 
-          {/* Caption Variant (Pillar) Selector */}
+          {/* Content Pillars */}
           <Text style={styles.label}>Content Pillar</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillarScroll}>
             <View style={styles.pillarRow}>
               {pillars.map((p, i) => (
-                <Pill key={i} label={p} variant="primary" />
+                <GlassPill key={i} label={p} variant="primary" />
               ))}
             </View>
           </ScrollView>
@@ -188,7 +189,7 @@ export default function EditPostScreen() {
             value={content}
             onChangeText={setContent}
             placeholder="Write your post…"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.labelTertiary}
           />
           <Text style={[styles.charCount, isOverLimit && { color: colors.negative }]}>
             {charCount} / {MAX_CHARS}
@@ -197,19 +198,19 @@ export default function EditPostScreen() {
           {/* Media Attachment */}
           <Text style={styles.label}>Attached Media</Text>
           {mediaUrl ? (
-            <Card style={styles.mediaPreviewCard}>
+            <GlassCard style={styles.mediaPreviewCard}>
               <Image source={{ uri: mediaUrl }} style={styles.mediaPreviewImage} resizeMode="cover" />
               <View style={styles.mediaActionsRow}>
                 <Pressable style={styles.mediaActionBtn} onPress={() => setModalVisible(true)}>
                   <Ionicons name="swap-horizontal" size={16} color={colors.primary} />
-                  <Text style={styles.mediaActionText}>Swap media</Text>
+                  <Text style={styles.mediaActionText}>Swap</Text>
                 </Pressable>
                 <Pressable style={styles.mediaActionBtnDanger} onPress={() => setMediaUrl(null)}>
                   <Ionicons name="trash-outline" size={16} color={colors.negative} />
                   <Text style={styles.mediaActionDangerText}>Remove</Text>
                 </Pressable>
               </View>
-            </Card>
+            </GlassCard>
           ) : (
             <Pressable style={styles.attachPlaceholder} onPress={() => setModalVisible(true)}>
               <View style={styles.attachIconWrap}>
@@ -222,15 +223,15 @@ export default function EditPostScreen() {
 
           {/* Scheduled Time */}
           <Text style={styles.label}>Scheduled Time</Text>
-          <Card style={styles.timeRow}>
+          <GlassCard style={styles.timeRow}>
             <Pressable style={styles.stepBtn} onPress={() => shiftDate(-24)}>
-              <Ionicons name="remove" size={18} color={colors.textPrimary} />
+              <Ionicons name="remove" size={18} color={colors.labelPrimary} />
             </Pressable>
             <Text style={styles.timeText}>{date.toLocaleString()}</Text>
             <Pressable style={styles.stepBtn} onPress={() => shiftDate(24)}>
-              <Ionicons name="add" size={18} color={colors.textPrimary} />
+              <Ionicons name="add" size={18} color={colors.labelPrimary} />
             </Pressable>
-          </Card>
+          </GlassCard>
           <View style={styles.quickRow}>
             <Pressable style={styles.quickChip} onPress={() => shiftDate(-1)}>
               <Text style={styles.quickText}>−1 hr</Text>
@@ -256,42 +257,46 @@ export default function EditPostScreen() {
       {/* Media Selector Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Media</Text>
-              <Pressable style={styles.closeBtn} onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={20} color={colors.textPrimary} />
-              </Pressable>
-            </View>
-
-            <Pressable style={styles.uploadNewBtn} onPress={handlePickFromDevice}>
-              <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.uploadNewText}>Upload from camera roll</Text>
-            </Pressable>
-
-            <Text style={styles.modalSectionLabel}>From Media Library</Text>
-
-            {loadingAssets ? (
-              <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
-            ) : libraryAssets.length === 0 ? (
-              <View style={styles.emptyLibrary}>
-                <Ionicons name="images-outline" size={32} color={colors.textMuted} />
-                <Text style={styles.emptyLibraryText}>No media in library yet</Text>
-              </View>
-            ) : (
-              <FlatList
-                data={libraryAssets}
-                keyExtractor={(item) => item.id}
-                numColumns={3}
-                contentContainerStyle={styles.libraryGrid}
-                columnWrapperStyle={styles.libraryRow}
-                renderItem={({ item }) => (
-                  <Pressable style={styles.libraryThumb} onPress={() => handleSelectAsset(item)}>
-                    <Image source={{ uri: item.url }} style={styles.thumbImage} />
+          <View style={styles.modalOuter}>
+            <BlurView intensity={40} tint="dark" style={styles.modalBlur}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Select Media</Text>
+                  <Pressable style={styles.closeBtn} onPress={() => setModalVisible(false)}>
+                    <Ionicons name="close" size={20} color={colors.labelPrimary} />
                   </Pressable>
+                </View>
+
+                <Pressable style={styles.uploadNewBtn} onPress={handlePickFromDevice}>
+                  <Ionicons name="cloud-upload-outline" size={18} color="#FFFFFF" />
+                  <Text style={styles.uploadNewText}>Upload from camera roll</Text>
+                </Pressable>
+
+                <Text style={styles.modalSectionLabel}>From Media Library</Text>
+
+                {loadingAssets ? (
+                  <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+                ) : libraryAssets.length === 0 ? (
+                  <View style={styles.emptyLibrary}>
+                    <Ionicons name="images-outline" size={32} color={colors.labelTertiary} />
+                    <Text style={styles.emptyLibraryText}>No media in library yet</Text>
+                  </View>
+                ) : (
+                  <FlatList
+                    data={libraryAssets}
+                    keyExtractor={(item) => item.id}
+                    numColumns={3}
+                    contentContainerStyle={styles.libraryGrid}
+                    columnWrapperStyle={styles.libraryRow}
+                    renderItem={({ item }) => (
+                      <Pressable style={styles.libraryThumb} onPress={() => handleSelectAsset(item)}>
+                        <Image source={{ uri: item.url }} style={styles.thumbImage} />
+                      </Pressable>
+                    )}
+                  />
                 )}
-              />
-            )}
+              </View>
+            </BlurView>
           </View>
         </View>
       </Modal>
@@ -308,14 +313,21 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radii.pill,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { ...typography.heading, color: colors.textPrimary },
-  label: { ...typography.subheading, color: colors.textPrimary, marginTop: spacing.sm },
+  title: { ...typography.heading, color: colors.labelPrimary },
+  label: {
+    ...typography.caption,
+    color: colors.labelSecondary,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: spacing.sm,
+  },
   platformRow: { flexDirection: 'row', gap: spacing.sm },
   platformChip: {
     flexDirection: 'row',
@@ -324,33 +336,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
   platformChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  platformChipText: { ...typography.caption, color: colors.textSecondary },
+  platformChipText: { ...typography.caption, color: colors.labelSecondary },
   platformChipTextActive: { color: '#FFFFFF', fontWeight: '700' },
 
   pillarScroll: { marginTop: spacing.xs },
   pillarRow: { flexDirection: 'row', gap: spacing.sm },
 
   input: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
-    color: colors.textPrimary,
+    color: colors.labelPrimary,
     fontSize: 14,
-    fontFamily: fonts.regular,
     minHeight: 120,
     textAlignVertical: 'top',
   },
   charCount: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: colors.labelTertiary,
     textAlign: 'right',
     marginTop: spacing.xs,
   },
@@ -366,7 +377,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     gap: spacing.sm,
     justifyContent: 'flex-end',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.glass,
   },
   mediaActionBtn: {
     flexDirection: 'row',
@@ -393,10 +404,10 @@ const styles = StyleSheet.create({
   },
   mediaActionDangerText: { ...typography.caption, color: colors.negative, fontWeight: '600' },
   attachPlaceholder: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass,
     borderRadius: radii.lg,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     borderStyle: 'dashed',
     padding: spacing.xl,
     alignItems: 'center',
@@ -414,8 +425,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 2,
   },
-  attachTitle: { ...typography.subheading, color: colors.textPrimary },
-  attachSubtitle: { ...typography.caption, color: colors.textSecondary },
+  attachTitle: { ...typography.subheading, color: colors.labelPrimary },
+  attachSubtitle: { ...typography.caption, color: colors.labelSecondary },
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -427,9 +438,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: radii.pill,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -439,44 +450,46 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
   quickText: { ...typography.caption, color: colors.primary },
-  timeText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'center' },
-  hint: { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
+  timeText: { flex: 1, ...typography.body, color: colors.labelPrimary, textAlign: 'center' },
+  hint: { ...typography.caption, color: colors.labelTertiary, textAlign: 'center' },
   saveBtn: {
     alignItems: 'center',
     backgroundColor: colors.primary,
-    borderRadius: radii.pill,
+    borderRadius: radii.md,
     paddingVertical: 14,
     marginTop: spacing.sm,
     ...shadows.primaryBtn,
   },
-  saveText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', fontFamily: fonts.bold },
+  saveText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
 
   modalBackdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
-  modalContent: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radii.lg,
-    borderTopRightRadius: radii.lg,
-    padding: spacing.xxl,
+  modalOuter: {
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
+    overflow: 'hidden',
     maxHeight: '80%',
+  },
+  modalBlur: {},
+  modalContent: {
+    padding: spacing.xxl,
     gap: spacing.md,
-    ...shadows.elevated,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  modalTitle: { ...typography.heading, color: colors.textPrimary },
+  modalTitle: { ...typography.heading, color: colors.labelPrimary },
   closeBtn: {
     width: 32,
     height: 32,
     borderRadius: radii.pill,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.glass,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -487,22 +500,23 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     backgroundColor: colors.primary,
     paddingVertical: spacing.md,
-    borderRadius: radii.pill,
+    borderRadius: radii.md,
     ...shadows.primaryBtn,
   },
   uploadNewText: { ...typography.subheading, color: '#FFFFFF', fontWeight: '700' },
   modalSectionLabel: {
     ...typography.caption,
-    color: colors.textMuted,
+    color: colors.labelTertiary,
     textTransform: 'uppercase',
     marginTop: spacing.sm,
+    letterSpacing: 0.5,
   },
   emptyLibrary: {
     alignItems: 'center',
     paddingVertical: spacing.xxxl,
     gap: spacing.sm,
   },
-  emptyLibraryText: { ...typography.caption, color: colors.textMuted },
+  emptyLibraryText: { ...typography.caption, color: colors.labelTertiary },
   libraryGrid: { gap: spacing.sm, paddingBottom: spacing.xxl },
   libraryRow: { gap: spacing.sm },
   libraryThumb: {
@@ -511,7 +525,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
   thumbImage: { width: '100%', height: '100%' },
 });

@@ -11,9 +11,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
-import { Card, Pill } from '../../src/components/ui';
+import { GlassCard } from '../../src/components/ui';
 import type { BusinessBrain } from '../../src/types';
 
 const MOCK_BRAIN: BusinessBrain = {
@@ -24,7 +24,7 @@ const MOCK_BRAIN: BusinessBrain = {
   brandVoice: 'Authoritative, clear, founder-first, candid',
   restrictions: ['Zero clickbait or buzzword stuffing', 'No divisive political discussions'],
   writingStyle: 'Short punchy paragraphs, data-backed frameworks, strong first-line hooks',
-  visualStyle: 'Modern light aesthetic, high clarity, clean typography',
+  visualStyle: 'Modern dark aesthetic, high clarity, clean typography',
   preferredHashtags: ['#AI', '#Founders', '#B2B', '#SaaS'],
   preferredCtas: ['Follow for weekly breakdown', 'Share thoughts below'],
 };
@@ -109,7 +109,7 @@ export default function BrainReviewScreen() {
 
         <View style={styles.fieldsContainer}>
           {FIELDS.map((field) => (
-            <Card key={field.key} style={styles.fieldCard}>
+            <GlassCard key={field.key} style={styles.fieldCard}>
               <View style={styles.fieldHeader}>
                 <Ionicons name="sparkles" size={14} color={colors.primary} />
                 <Text style={styles.fieldLabel}>{field.label}</Text>
@@ -136,7 +136,7 @@ export default function BrainReviewScreen() {
                     <TextInput
                       style={styles.addChipInput}
                       placeholder={`Add to ${field.label.toLowerCase()}…`}
-                      placeholderTextColor={colors.textMuted}
+                      placeholderTextColor={colors.labelTertiary}
                       value={newInputs[field.key] || ''}
                       onChangeText={(t) =>
                         setNewInputs((prev) => ({ ...prev, [field.key]: t }))
@@ -160,10 +160,10 @@ export default function BrainReviewScreen() {
                   style={styles.input}
                   value={brain[field.key]}
                   onChangeText={(text) => updateText(field.key, text)}
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.labelTertiary}
                 />
               )}
-            </Card>
+            </GlassCard>
           ))}
         </View>
 
@@ -181,29 +181,28 @@ const styles = StyleSheet.create({
   scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxl },
   header: { gap: spacing.xs },
   eyebrow: {
-    ...typography.caption,
+    ...typography.caption2,
     color: colors.primary,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     fontWeight: '700',
   },
-  title: { ...typography.display, color: colors.textPrimary },
-  subtitle: { ...typography.body, color: colors.textSecondary },
+  title: { ...typography.display, color: colors.labelPrimary },
+  subtitle: { ...typography.body, color: colors.labelSecondary },
   fieldsContainer: { gap: spacing.md },
   fieldCard: { gap: spacing.sm, padding: spacing.lg },
   fieldHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  fieldLabel: { ...typography.subheading, color: colors.textPrimary, fontWeight: '700' },
+  fieldLabel: { ...typography.subheading, color: colors.labelPrimary, fontWeight: '700' },
   listContainer: { gap: spacing.sm },
   input: {
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.glass,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    color: colors.textPrimary,
+    color: colors.labelPrimary,
     fontSize: 14,
-    fontFamily: fonts.regular,
   },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   chip: {
@@ -218,12 +217,12 @@ const styles = StyleSheet.create({
     paddingRight: spacing.sm,
     paddingVertical: 5,
   },
-  chipText: { ...typography.caption, color: colors.primary, fontWeight: '600', fontSize: 12 },
+  chipText: { ...typography.caption2, color: colors.primary, fontWeight: '600', fontSize: 12 },
   chipRemoveBtn: {
     width: 18,
     height: 18,
     borderRadius: radii.pill,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -235,15 +234,14 @@ const styles = StyleSheet.create({
   },
   addChipInput: {
     flex: 1,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.glass,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    color: colors.textPrimary,
+    color: colors.labelPrimary,
     fontSize: 13,
-    fontFamily: fonts.regular,
   },
   addChipBtn: {
     width: 36,
@@ -260,10 +258,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingVertical: spacing.lg,
+    borderRadius: radii.md,
+    paddingVertical: 15,
     marginTop: spacing.md,
     ...shadows.primaryBtn,
   },
-  saveText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', fontFamily: fonts.bold },
+  saveText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });

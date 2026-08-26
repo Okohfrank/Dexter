@@ -14,11 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
-import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { sendChatMessage } from '../../src/api/chat';
 import { connectVoiceStream } from '../../src/api/voice';
 import { useAppStore } from '../../src/store/app';
-import { Card, Pill } from '../../src/components/ui';
+import { GlassCard, GlassPill } from '../../src/components/ui';
 import type { ChatMessage, ChatBrief, BusinessBrain } from '../../src/types';
 
 const OPENING: ChatMessage = {
@@ -30,7 +30,6 @@ const OPENING: ChatMessage = {
 export default function InterviewScreen() {
   const router = useRouter();
   const business = useAppStore((s) => s.business);
-  const setBusiness = useAppStore((s) => s.setBusiness);
   const setBrain = useAppStore((s) => s.setBrain);
   const connectedAccounts = useAppStore((s) => s.connectedAccounts);
 
@@ -97,7 +96,7 @@ export default function InterviewScreen() {
             brandVoice: brainData.brandVoice || 'Direct & Insightful',
             restrictions: Array.isArray(brainData.restrictions) ? brainData.restrictions : [],
             writingStyle: brainData.writingStyle || 'Punchy, actionable paragraphs',
-            visualStyle: brainData.visualStyle || 'Modern minimalist light mode',
+            visualStyle: brainData.visualStyle || 'Modern minimalist dark mode',
             preferredHashtags: Array.isArray(brainData.preferredHashtags) ? brainData.preferredHashtags : ['#AI', '#Founders'],
             preferredCtas: Array.isArray(brainData.preferredCtas) ? brainData.preferredCtas : ['Follow for weekly breakdown'],
           };
@@ -192,7 +191,7 @@ export default function InterviewScreen() {
             </Text>
           </View>
           <Pressable onPress={toggleVoiceMode} style={styles.voiceModeToggle}>
-            <Pill
+            <GlassPill
               label={voiceActive ? 'VOICE ON' : 'VOICE AI'}
               variant={voiceActive ? 'positive' : 'primary'}
               icon={voiceActive ? 'mic' : 'mic-outline'}
@@ -202,7 +201,13 @@ export default function InterviewScreen() {
 
         {voiceActive && (
           <View style={styles.voiceBanner}>
-            <View style={[styles.voiceIndicator, voiceState === 'speaking' && styles.voiceSpeaking, voiceState === 'processing' && styles.voiceProcessing]}>
+            <View
+              style={[
+                styles.voiceIndicator,
+                voiceState === 'speaking' && styles.voiceSpeaking,
+                voiceState === 'processing' && styles.voiceProcessing,
+              ]}
+            >
               <Ionicons
                 name={voiceState === 'speaking' ? 'volume-high' : voiceState === 'processing' ? 'sync' : 'mic'}
                 size={16}
@@ -211,7 +216,11 @@ export default function InterviewScreen() {
             </View>
             <View style={styles.voiceBannerTextWrap}>
               <Text style={styles.voiceBannerTitle}>
-                {voiceState === 'speaking' ? 'Dexter is speaking…' : voiceState === 'processing' ? 'Thinking…' : 'Listening… speak or type freely'}
+                {voiceState === 'speaking'
+                  ? 'Dexter is speaking…'
+                  : voiceState === 'processing'
+                  ? 'Thinking…'
+                  : 'Listening… speak or type freely'}
               </Text>
               <Text style={styles.voiceBannerSub}>Real-time MisoLabs Voice Stream active</Text>
             </View>
@@ -239,13 +248,13 @@ export default function InterviewScreen() {
 
         {(brief || hasBrainReady) && (
           <Pressable style={styles.finalizeWrap} onPress={() => router.push('/(onboarding)/brain')}>
-            <Card style={styles.finalizeCard} highlighted>
+            <GlassCard style={styles.finalizeCard} highlighted elevated>
               <Ionicons name="checkmark-circle" size={20} color={colors.positive} />
               <Text style={styles.finalizeText}>
                 Dexter synthesized your Business Brain. Tap here to review & refine.
               </Text>
-              <Ionicons name="arrow-forward" size={16} color={colors.primary} />
-            </Card>
+              <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+            </GlassCard>
           </Pressable>
         )}
 
@@ -263,8 +272,8 @@ export default function InterviewScreen() {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder={voiceActive ? "Speak or type your answer…" : "Type your response to Dexter…"}
-              placeholderTextColor={colors.textMuted}
+              placeholder={voiceActive ? 'Speak or type your answer…' : 'Type your response to Dexter…'}
+              placeholderTextColor={colors.labelTertiary}
               value={input}
               onChangeText={setInput}
               multiline
@@ -293,20 +302,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.separator,
   },
   headerTitleWrap: { flex: 1 },
   voiceModeToggle: { marginLeft: spacing.sm },
   eyebrow: {
-    ...typography.caption,
+    ...typography.caption2,
     color: colors.primary,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     fontWeight: '700',
   },
-  title: { ...typography.heading, color: colors.textPrimary, marginTop: 2 },
-  subtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  title: { ...typography.heading, color: colors.labelPrimary, marginTop: 2 },
+  subtitle: { ...typography.caption2, color: colors.labelSecondary, marginTop: 2 },
   voiceBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -328,17 +337,17 @@ const styles = StyleSheet.create({
   voiceSpeaking: { backgroundColor: colors.positive },
   voiceProcessing: { backgroundColor: colors.warning },
   voiceBannerTextWrap: { flex: 1 },
-  voiceBannerTitle: { ...typography.caption, color: colors.textPrimary, fontWeight: '700' },
-  voiceBannerSub: { ...typography.caption, color: colors.textSecondary, fontSize: 11 },
+  voiceBannerTitle: { ...typography.caption, color: colors.labelPrimary, fontWeight: '700' },
+  voiceBannerSub: { ...typography.caption2, color: colors.labelSecondary },
   voiceEndBtn: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: radii.pill,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
   },
-  voiceEndText: { ...typography.caption, color: colors.textSecondary, fontWeight: '600', fontSize: 11 },
+  voiceEndText: { ...typography.caption2, color: colors.labelSecondary, fontWeight: '600' },
   list: { paddingHorizontal: spacing.xxl, paddingVertical: spacing.lg, gap: spacing.md },
   bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, maxWidth: '100%' },
   userRow: { justifyContent: 'flex-end' },
@@ -360,16 +369,15 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
   },
   assistantBubble: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glassHeavy,
     borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.subtle,
+    borderColor: colors.glassBorder,
   },
   userBubble: {
     backgroundColor: colors.primary,
     ...shadows.primaryBtn,
   },
-  bubbleText: { ...typography.body, color: colors.textPrimary, fontSize: 14, lineHeight: 21 },
+  bubbleText: { ...typography.body, color: colors.labelPrimary, fontSize: 14, lineHeight: 21 },
   userBubbleText: { color: '#FFFFFF', fontWeight: '500' },
   bubbleSpeakBtn: {
     alignSelf: 'flex-end',
@@ -383,7 +391,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     paddingBottom: spacing.sm,
   },
-  typingText: { ...typography.caption, color: colors.textSecondary },
+  typingText: { ...typography.caption2, color: colors.labelSecondary },
   finalizeWrap: {
     marginHorizontal: spacing.xxl,
     marginBottom: spacing.md,
@@ -394,7 +402,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.md,
   },
-  finalizeText: { flex: 1, ...typography.caption, color: colors.textPrimary, fontWeight: '600' },
+  finalizeText: { flex: 1, ...typography.caption, color: colors.labelPrimary, fontWeight: '600' },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -407,12 +415,11 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: radii.pill,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass,
     borderWidth: 1,
-    borderColor: colors.primaryBorder,
+    borderColor: colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.subtle,
   },
   micBtnActive: {
     backgroundColor: colors.primary,
@@ -421,17 +428,16 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.glassBorder,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },
   input: {
-    color: colors.textPrimary,
+    color: colors.labelPrimary,
     fontSize: 14,
-    fontFamily: fonts.regular,
     maxHeight: 100,
     paddingVertical: 4,
   },

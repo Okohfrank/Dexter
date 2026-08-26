@@ -11,10 +11,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows, fonts } from '../../src/theme';
+import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { useAuthStore } from '../../src/api/client';
 import { useAppStore } from '../../src/store/app';
-import { Card, Pill } from '../../src/components/ui';
+import { GlassCard, GlassPill } from '../../src/components/ui';
 
 type SettingRow = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -87,7 +87,7 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Profile Card */}
-        <Card style={styles.profileCard} elevated>
+        <GlassCard style={styles.profileCard} elevated>
           <View style={styles.avatarCircle}>
             <Text style={styles.avatarText}>
               {(user?.full_name ?? 'U').charAt(0).toUpperCase()}
@@ -97,13 +97,13 @@ export default function SettingsScreen() {
             <Text style={styles.profileName}>{user?.full_name ?? 'Founder'}</Text>
             <Text style={styles.profileEmail}>{user?.email ?? ''}</Text>
             {business && (
-              <Pill label={business.name} variant="primary" />
+              <GlassPill label={business.name} variant="primary" />
             )}
           </View>
-        </Card>
+        </GlassCard>
 
         {/* Autonomous Mode Toggle */}
-        <Card style={styles.autonomyCard} highlighted={autonomousMode}>
+        <GlassCard style={styles.autonomyCard} highlighted={autonomousMode}>
           <View style={styles.autonomyRow}>
             <View style={styles.autonomyIconWrap}>
               <Ionicons
@@ -123,17 +123,18 @@ export default function SettingsScreen() {
             <Switch
               value={autonomousMode}
               onValueChange={handleToggleAutonomous}
-              trackColor={{ false: colors.border, true: colors.primaryLight }}
+              trackColor={{ false: colors.backgroundTertiary, true: colors.primary }}
               thumbColor="#FFFFFF"
+              ios_backgroundColor={colors.backgroundTertiary}
             />
           </View>
-        </Card>
+        </GlassCard>
 
         {/* Settings List */}
         <Text style={styles.sectionLabel}>Configuration</Text>
         {settingRows.map((row, i) => (
           <Pressable key={i} onPress={row.onPress}>
-            <Card style={styles.settingRow}>
+            <GlassCard style={styles.settingRow}>
               <View style={styles.settingIconWrap}>
                 <Ionicons name={row.icon} size={20} color={colors.primary} />
               </View>
@@ -141,8 +142,8 @@ export default function SettingsScreen() {
                 <Text style={styles.settingLabel}>{row.label}</Text>
                 {row.subtitle && <Text style={styles.settingSubtitle}>{row.subtitle}</Text>}
               </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </Card>
+              <Ionicons name="chevron-forward" size={18} color={colors.labelTertiary} />
+            </GlassCard>
           </Pressable>
         ))}
 
@@ -160,13 +161,12 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxxl },
+  scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxxl + 60 },
 
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
-    padding: spacing.xl,
   },
   avatarCircle: {
     width: 56,
@@ -175,18 +175,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.primaryBtn,
   },
   avatarText: {
     fontSize: 22,
     fontWeight: '700',
     color: '#FFFFFF',
-    fontFamily: fonts.bold,
   },
   profileInfo: { flex: 1, gap: spacing.xs },
-  profileName: { ...typography.heading, color: colors.textPrimary, fontSize: 18 },
-  profileEmail: { ...typography.caption, color: colors.textSecondary },
+  profileName: { ...typography.heading, color: colors.labelPrimary, fontSize: 18 },
+  profileEmail: { ...typography.caption, color: colors.labelSecondary },
 
-  autonomyCard: { padding: spacing.lg },
+  autonomyCard: {},
   autonomyRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -195,19 +195,19 @@ const styles = StyleSheet.create({
   autonomyIconWrap: {
     width: 44,
     height: 44,
-    borderRadius: radii.pill,
+    borderRadius: radii.md,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.primaryBtn,
   },
   autonomyBody: { flex: 1 },
-  autonomyTitle: { ...typography.subheading, color: colors.textPrimary, fontWeight: '700' },
-  autonomySubtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  autonomyTitle: { ...typography.subheading, color: colors.labelPrimary, fontWeight: '700' },
+  autonomySubtitle: { ...typography.caption2, color: colors.labelSecondary, marginTop: 2 },
 
   sectionLabel: {
-    ...typography.caption,
-    color: colors.textMuted,
+    ...typography.caption2,
+    color: colors.labelTertiary,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     fontWeight: '700',
@@ -218,19 +218,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    padding: spacing.lg,
   },
   settingIconWrap: {
     width: 40,
     height: 40,
-    borderRadius: radii.pill,
+    borderRadius: radii.md,
     backgroundColor: colors.primarySurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   settingBody: { flex: 1 },
-  settingLabel: { ...typography.subheading, color: colors.textPrimary, fontWeight: '600' },
-  settingSubtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  settingLabel: { ...typography.subheading, color: colors.labelPrimary, fontWeight: '600' },
+  settingSubtitle: { ...typography.caption2, color: colors.labelSecondary, marginTop: 2 },
 
   logoutBtn: {
     flexDirection: 'row',
@@ -238,7 +237,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.lg,
-    borderRadius: radii.pill,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.negativeBorder,
     backgroundColor: colors.negativeSurface,
@@ -248,12 +247,11 @@ const styles = StyleSheet.create({
     color: colors.negative,
     fontSize: 15,
     fontWeight: '600',
-    fontFamily: fonts.semibold,
   },
 
   versionText: {
-    ...typography.caption,
-    color: colors.textMuted,
+    ...typography.caption2,
+    color: colors.labelTertiary,
     textAlign: 'center',
   },
 });

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { Tabs } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, fonts, shadows } from '../../src/theme';
+import { colors, spacing, radii } from '../../src/theme';
 
 type TabDef = {
   name: string;
@@ -26,9 +27,16 @@ export default function DashboardLayout() {
         headerShown: false,
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarInactiveTintColor: colors.labelTertiary,
         tabBarLabelStyle: styles.tabLabel,
         tabBarItemStyle: styles.tabItem,
+        tabBarBackground: () => (
+          <BlurView
+            intensity={80}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
+        ),
       }}
     >
       {TABS.map((tab) => (
@@ -38,13 +46,11 @@ export default function DashboardLayout() {
           options={{
             title: tab.title,
             tabBarIcon: ({ focused, color }) => (
-              <View style={focused ? styles.activeIconWrap : undefined}>
-                <Ionicons
-                  name={focused ? tab.iconActive : tab.icon}
-                  size={22}
-                  color={focused ? colors.primary : colors.textMuted}
-                />
-              </View>
+              <Ionicons
+                name={focused ? tab.iconActive : tab.icon}
+                size={22}
+                color={focused ? colors.primary : colors.labelTertiary}
+              />
             ),
           }}
         />
@@ -62,57 +68,21 @@ export default function DashboardLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    position: 'absolute',
+    backgroundColor: 'transparent',
+    borderTopWidth: 0.5,
+    borderTopColor: colors.separator,
     height: Platform.OS === 'ios' ? 88 : 64,
     paddingTop: spacing.xs,
     paddingBottom: Platform.OS === 'ios' ? spacing.xxl : spacing.sm,
-    ...shadows.elevated,
+    elevation: 0,
   },
   tabLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '500',
     marginTop: 2,
   },
   tabItem: {
     gap: 2,
-  },
-  activeIconWrap: {
-    backgroundColor: colors.primarySurface,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xs,
-  },
-});
-    borderRadius: radii.full,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    ...shadows.lg,
-  },
-  tabItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: radii.full,
-  },
-  tabItemActive: {
-    backgroundColor: colors.primary,
-    ...shadows.primaryBtn,
-  },
-  tabLabel: {
-    fontSize: 12,
-    fontFamily: fonts.bold,
-    color: '#FFFFFF',
   },
 });
