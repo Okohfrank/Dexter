@@ -285,7 +285,7 @@ export default function InterviewScreen() {
       >
         {!isUser && (
           <View style={styles.avatar}>
-            <Ionicons name="sparkles" size={14} color={colors.primary} />
+            <Ionicons name="bulb-outline" size={14} color={colors.primary} />
           </View>
         )}
         <View
@@ -449,7 +449,7 @@ export default function InterviewScreen() {
                   ? "Speak or type your answer…"
                   : "Type your response to Dexter…"
               }
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.inkFaint}
               value={input}
               onChangeText={setInput}
               multiline
@@ -493,10 +493,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     fontWeight: "700",
   },
-  title: { ...typography.heading, color: colors.labelPrimary, marginTop: 2 },
+  title: { ...typography.h1, color: colors.ink, marginTop: 2 },
   subtitle: {
     ...typography.caption2,
-    color: colors.labelSecondary,
+    color: colors.inkSoft,
     marginTop: 2,
   },
   voiceBanner: {
@@ -522,21 +522,21 @@ const styles = StyleSheet.create({
   voiceBannerTextWrap: { flex: 1 },
   voiceBannerTitle: {
     ...typography.caption,
-    color: colors.labelPrimary,
+    color: colors.ink,
     fontWeight: "700",
   },
-  voiceBannerSub: { ...typography.caption2, color: colors.labelSecondary },
+  voiceBannerSub: { ...typography.caption2, color: colors.inkSoft },
   voiceEndBtn: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: spacing.xs,
     borderRadius: radii.pill,
-    backgroundColor: colors.glass,
+    backgroundColor: colors.surfaceSunken,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
   },
   voiceEndText: {
     ...typography.caption2,
-    color: colors.labelSecondary,
+    color: colors.inkSoft,
     fontWeight: "600",
   },
   list: {
@@ -569,19 +569,17 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
   },
   assistantBubble: {
-    backgroundColor: colors.glassHeavy,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
   },
   userBubble: {
     backgroundColor: colors.primary,
     ...shadows.primaryBtn,
   },
   bubbleText: {
-    ...typography.body,
-    color: colors.labelPrimary,
-    fontSize: 14,
-    lineHeight: 21,
+    ...typography.bodySmall,
+    color: colors.ink,
   },
   userBubbleText: { color: "#FFFFFF", fontWeight: "500" },
   bubbleSpeakBtn: {
@@ -596,7 +594,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     paddingBottom: spacing.sm,
   },
-  typingText: { ...typography.caption2, color: colors.labelSecondary },
+  typingText: { ...typography.caption2, color: colors.inkSoft },
   finalizeWrap: {
     marginHorizontal: spacing.xxl,
     marginBottom: spacing.md,
@@ -610,7 +608,7 @@ const styles = StyleSheet.create({
   finalizeText: {
     flex: 1,
     ...typography.caption,
-    color: colors.labelPrimary,
+    color: colors.ink,
     fontWeight: "600",
   },
   inputRow: {
@@ -625,9 +623,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: radii.pill,
-    backgroundColor: colors.glass,
+    backgroundColor: colors.surfaceSunken,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -638,18 +636,17 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flex: 1,
-    backgroundColor: colors.glass,
-    borderRadius: radii.xl,
+    backgroundColor: colors.surfaceSunken,
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },
   input: {
-    color: colors.labelPrimary,
-    fontSize: 14,
+    ...typography.body,
     maxHeight: 100,
-    paddingVertical: 4,
+    paddingVertical: spacing.xs,
   },
   sendBtn: {
     width: 44,

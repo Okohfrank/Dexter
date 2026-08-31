@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { Link, useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import {
   AuthScreen,
-  BrandMark,
   AuthTextInput,
   PrimaryButton,
 } from '../../src/components/ui';
-import { colors, spacing, typography, radii } from '../../src/theme';
+import { colors, spacing, fonts, radii } from '../../src/theme';
 import { resetPassword } from '../../src/api/auth';
 
 export default function ResetPasswordScreen() {
@@ -49,33 +47,27 @@ export default function ResetPasswordScreen() {
 
   return (
     <AuthScreen>
-      <BrandMark />
       <View style={styles.header}>
         <Text style={styles.title}>New password</Text>
         <Text style={styles.subtitle}>
-          Create a new password for your Dexter account.
+          Create a new password for your account.
         </Text>
       </View>
 
       {success ? (
-        <View style={styles.successCardOuter}>
-          <BlurView intensity={25} tint="dark" style={styles.successCardBlur}>
-            <View style={styles.successCardContent}>
-              <Ionicons name="checkmark-circle" size={28} color={colors.positive} />
-              <Text style={styles.successTitle}>Password updated</Text>
-              <Text style={styles.successText}>
-                Your password has been changed successfully. You can now sign in.
-              </Text>
-              <PrimaryButton title="Sign In Now" onPress={() => router.replace('/login')} />
-            </View>
-          </BlurView>
+        <View style={styles.successCard}>
+          <Ionicons name="checkmark-circle" size={28} color="#000000" />
+          <Text style={styles.successTitle}>Password updated</Text>
+          <Text style={styles.successText}>
+            Your password has been changed successfully. You can now sign in.
+          </Text>
+          <PrimaryButton title="Sign In Now" onPress={() => router.replace('/login')} />
         </View>
       ) : (
         <>
           {!params.token && (
             <AuthTextInput
               label="Reset Token"
-              icon="key-outline"
               placeholder="Paste token from email"
               value={token}
               onChangeText={setToken}
@@ -85,30 +77,28 @@ export default function ResetPasswordScreen() {
 
           <AuthTextInput
             label="New Password"
-            icon="lock-closed-outline"
             placeholder="At least 8 characters"
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
+            secure
           />
 
           <AuthTextInput
             label="Confirm Password"
-            icon="shield-checkmark-outline"
             placeholder="Re-enter password"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
-            secureTextEntry
+            secure
           />
 
           <PrimaryButton title="Update Password" onPress={handleReset} disabled={loading} />
-          {loading && <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.sm }} />}
+          {loading && <ActivityIndicator color="#000000" style={{ marginTop: spacing.sm }} />}
 
           <View style={styles.footer}>
             <Link href="/login" asChild>
               <Pressable hitSlop={8} style={styles.backRow}>
-                <Ionicons name="arrow-back" size={16} color={colors.primary} />
-                <Text style={styles.footerLink}>Back to sign in</Text>
+                <Ionicons name="arrow-back" size={16} color="#000000" />
+                <Text style={styles.backText}>Back to sign in</Text>
               </Pressable>
             </Link>
           </View>
@@ -119,30 +109,44 @@ export default function ResetPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { marginTop: spacing.xl, marginBottom: spacing.xxl },
-  title: { ...typography.display, color: colors.labelPrimary },
+  header: {
+    marginTop: spacing.xl,
+    marginBottom: spacing.xxl,
+  },
+  title: {
+    fontFamily: fonts.bold,
+    fontSize: 28,
+    lineHeight: 34,
+    color: '#000000',
+  },
   subtitle: {
-    ...typography.body,
-    color: colors.labelSecondary,
-    marginTop: spacing.sm,
+    fontFamily: fonts.regular,
+    fontSize: 15,
     lineHeight: 22,
+    color: colors.inkSoft,
+    marginTop: spacing.sm,
   },
-  successCardOuter: {
-    borderRadius: radii.xl,
+  successCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
-    overflow: 'hidden',
-  },
-  successCardBlur: {
-    overflow: 'hidden',
-  },
-  successCardContent: {
+    borderColor: colors.border,
     padding: spacing.xl,
     alignItems: 'center',
     gap: spacing.sm,
   },
-  successTitle: { ...typography.heading, color: colors.labelPrimary, marginTop: 4 },
-  successText: { ...typography.body, color: colors.labelSecondary, textAlign: 'center' },
+  successTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 18,
+    color: '#000000',
+    marginTop: spacing.xs,
+  },
+  successText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.inkSoft,
+    textAlign: 'center',
+  },
   footer: {
     alignItems: 'center',
     marginTop: spacing.xxl,
@@ -152,5 +156,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  footerLink: { ...typography.body, color: colors.primary, fontWeight: '700' },
+  backText: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: '#000000',
+  },
 });

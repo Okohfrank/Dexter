@@ -2,7 +2,20 @@
  * Analytics API service connecting to backend /api/v1/analytics endpoints.
  */
 import { apiFetch } from './client';
-import type { PublishedPost, LearningInsight } from '../types';
+import type { PublishedPost, LearningInsight, PerformanceSummary } from '../types';
+
+export async function getPerformanceSummary(businessId?: string): Promise<PerformanceSummary | null> {
+  try {
+    const qs = businessId ? `?business_id=${businessId}` : '';
+    const res = await apiFetch(`/analytics/summary${qs}`, { method: 'GET' });
+    if (res.ok) {
+      return (await res.json()) as PerformanceSummary;
+    }
+  } catch {
+    // Graceful fallback to null
+  }
+  return null;
+}
 
 export async function getPublishedPosts(businessId?: string): Promise<PublishedPost[]> {
   try {

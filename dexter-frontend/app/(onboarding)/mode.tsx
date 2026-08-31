@@ -37,14 +37,14 @@ export default function InterviewModeScreen() {
                 Type your responses in an interactive chat session with Dexter.
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.labelTertiary} />
+            <Ionicons name="chevron-forward" size={18} color={colors.inkFaint} />
           </GlassCard>
         </Pressable>
 
         <Pressable onPress={() => pick('voice')}>
           <GlassCard style={styles.card} highlighted elevated>
             <View style={[styles.cardIcon, { backgroundColor: colors.primarySurface }]}>
-              <Ionicons name="sparkles" size={24} color={colors.primary} />
+              <Ionicons name="mic-outline" size={24} color={colors.primary} />
             </View>
             <View style={styles.cardBody}>
               <View style={styles.titleRow}>
@@ -55,7 +55,7 @@ export default function InterviewModeScreen() {
                 Fluid, real-time voice conversation with Dexter (ChatGPT Advanced Voice style).
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.labelTertiary} />
+            <Ionicons name="chevron-forward" size={18} color={colors.inkFaint} />
           </GlassCard>
         </Pressable>
       </View>
@@ -73,8 +73,8 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     fontWeight: '700',
   },
-  title: { ...typography.display, color: colors.labelPrimary },
-  subtitle: { ...typography.body, color: colors.labelSecondary, marginBottom: spacing.sm },
+  title: { ...typography.display, color: colors.ink },
+  subtitle: { ...typography.body, color: colors.inkSoft, marginBottom: spacing.sm },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -86,14 +86,14 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: radii.pill,
-    backgroundColor: colors.glass,
+    backgroundColor: colors.surfaceSunken,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cardBody: { flex: 1 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  cardTitle: { ...typography.heading, color: colors.labelPrimary, fontSize: 17 },
-  cardSubtitle: { ...typography.caption2, color: colors.labelSecondary, marginTop: 4 },
+  cardTitle: { ...typography.h2, color: colors.ink },
+  cardSubtitle: { ...typography.caption2, color: colors.inkSoft, marginTop: 4 },
 });

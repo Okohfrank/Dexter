@@ -16,17 +16,17 @@ import { useAppStore } from '../../src/store/app';
 import { GlassCard } from '../../src/components/ui';
 import type { BusinessBrain } from '../../src/types';
 
-const MOCK_BRAIN: BusinessBrain = {
-  industry: 'Autonomous AI & SaaS',
-  products: ['AI Social Employee', 'Autonomous Content Engine'],
-  audience: ['B2B Founders', 'Seed & Series-A CEOs', 'Tech Creators'],
-  goals: ['Reach 1,000 executive followers on LinkedIn', 'Generate qualified inbound demo requests'],
-  brandVoice: 'Authoritative, clear, founder-first, candid',
-  restrictions: ['Zero clickbait or buzzword stuffing', 'No divisive political discussions'],
-  writingStyle: 'Short punchy paragraphs, data-backed frameworks, strong first-line hooks',
-  visualStyle: 'Modern dark aesthetic, high clarity, clean typography',
-  preferredHashtags: ['#AI', '#Founders', '#B2B', '#SaaS'],
-  preferredCtas: ['Follow for weekly breakdown', 'Share thoughts below'],
+const EMPTY_BRAIN: BusinessBrain = {
+  industry: '',
+  products: [],
+  audience: [],
+  goals: [],
+  brandVoice: '',
+  restrictions: [],
+  writingStyle: '',
+  visualStyle: '',
+  preferredHashtags: [],
+  preferredCtas: [],
 };
 
 type TextField = {
@@ -59,7 +59,7 @@ export default function BrainReviewScreen() {
   const router = useRouter();
   const storedBrain = useAppStore((s) => s.brain);
   const setBrain = useAppStore((s) => s.setBrain);
-  const [brain, setBrainState] = useState<BusinessBrain>(storedBrain ?? MOCK_BRAIN);
+  const [brain, setBrainState] = useState<BusinessBrain>(storedBrain ?? EMPTY_BRAIN);
   const [newInputs, setNewInputs] = useState<Record<string, string>>({});
 
   const updateText = (key: keyof BusinessBrain, value: string) => {
@@ -111,7 +111,7 @@ export default function BrainReviewScreen() {
           {FIELDS.map((field) => (
             <GlassCard key={field.key} style={styles.fieldCard}>
               <View style={styles.fieldHeader}>
-                <Ionicons name="sparkles" size={14} color={colors.primary} />
+                <Ionicons name="bulb" size={14} color={colors.primary} />
                 <Text style={styles.fieldLabel}>{field.label}</Text>
               </View>
 
@@ -136,7 +136,7 @@ export default function BrainReviewScreen() {
                     <TextInput
                       style={styles.addChipInput}
                       placeholder={`Add to ${field.label.toLowerCase()}…`}
-                      placeholderTextColor={colors.labelTertiary}
+                      placeholderTextColor={colors.inkFaint}
                       value={newInputs[field.key] || ''}
                       onChangeText={(t) =>
                         setNewInputs((prev) => ({ ...prev, [field.key]: t }))
@@ -160,7 +160,8 @@ export default function BrainReviewScreen() {
                   style={styles.input}
                   value={brain[field.key]}
                   onChangeText={(text) => updateText(field.key, text)}
-                  placeholderTextColor={colors.labelTertiary}
+                  placeholderTextColor={colors.inkFaint}
+                  placeholder={brain[field.key] ? undefined : `Add ${field.label.toLowerCase()}…`}
                 />
               )}
             </GlassCard>
@@ -178,7 +179,7 @@ export default function BrainReviewScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxl },
+  scroll: { padding: spacing.xl, gap: spacing.lg, paddingBottom: spacing.xxxl },
   header: { gap: spacing.xs },
   eyebrow: {
     ...typography.caption2,
@@ -187,21 +188,21 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     fontWeight: '700',
   },
-  title: { ...typography.display, color: colors.labelPrimary },
-  subtitle: { ...typography.body, color: colors.labelSecondary },
+  title: { ...typography.displaySmall, color: colors.ink },
+  subtitle: { ...typography.body, color: colors.inkSoft },
   fieldsContainer: { gap: spacing.md },
   fieldCard: { gap: spacing.sm, padding: spacing.lg },
   fieldHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  fieldLabel: { ...typography.subheading, color: colors.labelPrimary, fontWeight: '700' },
+  fieldLabel: { ...typography.subheading, color: colors.ink, fontWeight: '700' },
   listContainer: { gap: spacing.sm },
   input: {
-    backgroundColor: colors.glass,
+    backgroundColor: colors.surfaceSunken,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    color: colors.labelPrimary,
+    color: colors.ink,
     fontSize: 14,
   },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
@@ -222,7 +223,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: radii.pill,
-    backgroundColor: colors.glass,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -234,18 +235,18 @@ const styles = StyleSheet.create({
   },
   addChipInput: {
     flex: 1,
-    backgroundColor: colors.glass,
+    backgroundColor: colors.surfaceSunken,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    color: colors.labelPrimary,
+    color: colors.ink,
     fontSize: 13,
   },
   addChipBtn: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     borderRadius: radii.pill,
     backgroundColor: colors.primary,
     alignItems: 'center',
@@ -258,7 +259,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     backgroundColor: colors.primary,
-    borderRadius: radii.md,
+    borderRadius: radii.pill,
     paddingVertical: 15,
     marginTop: spacing.md,
     ...shadows.primaryBtn,

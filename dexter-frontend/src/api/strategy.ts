@@ -4,23 +4,8 @@
 import { apiFetch, getApiError } from './client';
 import type { ContentPlan } from '../types';
 
-export const FALLBACK_STRATEGY: ContentPlan = {
-  id: 'strategy-default',
-  business_id: 'biz-default',
-  frequencyPerWeek: 4,
-  platformMix: { linkedin: 4 },
-  pillars: [
-    'Founder Thought Leadership & POV',
-    'Product Milestones & Technical Deep-dives',
-    'Actionable Industry Frameworks',
-    'Customer Wins & Social Proof',
-  ],
-  bestTimes: ['Tue 8:30 AM', 'Thu 10:15 AM', 'Sat 11:00 AM'],
-  notes: 'Schedule 4 LinkedIn posts per week targeted at mid-morning executive peak windows.',
-};
-
-export async function generateContentStrategy(businessId?: string): Promise<ContentPlan> {
-  if (!businessId) return FALLBACK_STRATEGY;
+export async function generateContentStrategy(businessId?: string): Promise<ContentPlan | null> {
+  if (!businessId) return null;
 
   try {
     const res = await apiFetch(`/strategy/${businessId}/generate`, { method: 'POST' });
@@ -28,10 +13,10 @@ export async function generateContentStrategy(businessId?: string): Promise<Cont
       return (await res.json()) as ContentPlan;
     }
   } catch {
-    // Return fallback if network fails
+    // Return null so screens show an honest empty state
   }
 
-  return FALLBACK_STRATEGY;
+  return null;
 }
 
 export async function generateNextPost(

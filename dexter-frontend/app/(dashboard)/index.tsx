@@ -8,11 +8,9 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { useAuthStore } from '../../src/api/client';
@@ -20,20 +18,20 @@ import { useAppStore } from '../../src/store/app';
 import * as WebBrowser from 'expo-web-browser';
 import { getLinkedInAuthorizationUrl } from '../../src/api/auth';
 import { getScheduledPosts, cancelPost, publishNow } from '../../src/api/publishing';
-import { getPublishedPosts, getLearningInsights } from '../../src/api/analytics';
-import { listConnectedAccounts, mockConnectAccount } from '../../src/api/oauth';
+import { getPublishedPosts, getLearningInsights, getPerformanceSummary } from '../../src/api/analytics';
+import { listConnectedAccounts } from '../../src/api/oauth';
 import { generateNextPost } from '../../src/api/strategy';
 import { listBusinesses, createBusiness } from '../../src/api/business';
 import { SocialPostPreview } from '../../src/components/SocialPostPreview';
-import { GlassCard, GlassPill, SegmentedControl, StatusDot } from '../../src/components/ui';
-import type { ScheduledPost, PublishedPost, LearningInsight } from '../../src/types';
-
-const { width: SCREEN_W } = Dimensions.get('window');
-const BENTO_GAP = spacing.md;
-const BENTO_PADDING = spacing.lg;
-const BENTO_COL = (SCREEN_W - BENTO_PADDING * 2 - BENTO_GAP) / 2;
+import { GlassCard, SegmentedControl, StatusDot, PulseDot } from '../../src/components/ui';
+import type { ScheduledPost, PublishedPost, LearningInsight, PerformanceSummary } from '../../src/types';
 
 type Tab = 'planned' | 'published' | 'learned';
+
+const formatNum = (n: number): string => {
+  if (!isFinite(n)) return '—';
+  return n.toLocaleString('en-US');
+};
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -48,9 +46,11 @@ export default function DashboardScreen() {
   const [scheduled, setScheduled] = useState<ScheduledPost[]>([]);
   const [published, setPublished] = useState<PublishedPost[]>([]);
   const [learnings, setLearnings] = useState<LearningInsight[]>([]);
+  const [summary, setSummary] = useState<PerformanceSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [generatingQuick, setGeneratingQuick] = useState(false);
+  const [connecting, setConnecting] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -62,7 +62,7 @@ export default function DashboardScreen() {
           biz = bList[0];
           setBusiness(biz);
         } else {
-          biz = {
+          biz = await createBusiness({ name: 'My Company' }).catch(() => null) ?? {
             id: 'biz_main',
             user_id: 'u1',
             name: 'Dexter AI Studio',
@@ -99,13 +99,18 @@ export default function DashboardScreen() {
         const lrn = await getLearningInsights(biz?.id);
         setLearnings(lrn || []);
       } catch {}
+
+      try {
+        const s = await getPerformanceSummary(biz?.id);
+        setSummary(s);
+      } catch {}
     } catch {
       // Keep state clean
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [setBusiness, setConnectedAccounts]);
 
   useEffect(() => {
     loadData();
@@ -117,6 +122,7 @@ export default function DashboardScreen() {
   };
 
   const handleQuickConnect = async () => {
+    setConnecting(true);
     try {
       let biz = business;
       if (!biz) {
@@ -142,6 +148,8 @@ export default function DashboardScreen() {
       await loadData();
     } catch (e: any) {
       Alert.alert('Connection Error', e.message || 'Could not connect LinkedIn.');
+    } finally {
+      setConnecting(false);
     }
   };
 
@@ -152,12 +160,6 @@ export default function DashboardScreen() {
       if (!biz) {
         biz = await createBusiness({ name: 'Dexter AI Studio' });
         setBusiness(biz);
-      }
-      let accs = connectedAccounts;
-      if (!accs.some((a) => a.platform === 'linkedin')) {
-        const mockAcc = await mockConnectAccount(biz.id, 'linkedin');
-        accs = [mockAcc];
-        setConnectedAccounts(accs);
       }
       await generateNextPost(biz.id);
       Alert.alert('Post Drafted & Queued', 'Dexter autonomously scheduled your next post.');
@@ -227,6 +229,45 @@ export default function DashboardScreen() {
     });
   };
 
+  const reach = summary?.total_impressions ?? null;
+  const engagements = summary?.total_engagements ?? null;
+  const rate = summary?.avg_engagement_rate_pct ?? null;
+
+  const stats = [
+    {
+      icon: 'trending-up' as const,
+      label: 'Total Reach',
+      value: reach != null ? formatNum(reach) : '—',
+      meta: 'lifetime impressions',
+      tone: colors.primary,
+      delta: null as string | null,
+    },
+    {
+      icon: 'heart' as const,
+      label: 'Engagements',
+      value: engagements != null ? formatNum(engagements) : '—',
+      meta: 'likes + comments + reposts',
+      tone: '#D97A9A',
+      delta: null as string | null,
+    },
+    {
+      icon: 'pulse' as const,
+      label: 'Engagement Rate',
+      value: rate != null ? `${rate}%` : '—',
+      meta: 'across published posts',
+      tone: colors.positive,
+      delta: null as string | null,
+    },
+    {
+      icon: 'time' as const,
+      label: 'Queued Posts',
+      value: String(scheduled.length),
+      meta: autonomousMode ? 'autonomous window' : 'awaiting approval',
+      tone: colors.energy,
+      delta: null as string | null,
+    },
+  ];
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -234,7 +275,7 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
-        {/* ── Top Header ────────────────────────────── */}
+        {/* ── Header ──────────────────────────────────── */}
         <View style={styles.header}>
           <View style={styles.headerTextWrap}>
             <Text style={styles.title}>Good morning, {firstName}</Text>
@@ -244,110 +285,85 @@ export default function DashboardScreen() {
                 : 'Dexter is standing by for instructions.'}
             </Text>
           </View>
-          <Pressable style={styles.refreshBtn} onPress={loadData}>
-            <Ionicons name="refresh" size={18} color={colors.labelSecondary} />
+          <Pressable style={styles.iconBtn} onPress={loadData} hitSlop={8}>
+            <Ionicons name="refresh" size={18} color={colors.inkSoft} />
           </Pressable>
         </View>
 
-        {/* ── Bento Grid ────────────────────────────── */}
-        <View style={styles.bentoGrid}>
-          {/* Row 1: Hero Status Card (2x1) */}
-          <View style={styles.bentoRow}>
-            <View style={[styles.bentoCard, styles.bento2x1]}>
-              <BlurView intensity={20} tint="dark" style={styles.bentoBlur}>
-                <View style={styles.bentoContent}>
-                  <View style={styles.heroAccent} />
-                  <View style={styles.heroRow}>
-                    <View style={styles.heroIconWrap}>
-                      <Ionicons
-                        name={autonomousMode ? 'radio' : 'pause'}
-                        size={22}
-                        color={autonomousMode ? colors.positive : colors.warning}
-                      />
-                    </View>
-                    <View style={styles.heroTextWrap}>
-                      <Text style={styles.heroLabel}>
-                        {autonomousMode ? 'AUTONOMOUS ACTIVE' : 'SUPERVISED MODE'}
-                      </Text>
-                      <Text style={styles.heroSubtext}>
-                        {autonomousMode
-                          ? 'Dexter is actively planning and publishing content'
-                          : 'Enable autonomous mode in Settings to let Dexter operate'}
-                      </Text>
-                    </View>
-                    <StatusDot active={autonomousMode} />
-                  </View>
-                </View>
-              </BlurView>
+        {/* ── Hero Card (§8.1) ────────────────────────── */}
+        <View style={[styles.heroCard, shadows.md]}>
+          <View style={styles.heroLeft}>
+            <View style={styles.heroEyebrowRow}>
+              {generatingQuick || loading ? <PulseDot active size={10} /> : <StatusDot active={autonomousMode} color={autonomousMode ? colors.positive : colors.inkFaint} />}
+              <Text style={styles.heroEyebrow}>
+                {autonomousMode ? 'Autonomous Active' : 'Supervised Mode'}
+              </Text>
             </View>
+            <Text style={styles.heroStat}>{String(scheduled.length)}</Text>
+            <Text style={styles.heroStatLabel}>Posts queued for publishing</Text>
           </View>
-
-          {/* Row 2: Stats (3x 1x1 cards) */}
-          <View style={styles.bentoRow}>
-            <View style={[styles.bentoCard, styles.bento1x1]}>
-              <BlurView intensity={20} tint="dark" style={styles.bentoBlur}>
-                <View style={styles.bentoContent}>
-                  <Ionicons name="trending-up" size={18} color={colors.systemTeal} />
-                  <Text style={styles.statValue}>14.2k</Text>
-                  <Text style={styles.statLabel}>Total Reach</Text>
-                  <Text style={styles.statGrowth}>+28%</Text>
-                </View>
-              </BlurView>
+          <View style={styles.heroRight}>
+            <View style={styles.heroMiniRow}>
+              <Ionicons name={autonomousMode ? 'radio' : 'pause'} size={14} color={autonomousMode ? colors.positive : colors.inkSoft} />
+              <Text style={styles.heroMiniText}>
+                {autonomousMode ? 'Planning & publishing live' : 'You approve every post'}
+              </Text>
             </View>
-            <View style={[styles.bentoCard, styles.bento1x1]}>
-              <BlurView intensity={20} tint="dark" style={styles.bentoBlur}>
-                <View style={styles.bentoContent}>
-                  <Ionicons name="heart" size={18} color={colors.systemPink} />
-                  <Text style={styles.statValue}>1,240</Text>
-                  <Text style={styles.statLabel}>Engagements</Text>
-                  <Text style={styles.statGrowth}>8.7% rate</Text>
-                </View>
-              </BlurView>
-            </View>
-          </View>
-
-          {/* Row 3: Autonomy + Next Post */}
-          <View style={styles.bentoRow}>
-            <View style={[styles.bentoCard, styles.bento1x1]}>
-              <BlurView intensity={20} tint="dark" style={styles.bentoBlur}>
-                <View style={styles.bentoContent}>
-                  <Ionicons name="rocket" size={18} color={colors.systemPurple} />
-                  <Text style={styles.statValue}>94%</Text>
-                  <Text style={styles.statLabel}>Autonomy</Text>
-                  <Text style={styles.statGrowth}>Zero friction</Text>
-                </View>
-              </BlurView>
-            </View>
-            <View style={[styles.bentoCard, styles.bento1x1]}>
-              <BlurView intensity={20} tint="dark" style={styles.bentoBlur}>
-                <View style={styles.bentoContent}>
-                  <Ionicons name="time" size={18} color={colors.systemOrange} />
-                  <Text style={styles.statValue}>{scheduled.length}</Text>
-                  <Text style={styles.statLabel}>Queued Posts</Text>
-                  <Text style={styles.statGrowth}>Upcoming</Text>
-                </View>
-              </BlurView>
+            <View style={styles.heroMiniRow}>
+              <Ionicons name="link" size={14} color={colors.inkFaint} />
+              <Text style={styles.heroMiniTextMuted}>
+                {linkedinConnected ? 'LinkedIn linked' : 'LinkedIn not linked'}
+              </Text>
             </View>
           </View>
         </View>
 
-        {/* ── Missing Channel Banner ─────────────────── */}
+        {/* ── Stat Grid (§3.3) ────────────────────────── */}
+        <View style={styles.statGrid}>
+          {stats.map((s) => (
+            <View key={s.label} style={[styles.statCard, shadows.subtle]}>
+              <View style={[styles.statIcon, { backgroundColor: colors.primarySurface }]}>
+                <Ionicons name={s.icon} size={17} color={s.tone} />
+              </View>
+              <Text style={styles.statLabel}>{s.label}</Text>
+              <Text style={styles.statValue}>{s.value}</Text>
+              <View style={styles.statMetaRow}>
+                {s.delta ? (
+                  <View style={[styles.deltaPill, { backgroundColor: colors.positiveFill }]}>
+                    <Text style={[styles.deltaText, { color: colors.positive }]}>{s.delta}</Text>
+                  </View>
+                ) : null}
+                <Text style={styles.statMeta}>{s.meta}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* ── Missing Channel Banner ──────────────────── */}
         {!linkedinConnected && (
-          <GlassCard style={styles.channelBanner} elevated>
+          <GlassCard style={styles.channelBanner}>
             <View style={styles.channelBannerHeader}>
-              <Ionicons name="logo-linkedin" size={20} color="#0A66C2" />
+              <Ionicons name="logo-linkedin" size={20} color={colors.primary} />
               <Text style={styles.channelBannerTitle}>Link LinkedIn Account</Text>
             </View>
             <Text style={styles.channelBannerText}>
-              Connect your account so Dexter can draft and publish thought-leadership posts autonomously.
+              Connect your account so Dexter can draft and publish thought-leadership posts for you.
             </Text>
-            <Pressable style={styles.channelBannerBtn} onPress={handleQuickConnect}>
-              <Text style={styles.channelBannerBtnText}>Connect LinkedIn (1-Tap)</Text>
+            <Pressable
+              style={[styles.channelBannerBtn, connecting && { opacity: 0.6 }]}
+              onPress={handleQuickConnect}
+              disabled={connecting}
+            >
+              {connecting ? (
+                <ActivityIndicator size="small" color={colors.surface} />
+              ) : (
+                <Text style={styles.channelBannerBtnText}>Connect LinkedIn</Text>
+              )}
             </Pressable>
           </GlassCard>
         )}
 
-        {/* ── Segmented Tabs ─────────────────────────── */}
+        {/* ── Segmented Tabs ──────────────────────────── */}
         <SegmentedControl
           segments={[
             { key: 'planned' as Tab, label: 'Upcoming', icon: 'calendar' },
@@ -359,29 +375,25 @@ export default function DashboardScreen() {
         />
 
         {loading && !refreshing && (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.lg }} />
+          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
         )}
 
-        {/* ── Planned Posts Tab ──────────────────────── */}
+        {/* ── Planned Posts Tab ───────────────────────── */}
         {tab === 'planned' && (
           <View style={styles.feedContainer}>
             {scheduled.length === 0 && !loading ? (
-              <GlassCard style={styles.emptyCard} elevated>
-                <Ionicons name="sparkles" size={36} color={colors.primary} />
-                <Text style={styles.emptyTitle}>Queue is Clear</Text>
+              <GlassCard style={styles.emptyCard}>
+                <Ionicons name="calendar-outline" size={34} color={colors.inkFaint} />
+                <Text style={styles.emptyTitle}>Queue is clear</Text>
                 <Text style={styles.emptySubtitle}>
-                  No scheduled posts yet. Have Dexter craft a post based on your business brain right now.
+                  No posts scheduled yet — ask Dexter to draft one now.
                 </Text>
-                <Pressable
-                  style={styles.emptyActionBtn}
-                  onPress={handleQuickGenerate}
-                  disabled={generatingQuick}
-                >
+                <Pressable style={styles.emptyActionBtn} onPress={handleQuickGenerate} disabled={generatingQuick}>
                   {generatingQuick ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <ActivityIndicator size="small" color={colors.surface} />
                   ) : (
                     <>
-                      <Ionicons name="flash" size={16} color="#FFFFFF" />
+                      <Ionicons name="flash" size={16} color={colors.surface} />
                       <Text style={styles.emptyActionText}>Draft Next Post with Dexter</Text>
                     </>
                   )}
@@ -401,7 +413,7 @@ export default function DashboardScreen() {
                   {/* Dexter's Decision Card */}
                   <GlassCard style={styles.decisionCard}>
                     <View style={styles.decisionHeader}>
-                      <Ionicons name="sparkles" size={15} color={colors.primary} />
+                      <Ionicons name="pulse" size={15} color={colors.primary} />
                       <Text style={styles.decisionLabel}>Dexter's Decision</Text>
                     </View>
                     <Text style={styles.reasonText}>
@@ -433,25 +445,20 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* ── Published Posts Tab ────────────────────── */}
+        {/* ── Published Posts Tab ─────────────────────── */}
         {tab === 'published' && (
           <View style={styles.feedContainer}>
             {published.length === 0 && !loading ? (
               <GlassCard style={styles.emptyCard}>
-                <Ionicons name="checkmark-done-circle-outline" size={36} color={colors.labelTertiary} />
-                <Text style={styles.emptyTitle}>No Published Posts Yet</Text>
+                <Ionicons name="checkmark-done-circle-outline" size={34} color={colors.inkFaint} />
+                <Text style={styles.emptyTitle}>Nothing published yet</Text>
                 <Text style={styles.emptySubtitle}>
-                  Posts published autonomously by Dexter or via 'Publish now' will appear here with engagement analytics.
+                  Posts published by Dexter or via "Publish now" appear here with engagement analytics.
                 </Text>
               </GlassCard>
             ) : (
               published.map((post) => (
                 <View key={post.id} style={styles.postWrapper}>
-                  {post.caption_variant ? (
-                    <View style={styles.variantBadgeWrap}>
-                      <GlassPill label={`Pillar: ${post.caption_variant}`} variant="primary" />
-                    </View>
-                  ) : null}
                   <SocialPostPreview
                     post={post}
                     authorName={authorName}
@@ -465,22 +472,22 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* ── Learned Insights Tab ──────────────────── */}
+        {/* ── Learned Insights Tab ────────────────────── */}
         {tab === 'learned' && (
           <View style={styles.feedContainer}>
             {learnings.length === 0 && !loading ? (
               <GlassCard style={styles.emptyCard}>
-                <Ionicons name="bulb-outline" size={36} color={colors.labelTertiary} />
-                <Text style={styles.emptyTitle}>Insights Accumulating</Text>
+                <Ionicons name="bulb-outline" size={34} color={colors.inkFaint} />
+                <Text style={styles.emptyTitle}>Insights accumulating</Text>
                 <Text style={styles.emptySubtitle}>
-                  Dexter is observing audience interactions. Actionable growth learnings will appear as your posts gain impressions.
+                  Dexter is observing audience interactions. Growth learnings appear as posts gain impressions.
                 </Text>
               </GlassCard>
             ) : (
               learnings.map((l) => (
                 <GlassCard key={l.id} style={styles.learnCard} elevated>
                   <View style={styles.learnHeader}>
-                    <Ionicons name="bulb" size={18} color={colors.warning} />
+                    <Ionicons name="bulb" size={18} color={colors.energy} />
                     <Text style={styles.learnDate}>{formatWhen(l.generated_at)}</Text>
                   </View>
                   <Text style={styles.learnSummary}>{l.summary}</Text>
@@ -500,122 +507,108 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: BENTO_PADDING, gap: spacing.lg, paddingBottom: spacing.xxxxl + 60 },
+  scroll: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxxl + 64 },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
   headerTextWrap: { flex: 1, gap: spacing.xs },
-  title: { ...typography.display, color: colors.labelPrimary, marginTop: spacing.xs },
-  subtitle: { ...typography.callout, color: colors.labelSecondary, marginTop: 2 },
-  refreshBtn: {
-    width: 36,
-    height: 36,
+  title: { ...typography.displaySmall, marginTop: spacing.xs },
+  subtitle: { ...typography.bodySmall, color: colors.inkSoft, marginTop: 2 },
+  iconBtn: {
+    width: 44,
+    height: 44,
     borderRadius: radii.pill,
-    backgroundColor: colors.glass,
+    backgroundColor: colors.surfaceSunken,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-
-  // ── Bento Grid ──
-  bentoGrid: { gap: BENTO_GAP },
-  bentoRow: { flexDirection: 'row', gap: BENTO_GAP },
-  bentoCard: {
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-    overflow: 'hidden',
-  },
-  bentoBlur: { flex: 1, overflow: 'hidden' },
-  bentoContent: {
-    flex: 1,
-    padding: spacing.lg,
-    justifyContent: 'center',
-  },
-  bento2x1: {
-    flex: 1,
-    height: BENTO_COL * 0.5,
-  },
-  bento1x1: {
-    flex: 1,
-    height: BENTO_COL * 0.65,
   },
 
   // ── Hero Card ──
-  heroAccent: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-    backgroundColor: colors.primary,
-  },
-  heroRow: {
+  heroCard: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    gap: spacing.lg,
   },
-  heroIconWrap: {
-    width: 44,
-    height: 44,
+  heroLeft: { flex: 1, gap: spacing.xs },
+  heroEyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  heroEyebrow: {
+    ...typography.label,
+    color: colors.primary,
+    fontSize: 11,
+  },
+  heroStat: {
+    ...typography.displayMedium,
+    marginTop: spacing.xs,
+    fontSize: 40,
+    lineHeight: 44,
+  },
+  heroStatLabel: {
+    ...typography.bodySmall,
+    color: colors.inkSoft,
+    marginTop: 2,
+  },
+  heroRight: { gap: spacing.sm, paddingTop: spacing.xs },
+  heroMiniRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  heroMiniText: { ...typography.caption, color: colors.inkSoft },
+  heroMiniTextMuted: { ...typography.caption, color: colors.inkFaint },
+
+  // ── Stat Grid ──
+  statGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    justifyContent: 'space-between',
+  },
+  statCard: {
+    width: '48.2%',
+    backgroundColor: colors.surface,
     borderRadius: radii.md,
-    backgroundColor: colors.glass,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    gap: spacing.xs,
+  },
+  statIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroTextWrap: { flex: 1 },
-  heroLabel: {
-    ...typography.caption2,
-    color: colors.primary,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+  statLabel: { ...typography.label, fontSize: 11 },
+  statValue: { ...typography.stat, marginTop: spacing.xs },
+  statMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  statMeta: { ...typography.caption2, color: colors.inkFaint, flex: 1 },
+  deltaPill: {
+    borderRadius: radii.pill,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
-  heroSubtext: {
-    ...typography.caption,
-    color: colors.labelSecondary,
-    marginTop: 2,
-  },
-
-  // ── Stat Cards ──
-  statValue: {
-    ...typography.heading,
-    color: colors.labelPrimary,
-    fontSize: 22,
-    marginTop: spacing.sm,
-  },
-  statLabel: {
-    ...typography.caption2,
-    color: colors.labelTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 2,
-  },
-  statGrowth: {
-    ...typography.caption2,
-    color: colors.positive,
-    fontWeight: '600',
-    marginTop: 2,
-  },
+  deltaText: { ...typography.caption2, fontWeight: '700' },
 
   // ── Channel Banner ──
-  channelBanner: {
-    gap: spacing.sm,
-  },
+  channelBanner: { gap: spacing.sm },
   channelBannerHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  channelBannerTitle: { ...typography.subheading, color: '#5AC8FA', fontWeight: '700' },
-  channelBannerText: { ...typography.caption, color: colors.labelSecondary, fontSize: 13, lineHeight: 18 },
+  channelBannerTitle: { ...typography.h3, color: colors.ink },
+  channelBannerText: { ...typography.bodySmall, color: colors.inkSoft, lineHeight: 19 },
   channelBannerBtn: {
-    backgroundColor: '#0A66C2',
-    borderRadius: radii.md,
-    paddingVertical: 10,
+    backgroundColor: colors.primary,
+    borderRadius: radii.pill,
+    paddingVertical: 12,
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
-  channelBannerBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
+  channelBannerBtnText: { color: colors.surface, fontFamily: 'Inter_600SemiBold', fontSize: 14 },
 
   // ── Feed ──
   feedContainer: { gap: spacing.lg },
@@ -627,56 +620,42 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginVertical: spacing.md,
   },
-  emptyTitle: {
-    ...typography.heading,
-    color: colors.labelPrimary,
-    marginTop: spacing.xs,
-  },
+  emptyTitle: { ...typography.h2, color: colors.ink, marginTop: spacing.xs },
   emptySubtitle: {
-    ...typography.callout,
-    color: colors.labelSecondary,
+    ...typography.bodySmall,
+    color: colors.inkSoft,
     textAlign: 'center',
-    fontSize: 14,
     lineHeight: 20,
-    maxWidth: 320,
+    maxWidth: 300,
   },
   emptyActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     backgroundColor: colors.primary,
-    borderRadius: radii.md,
+    borderRadius: radii.pill,
     paddingVertical: 12,
     paddingHorizontal: spacing.xl,
     marginTop: spacing.sm,
     ...shadows.primaryBtn,
   },
   emptyActionText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: colors.surface,
+    fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
   },
 
   postWrapper: { gap: spacing.sm },
-  decisionCard: {
-    gap: spacing.sm,
-  },
-  decisionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
+  decisionCard: { gap: spacing.sm },
+  decisionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   decisionLabel: {
-    ...typography.caption2,
+    ...typography.label,
     color: colors.primary,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    fontSize: 11,
   },
   reasonText: {
-    ...typography.callout,
-    color: colors.labelPrimary,
-    fontSize: 14,
+    ...typography.bodySmall,
+    color: colors.ink,
     lineHeight: 20,
   },
   postActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
@@ -684,35 +663,33 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.sm + 2,
-    borderRadius: radii.md,
+    paddingVertical: 10,
+    borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
-    backgroundColor: colors.glass,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  ghostBtnText: { ...typography.caption, color: colors.labelPrimary, fontWeight: '600' },
+  ghostBtnText: { ...typography.caption, color: colors.ink, fontFamily: 'Inter_600SemiBold' },
   solidBtn: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.sm + 2,
-    borderRadius: radii.md,
+    paddingVertical: 10,
+    borderRadius: radii.pill,
     backgroundColor: colors.primary,
     ...shadows.primaryBtn,
   },
-  solidBtnText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
-
-  variantBadgeWrap: { marginBottom: 2 },
+  solidBtnText: { ...typography.caption, color: colors.surface, fontFamily: 'Inter_700Bold' },
 
   learnCard: { gap: spacing.sm },
   learnHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  learnDate: { ...typography.caption2, color: colors.labelTertiary },
-  learnSummary: { ...typography.callout, color: colors.labelPrimary, fontSize: 14, lineHeight: 22 },
+  learnDate: { ...typography.caption2, color: colors.inkFaint },
+  learnSummary: { ...typography.bodySmall, color: colors.ink, lineHeight: 21 },
   goalPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.positiveSurface,
+    backgroundColor: colors.positiveFill,
     borderWidth: 1,
     borderColor: colors.positiveBorder,
     borderRadius: radii.pill,
@@ -720,5 +697,5 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     alignSelf: 'flex-start',
   },
-  goalText: { ...typography.caption2, color: colors.positive, fontWeight: '600' },
+  goalText: { ...typography.caption2, color: colors.positive, fontFamily: 'Inter_600SemiBold' },
 });

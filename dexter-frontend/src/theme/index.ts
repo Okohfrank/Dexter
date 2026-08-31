@@ -1,274 +1,437 @@
 /**
- * Dexter — Apple Human Interface Guidelines Design System
- * Dark-mode-first palette with glassmorphism, system fonts (SF Pro / Roboto),
- * continuous corner radii, and Apple's 8pt spacing grid.
+ * Dexter — DESIGN.md v1.0 Design System
+ * Single source of truth mirroring `dexter-frontend/DESIGN.md` §2.
+ * Companion machine-readable file: `dexter-design-system.css` (same values).
+ * Never hardcode a color, font size, spacing value, or radius — resolve to a token here.
  */
 
-/* ── Color Palette ────────────────────────────────────── */
+/* ── Color Tokens (§2.1) ──────────────────────────────── */
+export const colorBg = '#FBF8F2';           // Screen background (legacy)
+export const colorBgAlt = '#F3EEE1';        // Section background, alt rows (legacy)
+export const colorSurface = '#FFFFFF';      // Card surface
+export const colorSurfaceSunken = '#F6F3EA';// Inputs, inset areas (legacy)
+export const colorInk = '#000000';          // Primary text — pure black
+export const colorInkSoft = '#888888';      // Secondary text — gray
+export const colorInkFaint = '#999999';     // Placeholder, disabled, labels
+export const colorBorder = '#E0E0E0';       // Hairline borders — neutral gray
+export const colorAccent = '#CDDC39';       // Lime/chartreuse — primary actions, active tabs
+export const colorAccentStrong = '#B8CC2A'; // Pressed/hover on accent elements
+export const colorBrand = '#CDDC39';        // Alias — lime (replaces indigo)
+export const colorBrandTint = '#F5F8D0';    // Lime tint background
+export const colorBrandStrong = '#B8CC2A';  // Alias — pressed lime
+export const colorPremium = '#000000';      // Black (replaces burgundy)
+export const colorEnergy = '#CDDC39';       // Lime (replaces orange)
+export const colorPositiveText = '#000000'; // Black (replaces green)
+export const colorPositiveFill = '#F5F5F5'; // Light gray (replaces mint)
+export const colorNegativeText = '#000000'; // Black (replaces red)
+export const colorNegativeFill = '#F5F5F5'; // Light gray (replaces red tint)
+export const colorHighlightBg = '#F5F5F5';  // Light gray (replaces yellow)
+
+/* Paired darker text tokens for colored fills (§5) */
+export const colorOnHighlight = '#000000';  // Text on light gray
+export const colorOnPositive = '#000000';   // Text on light gray
+export const colorOnEnergy = '#000000';     // Text on lime
+
+/* Dark surface set — pure black mode */
+export const colorBgDark = '#000000';
+export const colorSurfaceDark = '#111111';
+export const colorInkDark = '#FFFFFF';
+export const colorBorderDark = '#333333';
+
+/* Backward-compatible palette aliases (legacy screens reference these until restyled) */
 export const colors = {
-  // ── Apple System Colors ──
-  systemBlue: '#007AFF',
-  systemGreen: '#34C759',
-  systemRed: '#FF3B30',
-  systemOrange: '#FF9500',
-  systemYellow: '#FFCC00',
-  systemPurple: '#AF52DE',
-  systemPink: '#FF2D55',
-  systemTeal: '#5AC8FA',
-  systemIndigo: '#5856D6',
-
-  // ── Dark Backgrounds ──
-  background: '#000000',
-  backgroundPrimary: '#1C1C1E',
-  backgroundSecondary: '#2C2C2E',
-  backgroundTertiary: '#3A3A3C',
-  backgroundElevated: '#1C1C1E',
-
-  // ── Glass Surfaces ──
-  glass: 'rgba(255, 255, 255, 0.08)',
-  glassLight: 'rgba(255, 255, 255, 0.12)',
-  glassHeavy: 'rgba(255, 255, 255, 0.18)',
-  glassBorder: 'rgba(255, 255, 255, 0.15)',
-  glassBorderLight: 'rgba(255, 255, 255, 0.08)',
-  glassBorderFocused: 'rgba(0, 122, 255, 0.50)',
-
-  // ── Glass surface presets ──
-  surface: 'rgba(255, 255, 255, 0.08)',
-  surfaceAlt: 'rgba(255, 255, 255, 0.05)',
-  surfacePressed: 'rgba(255, 255, 255, 0.15)',
-  surfaceHover: 'rgba(255, 255, 255, 0.12)',
-
-  // ── Labels (Apple's dark-mode text) ──
-  labelPrimary: '#FFFFFF',
-  labelSecondary: 'rgba(235, 235, 245, 0.60)',
-  labelTertiary: 'rgba(235, 235, 245, 0.30)',
-  labelQuaternary: 'rgba(235, 235, 245, 0.18)',
-
-  // ── Backward compatibility aliases ──
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(235, 235, 245, 0.60)',
-  textMuted: 'rgba(235, 235, 245, 0.30)',
-  textInverse: '#000000',
-
-  // ── Separators ──
-  separator: 'rgba(84, 84, 88, 0.65)',
-  separatorOpaque: '#38383A',
-  border: 'rgba(255, 255, 255, 0.15)',
-  borderLight: 'rgba(255, 255, 255, 0.08)',
-  borderFocused: 'rgba(0, 122, 255, 0.50)',
-  divider: 'rgba(84, 84, 88, 0.65)',
-
-  // ── Functional Colors ──
-  primary: '#007AFF',
-  primaryDark: '#0056CC',
-  primaryLight: '#5AC8FA',
-  primarySurface: 'rgba(0, 122, 255, 0.15)',
-  primaryBorder: 'rgba(0, 122, 255, 0.30)',
-
-  accent: '#FF9500',
-  accentSurface: 'rgba(255, 149, 0, 0.15)',
-  accentBorder: 'rgba(255, 149, 0, 0.30)',
-
-  secondary: '#5AC8FA',
-  secondarySurface: 'rgba(90, 200, 250, 0.15)',
-  secondaryBorder: 'rgba(90, 200, 250, 0.30)',
-
-  positive: '#34C759',
-  positiveSurface: 'rgba(52, 199, 89, 0.15)',
-  positiveBorder: 'rgba(52, 199, 89, 0.30)',
-
-  negative: '#FF3B30',
-  negativeSurface: 'rgba(255, 59, 48, 0.15)',
-  negativeBorder: 'rgba(255, 59, 48, 0.30)',
-
-  warning: '#FF9500',
-  warningSurface: 'rgba(255, 149, 0, 0.15)',
-  warningBorder: 'rgba(255, 149, 0, 0.30)',
-
-  // ── Misc ──
-  overlay: 'rgba(0, 0, 0, 0.60)',
-  skeleton: 'rgba(255, 255, 255, 0.06)',
+  background: colorSurface,        // white (was warm paper)
+  backgroundAlt: '#F5F5F5',
+  surface: colorSurface,
+  surfaceSunken: '#F5F5F5',
+  textPrimary: colorInk,
+  textSecondary: colorInkSoft,
+  textMuted: colorInkFaint,
+  textInverse: colorSurface,
+  labelPrimary: colorInk,
+  labelSecondary: colorInkSoft,
+  labelTertiary: colorInkFaint,
+  primary: colorAccent,            // lime
+  primaryDark: colorAccentStrong,
+  primaryLight: '#E0E86B',
+  primarySurface: '#F5F8D0',
+  primaryBorder: '#D4DF6B',
+  accent: colorAccent,
+  accentSurface: '#F5F8D0',
+  accentBorder: '#D4DF6B',
+  secondary: colorAccent,
+  secondarySurface: '#F5F8D0',
+  secondaryBorder: '#D4DF6B',
+  positive: colorInk,
+  positiveSurface: '#F5F5F5',
+  positiveBorder: '#E0E0E0',
+  negative: colorInk,
+  negativeSurface: '#F5F5F5',
+  negativeBorder: '#E0E0E0',
+  warning: colorAccent,
+  warningSurface: '#F5F8D0',
+  warningBorder: '#D4DF6B',
+  highlight: '#F5F5F5',
+  border: colorBorder,
+  borderLight: '#F0F0F0',
+  divider: colorBorder,
+  separator: colorBorder,
+  skeleton: '#F0F0F0',
+  overlay: 'rgba(0, 0, 0, 0.5)',
+  glass: '#F5F5F5',
+  glassLight: '#FAFAFA',
+  glassHeavy: '#FFFFFF',
+  glassBorder: colorBorder,
+  glassBorderLight: '#F0F0F0',
+  glassBorderFocused: colorAccent,
+  surfaceAlt: '#F5F5F5',
+  surfacePressed: '#E8E8E8',
+  surfaceHover: '#F0F0F0',
+  systemBlue: colorAccent,
+  systemGreen: colorInk,
+  systemRed: colorInk,
+  systemOrange: colorAccent,
+  systemYellow: '#F5F5F5',
+  systemPurple: colorInk,
+  systemPink: colorInk,
+  systemTeal: colorAccent,
+  systemIndigo: colorAccent,
+  backgroundPrimary: colorSurface,
+  backgroundSecondary: '#F5F5F5',
+  backgroundTertiary: colorBorder,
+  backgroundElevated: colorSurface,
+  /* DESIGN.md §2.1 semantic names */
+  ink: colorInk,
+  inkSoft: colorInkSoft,
+  inkFaint: colorInkFaint,
+  accentStrong: colorAccentStrong,
+  brand: colorAccent,
+  brandTint: '#F5F8D0',
+  brandStrong: colorAccentStrong,
+  energy: colorAccent,
+  premium: colorInk,
+  positiveFill: '#F5F5F5',
+  negativeFill: '#F5F5F5',
+  highlightFill: '#F5F5F5',
+  onHighlight: colorInk,
+  onPositive: colorInk,
+  onEnergy: colorInk,
+  bgDark: colorBgDark,
+  surfaceDark: colorSurfaceDark,
+  inkDark: colorInkDark,
+  borderDark: colorBorderDark,
 };
 
-/* ── Spacing (Apple 8pt Grid) ─────────────────────────── */
+/* ── Spacing (§2.3) — 4px base scale ─────────────────── */
+export const space1 = 4;
+export const space2 = 8;
+export const space3 = 12;
+export const space4 = 16;
+export const space5 = 20;
+export const space6 = 24;
+export const space7 = 32;
+export const space8 = 40;
+export const space9 = 48;
+export const space10 = 64;
+
 export const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
-  xxxl: 32,
-  xxxxl: 48,
+  xs: space1,     // 4
+  sm: space2,     // 8
+  md: space3,     // 12
+  lg: space4,     // 16
+  xl: space5,     // 20
+  xxl: space6,    // 24
+  xxxl: space7,   // 32
+  xxxxl: space8,  // 40
+  // Legacy alias for the old 48px bucket
+  huge: space9,   // 48
 };
 
-/* ── Corner Radii (Apple Continuous Corners) ──────────── */
+/* ── Radius (§2.4) ───────────────────────────────────── */
+export const radiusSm = 12;    // chips, inputs, small tappable rows
+export const radiusMd = 20;    // standard card
+export const radiusLg = 28;    // hero/feature card, bottom sheets
+export const radiusFull = 999; // buttons, pills, nav, avatars
+
 export const radii = {
-  xs: 8,
-  sm: 10,
-  md: 13,
-  lg: 16,
-  xl: 22,
-  xxl: 28,
-  xxxl: 39,
-  pill: 999,
+  xs: radiusSm,   // 12 — minimum for any tappable element
+  sm: radiusSm,   // 12
+  md: radiusMd,   // 20
+  lg: radiusLg,   // 28
+  xl: radiusLg,   // 28
+  xxl: radiusLg,  // 28
+  xxxl: radiusLg, // 28 — legacy alias for bottom sheet top corners
+  pill: radiusFull, // 999
 };
 
-/* ── System Fonts ─────────────────────────────────────── */
-export const fonts = {
-  regular: 'System',
-  medium: 'System',
-  semibold: 'System',
-  bold: 'System',
-  extrabold: 'System',
-};
+/* ── Shadow (§2.5) — neutral black ────────────────────── */
+const SHADOW_SM: [number, number, number, string] = [0, 1, 2, 'rgba(0, 0, 0, 0.05)'];
+const SHADOW_MD: [number, number, number, string] = [0, 8, 24, 'rgba(0, 0, 0, 0.10)'];
+const SHADOW_LG: [number, number, number, string] = [0, 20, 48, 'rgba(0, 0, 0, 0.15)'];
 
-/* ── Typography Presets (Apple HIG) ───────────────────── */
-export const typography = {
-  largeTitle: {
-    fontSize: 34,
-    lineHeight: 41,
-    fontWeight: '700' as const,
-    letterSpacing: 0.37,
-    color: colors.labelPrimary,
-  },
-  display: {
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: '700' as const,
-    letterSpacing: 0.36,
-    color: colors.labelPrimary,
-  },
-  heading: {
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: '700' as const,
-    letterSpacing: 0.35,
-    color: colors.labelPrimary,
-  },
-  title3: {
-    fontSize: 20,
-    lineHeight: 25,
-    fontWeight: '600' as const,
-    letterSpacing: 0.38,
-    color: colors.labelPrimary,
-  },
-  subheading: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: '600' as const,
-    letterSpacing: -0.41,
-    color: colors.labelPrimary,
-  },
-  body: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: '400' as const,
-    letterSpacing: -0.41,
-    color: colors.labelSecondary,
-  },
-  callout: {
-    fontSize: 16,
-    lineHeight: 21,
-    fontWeight: '400' as const,
-    letterSpacing: -0.32,
-    color: colors.labelSecondary,
-  },
-  caption: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '500' as const,
-    letterSpacing: -0.08,
-    color: colors.labelSecondary,
-  },
-  caption2: {
-    fontSize: 11,
-    lineHeight: 13,
-    fontWeight: '500' as const,
-    letterSpacing: 0.07,
-    color: colors.labelTertiary,
-  },
-  footnote: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '400' as const,
-    letterSpacing: -0.08,
-    color: colors.labelTertiary,
-  },
-};
-
-/* ── Shadow Presets (Apple Diffused Shadows) ──────────── */
 export const shadows = {
+  sm: {
+    shadowColor: '#000000',
+    shadowOpacity: 0.05,
+    shadowRadius: SHADOW_SM[2],
+    shadowOffset: { width: SHADOW_SM[0], height: SHADOW_SM[1] },
+    elevation: 2,
+  },
+  md: {
+    shadowColor: '#000000',
+    shadowOpacity: 0.10,
+    shadowRadius: SHADOW_MD[2],
+    shadowOffset: { width: SHADOW_MD[0], height: SHADOW_MD[1] },
+    elevation: 4,
+  },
+  lg: {
+    shadowColor: '#000000',
+    shadowOpacity: 0.15,
+    shadowRadius: SHADOW_LG[2],
+    shadowOffset: { width: SHADOW_LG[0], height: SHADOW_LG[1] },
+    elevation: 8,
+  },
+  // Legacy aliases
   card: {
     shadowColor: '#000000',
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    shadowOpacity: 0.05,
+    shadowRadius: SHADOW_SM[2],
+    shadowOffset: { width: SHADOW_SM[0], height: SHADOW_SM[1] },
+    elevation: 2,
   },
   elevated: {
     shadowColor: '#000000',
-    shadowOpacity: 0.45,
-    shadowRadius: 30,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 12,
+    shadowOpacity: 0.10,
+    shadowRadius: SHADOW_MD[2],
+    shadowOffset: { width: SHADOW_MD[0], height: SHADOW_MD[1] },
+    elevation: 4,
   },
   primaryBtn: {
-    shadowColor: '#007AFF',
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    shadowColor: '#000000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   subtle: {
     shadowColor: '#000000',
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    shadowOpacity: 0.05,
+    shadowRadius: SHADOW_SM[2],
+    shadowOffset: { width: SHADOW_SM[0], height: SHADOW_SM[1] },
+    elevation: 1,
   },
   glow: {
-    shadowColor: '#007AFF',
-    shadowOpacity: 0.20,
-    shadowRadius: 24,
+    shadowColor: colorAccent,
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
     shadowOffset: { width: 0, height: 0 },
     elevation: 0,
   },
 };
 
-/* ── Glass Style Presets ──────────────────────────────── */
+/* ── Motion (§2.6) ────────────────────────────────────── */
+export const motion = {
+  durationFast: 150,
+  durationBase: 240,
+  easingOut: [0.16, 1, 0.3, 1] as const,
+};
+
+/* ── Fonts (§2.2) — Fraunces (display) + Inter (UI/body) only ── */
+export const fontFamilyDisplay = 'Fraunces_700Bold';
+export const fontFamilyDisplayMedium = 'Fraunces_600SemiBold';
+export const fontFamilyRegular = 'Inter_400Regular';
+export const fontFamilyMedium = 'Inter_500Medium';
+export const fontFamilySemiBold = 'Inter_600SemiBold';
+export const fontFamilyBold = 'Inter_700Bold';
+
+/* Backward-compatible font aliases */
+export const fonts = {
+  regular: fontFamilyRegular,
+  medium: fontFamilyMedium,
+  semibold: fontFamilySemiBold,
+  bold: fontFamilyBold,
+  extrabold: fontFamilyBold,
+  display: fontFamilyDisplay,
+  displayMedium: fontFamilyDisplayMedium,
+};
+
+/* ── Typography Presets (§2.2) ────────────────────────── */
+export const typography = {
+  /// Fraunces display (max 1–2 elements per screen)
+  displayLarge: {
+    fontFamily: fontFamilyDisplay,
+    fontSize: 40,
+    lineHeight: 43.2,
+    letterSpacing: -0.5,
+    color: colorInk,
+  },
+  displayMedium: {
+    fontFamily: fontFamilyDisplayMedium,
+    fontSize: 32,
+    lineHeight: 35.8,
+    letterSpacing: -0.4,
+    color: colorInk,
+  },
+  displaySmall: {
+    fontFamily: fontFamilyDisplayMedium,
+    fontSize: 26,
+    lineHeight: 30.7,
+    letterSpacing: -0.3,
+    color: colorInk,
+  },
+  /// Inter UI
+  h1: {
+    fontFamily: fontFamilyBold,
+    fontSize: 22,
+    lineHeight: 27.5,
+    letterSpacing: -0.2,
+    color: colorInk,
+  },
+  h2: {
+    fontFamily: fontFamilySemiBold,
+    fontSize: 18,
+    lineHeight: 23.4,
+    letterSpacing: -0.1,
+    color: colorInk,
+  },
+  h3: {
+    fontFamily: fontFamilySemiBold,
+    fontSize: 15,
+    lineHeight: 20.3,
+    letterSpacing: 0,
+    color: colorInk,
+  },
+  body: {
+    fontFamily: fontFamilyRegular,
+    fontSize: 15,
+    lineHeight: 23.3,
+    letterSpacing: 0,
+    color: colorInk,
+  },
+  bodySmall: {
+    fontFamily: fontFamilyRegular,
+    fontSize: 13,
+    lineHeight: 19.5,
+    letterSpacing: 0,
+    color: colorInk,
+  },
+  label: {
+    fontFamily: fontFamilySemiBold,
+    fontSize: 12,
+    lineHeight: 15.6,
+    letterSpacing: 0.6,
+    color: colorInkFaint,
+    textTransform: 'uppercase' as const,
+  },
+  stat: {
+    fontFamily: fontFamilyBold,
+    fontSize: 28,
+    lineHeight: 30.8,
+    letterSpacing: -0.3,
+    color: colorInk,
+    fontVariant: ['tabular-nums'] as ['tabular-nums'],
+  },
+  caption2: {
+    fontFamily: fontFamilyMedium,
+    fontSize: 11,
+    lineHeight: 15.4,
+    letterSpacing: 0.2,
+    color: colorInkFaint,
+  },
+  // Backward-compatible aliases used by legacy screens
+  largeTitle: {
+    fontFamily: fontFamilyDisplay,
+    fontSize: 34,
+    lineHeight: 40.8,
+    letterSpacing: -0.4,
+    color: colorInk,
+  },
+  display: {
+    fontFamily: fontFamilyDisplay,
+    fontSize: 28,
+    lineHeight: 33.6,
+    letterSpacing: -0.3,
+    color: colorInk,
+  },
+  heading: {
+    fontFamily: fontFamilyBold,
+    fontSize: 22,
+    lineHeight: 27.5,
+    letterSpacing: -0.2,
+    color: colorInk,
+  },
+  title3: {
+    fontFamily: fontFamilySemiBold,
+    fontSize: 20,
+    lineHeight: 26,
+    letterSpacing: -0.2,
+    color: colorInk,
+  },
+  subheading: {
+    fontFamily: fontFamilySemiBold,
+    fontSize: 17,
+    lineHeight: 22.1,
+    letterSpacing: -0.2,
+    color: colorInk,
+  },
+  callout: {
+    fontFamily: fontFamilyRegular,
+    fontSize: 16,
+    lineHeight: 22.4,
+    letterSpacing: -0.15,
+    color: colorInkSoft,
+  },
+  caption: {
+    fontFamily: fontFamilyMedium,
+    fontSize: 13,
+    lineHeight: 18.2,
+    letterSpacing: 0,
+    color: colorInkSoft,
+  },
+  footnote: {
+    fontFamily: fontFamilyRegular,
+    fontSize: 13,
+    lineHeight: 18.2,
+    letterSpacing: 0,
+    color: colorInkFaint,
+  },
+};
+
+/* ── Surface presets (aligned to DESIGN.md §3.2) ─────── */
 export const glass = {
   card: {
-    backgroundColor: colors.glass,
-    borderRadius: radii.xl,
+    backgroundColor: colorSurface,
+    borderRadius: radiusMd,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colorBorder,
     overflow: 'hidden' as const,
+    ...shadows.sm,
   },
   cardLight: {
-    backgroundColor: colors.glassLight,
-    borderRadius: radii.xl,
+    backgroundColor: colorSurface,
+    borderRadius: radiusMd,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colorBorder,
     overflow: 'hidden' as const,
   },
   cardHeavy: {
-    backgroundColor: colors.glassHeavy,
-    borderRadius: radii.xl,
+    backgroundColor: colorSurface,
+    borderRadius: radiusMd,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colorBorder,
     overflow: 'hidden' as const,
+    ...shadows.md,
   },
   pill: {
-    backgroundColor: colors.glass,
-    borderRadius: radii.pill,
+    backgroundColor: colorSurfaceSunken,
+    borderRadius: radiusFull,
     borderWidth: 1,
-    borderColor: colors.glassBorderLight,
+    borderColor: colorBorder,
   },
   input: {
-    backgroundColor: colors.glass,
-    borderRadius: radii.md,
+    backgroundColor: colorSurfaceSunken,
+    borderRadius: radiusFull,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colorBorder,
   },
 };

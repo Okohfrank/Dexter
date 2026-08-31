@@ -14,9 +14,11 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
-import { generateContentStrategy, FALLBACK_STRATEGY } from '../../src/api/strategy';
+import { generateContentStrategy } from '../../src/api/strategy';
 import { GlassCard, GlassPill } from '../../src/components/ui';
 import type { ContentPlan } from '../../src/types';
+
+const MAX_FREQUENCY = 21;
 
 export default function StrategyReviewScreen() {
   const router = useRouter();
@@ -25,8 +27,8 @@ export default function StrategyReviewScreen() {
   const setAutonomousMode = useAppStore((s) => s.setAutonomousMode);
   const autonomousMode = useAppStore((s) => s.autonomousMode);
 
-  const [plan, setPlan] = useState<ContentPlan>(FALLBACK_STRATEGY);
-  const [frequency, setFrequency] = useState(FALLBACK_STRATEGY.frequencyPerWeek);
+  const [plan, setPlan] = useState<ContentPlan | null>(null);
+  const [frequency, setFrequency] = useState(4);
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(autonomousMode);
 
@@ -35,9 +37,7 @@ export default function StrategyReviewScreen() {
       try {
         const derived = await generateContentStrategy(business?.id);
         setPlan(derived);
-        setFrequency(derived.frequencyPerWeek);
-      } catch {
-        setPlan(FALLBACK_STRATEGY);
+        setFrequency(derived?.frequencyPerWeek ?? 4);
       } finally {
         setLoading(false);
       }
@@ -56,7 +56,9 @@ export default function StrategyReviewScreen() {
             onPress: () => {
               setEnabled(true);
               setAutonomousMode(true);
-              setContentPlan({ ...plan, frequencyPerWeek: frequency });
+              if (plan) {
+                setContentPlan({ ...plan, frequencyPerWeek: frequency });
+              }
               router.replace('/(dashboard)');
             },
           },
@@ -84,10 +86,28 @@ export default function StrategyReviewScreen() {
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingText}>Dexter is optimizing your posting strategy…</Text>
           </GlassCard>
+        ) : !plan ? (
+          <GlassCard style={styles.emptyCard}>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="calendar-clear-outline" size={30} color={colors.inkFaint} />
+            </View>
+            <Text style={styles.emptyTitle}>No strategy available</Text>
+            <Text style={styles.emptyText}>
+              Connect a business and a LinkedIn account from the dashboard, then come back here to generate your plan.
+            </Text>
+            <Pressable
+              style={styles.primaryBtn}
+              onPress={() => {
+                router.replace('/(dashboard)');
+              }}
+            >
+              <Text style={styles.primaryBtnText}>Go to Dashboard</Text>
+            </Pressable>
+          </GlassCard>
         ) : (
           <>
             {/* Frequency Card */}
-            <GlassCard style={styles.card} elevated>
+            <GlassCard style={styles.card}>
               <View style={styles.cardHeader}>
                 <Ionicons name="calendar-outline" size={18} color={colors.primary} />
                 <Text style={styles.cardLabel}>Posting Frequency</Text>
@@ -97,7 +117,7 @@ export default function StrategyReviewScreen() {
                   style={styles.stepBtn}
                   onPress={() => setFrequency((f) => Math.max(1, f - 1))}
                 >
-                  <Ionicons name="remove" size={18} color={colors.labelPrimary} />
+                  <Ionicons name="remove" size={18} color={colors.ink} />
                 </Pressable>
                 <View style={styles.stepValueWrap}>
                   <Text style={styles.stepValueNumber}>{frequency}</Text>
@@ -105,9 +125,9 @@ export default function StrategyReviewScreen() {
                 </View>
                 <Pressable
                   style={styles.stepBtn}
-                  onPress={() => setFrequency((f) => Math.min(21, f + 1))}
+                  onPress={() => setFrequency((f) => Math.min(MAX_FREQUENCY, f + 1))}
                 >
-                  <Ionicons name="add" size={18} color={colors.labelPrimary} />
+                  <Ionicons name="add" size={18} color={colors.ink} />
                 </Pressable>
               </View>
             </GlassCard>
@@ -143,13 +163,14 @@ export default function StrategyReviewScreen() {
               </View>
               <View style={styles.reasonBox}>
                 <Text style={styles.reasonText}>
-                  Why: Mid-morning slots (8:30–10:15 AM) yield the highest initial impression velocity and comment rate for executive audiences.
+                  {plan.notes ||
+                    'Why: Mid-morning slots yield the highest initial impression velocity and comment rate for executive audiences.'}
                 </Text>
               </View>
             </GlassCard>
 
             {/* Autonomous Mode Hand-Off Card */}
-            <GlassCard style={styles.autonomyCard} elevated highlighted>
+            <GlassCard style={styles.autonomyCard} elevated>
               <View style={styles.autonomyHeader}>
                 <View style={styles.autonomyIconWrap}>
                   <Ionicons name="rocket" size={24} color="#FFFFFF" />
@@ -163,18 +184,18 @@ export default function StrategyReviewScreen() {
                 <Switch
                   value={enabled}
                   onValueChange={handleToggle}
-                  trackColor={{ false: colors.backgroundTertiary, true: colors.primary }}
+                  trackColor={{ false: colors.border, true: colors.primary }}
                   thumbColor="#FFFFFF"
-                  ios_backgroundColor={colors.backgroundTertiary}
+                  ios_backgroundColor={colors.border}
                 />
               </View>
             </GlassCard>
+
+            <Text style={styles.hint}>
+              You maintain full supervisory control. Override or pause at any time from your dashboard.
+            </Text>
           </>
         )}
-
-        <Text style={styles.hint}>
-          You maintain full supervisory control. Override or pause at any time from your dashboard.
-        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -182,7 +203,7 @@ export default function StrategyReviewScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxl },
+  scroll: { padding: spacing.xl, gap: spacing.lg, paddingBottom: spacing.xxxl },
   header: { gap: spacing.xs },
   eyebrow: {
     ...typography.caption2,
@@ -191,8 +212,8 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     fontWeight: '700',
   },
-  title: { ...typography.display, color: colors.labelPrimary },
-  subtitle: { ...typography.body, color: colors.labelSecondary },
+  title: { ...typography.displaySmall, color: colors.ink },
+  subtitle: { ...typography.body, color: colors.inkSoft },
   loadingCard: {
     padding: spacing.xxxl,
     alignItems: 'center',
@@ -202,29 +223,64 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...typography.caption,
-    color: colors.labelSecondary,
+    color: colors.inkSoft,
     textAlign: 'center',
   },
+  emptyCard: {
+    padding: spacing.xxl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginVertical: spacing.xl,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surfaceSunken,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  emptyTitle: { ...typography.h3, color: colors.ink },
+  emptyText: {
+    ...typography.callout,
+    color: colors.inkSoft,
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 300,
+  },
+  primaryBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radii.pill,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.xl,
+    marginTop: spacing.sm,
+    ...shadows.primaryBtn,
+  },
+  primaryBtnText: { color: '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 14 },
   card: { gap: spacing.md },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  cardLabel: { ...typography.subheading, color: colors.labelPrimary, fontWeight: '700' },
+  cardLabel: { ...typography.subheading, color: colors.ink, fontWeight: '700' },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.glass,
+    backgroundColor: colors.surfaceSunken,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     padding: spacing.xs,
   },
   stepBtn: {
     width: 44,
     height: 44,
     borderRadius: radii.pill,
-    backgroundColor: colors.glass,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -232,11 +288,11 @@ const styles = StyleSheet.create({
   stepValueNumber: {
     fontSize: 22,
     fontWeight: '700',
-    color: colors.labelPrimary,
+    color: colors.ink,
   },
   stepValueUnit: {
     ...typography.caption2,
-    color: colors.labelSecondary,
+    color: colors.inkSoft,
     fontSize: 11,
   },
   pillarList: { gap: spacing.sm },
@@ -245,24 +301,24 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: radii.pill,
-    backgroundColor: colors.positiveSurface,
+    backgroundColor: colors.positiveFill,
     borderWidth: 1,
     borderColor: colors.positiveBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pillarText: { ...typography.body, color: colors.labelPrimary, flex: 1, fontSize: 14 },
+  pillarText: { ...typography.body, color: colors.ink, flex: 1, fontSize: 14 },
   timesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   reasonBox: {
-    backgroundColor: colors.glass,
+    backgroundColor: colors.surfaceSunken,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     padding: spacing.md,
   },
   reasonText: {
     ...typography.caption,
-    color: colors.labelSecondary,
+    color: colors.inkSoft,
     lineHeight: 18,
     fontStyle: 'italic',
   },
@@ -285,11 +341,11 @@ const styles = StyleSheet.create({
     ...shadows.primaryBtn,
   },
   autonomyBody: { flex: 1 },
-  autonomyTitle: { ...typography.subheading, color: colors.labelPrimary, fontWeight: '700' },
-  autonomySubtitle: { ...typography.caption2, color: colors.labelSecondary, marginTop: 2 },
+  autonomyTitle: { ...typography.subheading, color: colors.ink, fontWeight: '700' },
+  autonomySubtitle: { ...typography.caption2, color: colors.inkSoft, marginTop: 2 },
   hint: {
     ...typography.caption2,
-    color: colors.labelTertiary,
+    color: colors.inkFaint,
     textAlign: 'center',
     paddingHorizontal: spacing.lg,
   },

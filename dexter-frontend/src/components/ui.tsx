@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,21 @@ import {
   ViewStyle,
   StyleProp,
   Dimensions,
+  AccessibilityInfo,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, fonts, shadows, glass } from '../theme';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withDelay,
+  withSpring,
+  Easing,
+  cancelAnimation,
+} from 'react-native-reanimated';
+import { colors, spacing, radii, typography, fonts, shadows, motion, colorAccent } from '../theme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -46,56 +56,54 @@ export function AuthScreen({ children }: { children: React.ReactNode }) {
 export function BrandMark() {
   return (
     <View style={styles.logo}>
-      <BlurView intensity={40} tint="dark" style={styles.logoBlur}>
-        <View style={styles.logoInner}>
-          <View style={styles.logoIcon}>
-            <Ionicons name="sparkles" size={14} color="#FFFFFF" />
-          </View>
-          <Text style={styles.logoText}>Dexter</Text>
-        </View>
-      </BlurView>
+      <Text style={styles.logoText}>Dexter</Text>
     </View>
   );
 }
 
-/* ── Glass Card ──────────────────────────────────────── */
+/* ── Card (§3.2) ─────────────────────────────────────── */
 export function GlassCard({
   children,
   style,
   elevated,
   highlighted,
-  intensity = 25,
 }: {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   elevated?: boolean;
   highlighted?: boolean;
-  intensity?: number;
 }) {
   return (
     <View
       style={[
-        styles.glassCardOuter,
-        elevated && shadows.card,
-        highlighted && styles.glassCardHighlighted,
+        styles.cardOuter,
+        elevated && shadows.md,
+        highlighted && styles.cardHighlighted,
         style,
       ]}
     >
-      <BlurView
-        intensity={intensity}
-        tint="dark"
-        style={styles.glassCardBlur}
-      >
-        <View style={[styles.glassCardContent]}>
-          {children}
-        </View>
-      </BlurView>
+      <View style={styles.cardContent}>{children}</View>
     </View>
   );
 }
 
 /** Backward-compat alias */
 export const Card = GlassCard;
+
+/* ── Hero Card (§3.2) ────────────────────────────────── */
+export function HeroCard({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View style={[styles.heroCardOuter, shadows.md, style]}>
+      <View style={styles.heroCardContent}>{children}</View>
+    </View>
+  );
+}
 
 /* ── Bento Card (Variable-size grid card) ────────────── */
 export type BentoSize = '1x1' | '2x1' | '1x2' | '2x2' | 'full';
@@ -118,25 +126,19 @@ export function BentoCard({
       style={[
         styles.bentoCardOuter,
         bentoStyle,
-        accentColor && { borderColor: `${accentColor}33` },
+        accentColor && { borderColor: accentColor },
         style,
       ]}
     >
-      <BlurView intensity={20} tint="dark" style={styles.bentoCardBlur}>
-        <View style={styles.bentoCardContent}>
-          {accentColor && (
-            <View
-              style={[styles.bentoAccentStrip, { backgroundColor: accentColor }]}
-            />
-          )}
-          {children}
-        </View>
-      </BlurView>
+      <View style={styles.bentoCardContent}>
+        {accentColor && <View style={[styles.bentoAccentStrip, { backgroundColor: accentColor }]} />}
+        {children}
+      </View>
     </View>
   );
 }
 
-/* ── Glass Pill Badge ────────────────────────────────── */
+/* ── Status Pill (§3.4) ──────────────────────────────── */
 export function GlassPill({
   label,
   icon,
@@ -147,11 +149,11 @@ export function GlassPill({
   variant?: 'default' | 'positive' | 'primary' | 'warning' | 'negative';
 }) {
   const variantStyles = {
-    default: { bg: colors.glass, border: colors.glassBorderLight, text: colors.labelSecondary },
-    positive: { bg: colors.positiveSurface, border: colors.positiveBorder, text: colors.positive },
-    primary: { bg: colors.primarySurface, border: colors.primaryBorder, text: colors.primary },
-    warning: { bg: colors.warningSurface, border: colors.warningBorder, text: colors.warning },
-    negative: { bg: colors.negativeSurface, border: colors.negativeBorder, text: colors.negative },
+    default: { bg: '#F5F5F5', border: colors.border, text: colors.inkSoft },
+    positive: { bg: '#F5F5F5', border: '#E0E0E0', text: '#000000' },
+    primary: { bg: '#F5F8D0', border: '#D4DF6B', text: '#000000' },
+    warning: { bg: '#F5F5F5', border: '#E0E0E0', text: '#000000' },
+    negative: { bg: '#F5F5F5', border: '#E0E0E0', text: '#000000' },
   }[variant];
 
   return (
@@ -165,7 +167,31 @@ export function GlassPill({
 /** Backward-compat alias */
 export const Pill = GlassPill;
 
-/* ── Segmented Control (Apple-style) ─────────────────── */
+/* ── Filter Chip (§3.4) ──────────────────────────────── */
+export function FilterChip({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active?: boolean;
+  onPress?: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.filterChip,
+        active && styles.filterChipActive,
+        pressed && { transform: [{ scale: 0.97 }] },
+      ]}
+    >
+      <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+/* ── Segmented Control ───────────────────────────────── */
 export function SegmentedControl<T extends string>({
   segments,
   selected,
@@ -175,41 +201,74 @@ export function SegmentedControl<T extends string>({
   selected: T;
   onChange: (key: T) => void;
 }) {
+  const segmentCount = segments.length;
+  const selectedIndex = segments.findIndex((s) => s.key === selected);
+
+  // Track layout widths for each segment
+  const [containerWidth, setContainerWidth] = useState(0);
+  const PILL_PADDING = 4; // inner padding of the outer track
+  const pillWidth = containerWidth > 0 ? (containerWidth - PILL_PADDING * 2) / segmentCount : 0;
+
+  // Animated X position of the sliding pill
+  const translateX = useSharedValue(0);
+
+  useEffect(() => {
+    if (pillWidth > 0) {
+      translateX.value = withTiming(PILL_PADDING + selectedIndex * pillWidth, {
+        duration: motion.durationBase,
+        easing: Easing.bezier(0.16, 1, 0.3, 1),
+      });
+    }
+  }, [selectedIndex, pillWidth]);
+
+  const pillAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+    width: pillWidth,
+  }));
+
   return (
-    <View style={styles.segmentedOuter}>
-      <BlurView intensity={20} tint="dark" style={styles.segmentedBlur}>
-        <View style={styles.segmentedInner}>
-          {segments.map((seg) => {
-            const active = seg.key === selected;
-            return (
-              <Pressable
-                key={seg.key}
-                style={[styles.segmentBtn, active && styles.segmentBtnActive]}
-                onPress={() => onChange(seg.key)}
-              >
-                {seg.icon && (
-                  <Ionicons
-                    name={seg.icon}
-                    size={13}
-                    color={active ? '#FFFFFF' : colors.labelTertiary}
-                  />
-                )}
-                <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
-                  {seg.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </BlurView>
+    <View
+      style={styles.segmentedOuter}
+      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+    >
+      {/* Sliding white pill indicator */}
+      {pillWidth > 0 && (
+        <Animated.View style={[styles.segmentPill, pillAnimStyle]} />
+      )}
+
+      {/* Segment buttons */}
+      {segments.map((seg) => {
+        const active = seg.key === selected;
+        return (
+          <Pressable
+            key={seg.key}
+            style={({ pressed }) => [
+              styles.segmentBtn,
+              pressed && { opacity: 0.7 },
+            ]}
+            onPress={() => onChange(seg.key)}
+          >
+            {seg.icon && (
+              <Ionicons
+                name={seg.icon}
+                size={13}
+                color={active ? colors.ink : colors.inkFaint}
+              />
+            )}
+            <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
+              {seg.label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
 
-/* ── Text Input (Glass) ──────────────────────────────── */
+/* ── Text Input (§3.5) — underline style ──────────────── */
 type AuthInputProps = TextInputProps & {
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon?: keyof typeof Ionicons.glyphMap;
   secure?: boolean;
 };
 
@@ -221,15 +280,10 @@ export function AuthTextInput({ label, icon, secure, ...props }: AuthInputProps)
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <View style={[styles.inputWrap, focused && styles.inputWrapFocused]}>
-        <Ionicons
-          name={icon}
-          size={18}
-          color={focused ? colors.primary : colors.labelTertiary}
-        />
         <TextInput
           {...props}
           secureTextEntry={hidden}
-          placeholderTextColor={colors.labelTertiary}
+          placeholderTextColor={colors.inkFaint}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={styles.input}
@@ -239,7 +293,7 @@ export function AuthTextInput({ label, icon, secure, ...props }: AuthInputProps)
             <Ionicons
               name={hidden ? 'eye-outline' : 'eye-off-outline'}
               size={18}
-              color={colors.labelTertiary}
+              color={colors.inkFaint}
             />
           </Pressable>
         )}
@@ -248,7 +302,14 @@ export function AuthTextInput({ label, icon, secure, ...props }: AuthInputProps)
   );
 }
 
-/* ── Primary Button ──────────────────────────────────── */
+/* ── Buttons (§3.1) ──────────────────────────────────── */
+function pressStyle(focused: boolean) {
+  return [
+    { transform: [{ scale: focused ? 0.97 : 1 }] },
+    { opacity: focused ? 0.9 : 1 },
+  ];
+}
+
 export function PrimaryButton({
   title,
   onPress,
@@ -266,24 +327,52 @@ export function PrimaryButton({
       disabled={disabled}
       style={({ pressed }) => [
         styles.primaryBtn,
-        pressed && { transform: [{ scale: 0.97 }], opacity: 0.9 },
+        ...pressStyle(pressed),
         disabled && { opacity: 0.45 },
       ]}
     >
-      {icon && <Ionicons name={icon} size={18} color="#FFFFFF" style={{ marginRight: 6 }} />}
+      {icon && <Ionicons name={icon} size={17} color={colors.surface} style={{ marginRight: 6 }} />}
       <Text style={styles.primaryBtnText}>{title}</Text>
     </Pressable>
   );
 }
 
-/* ── Outlined Button (Glass) ─────────────────────────── */
+/* Energy (orange) — reserved for "Go live" / autonomous CTAs */
+export function EnergyButton({
+  title,
+  onPress,
+  disabled,
+  icon,
+}: {
+  title: string;
+  onPress?: () => void;
+  disabled?: boolean;
+  icon?: keyof typeof Ionicons.glyphMap;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [
+        styles.energyBtn,
+        ...pressStyle(pressed),
+        disabled && { opacity: 0.45 },
+      ]}
+    >
+      {icon && <Ionicons name={icon} size={17} color={colors.ink} style={{ marginRight: 6 }} />}
+      <Text style={styles.energyBtnText}>{title}</Text>
+    </Pressable>
+  );
+}
+
+/* Outlined / Secondary (white fill, 1px border) */
 export function OutlinedButton({
   title,
   icon,
   onPress,
 }: {
   title: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon?: keyof typeof Ionicons.glyphMap;
   onPress?: () => void;
 }) {
   return (
@@ -291,11 +380,34 @@ export function OutlinedButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.outlinedBtn,
-        pressed && { backgroundColor: colors.surfacePressed },
+        ...pressStyle(pressed),
       ]}
     >
-      <Ionicons name={icon} size={18} color={colors.labelPrimary} />
+      {icon && <Ionicons name={icon} size={18} color={colors.ink} style={{ marginRight: 6 }} />}
       <Text style={styles.outlinedBtnText}>{title}</Text>
+    </Pressable>
+  );
+}
+
+export const SecondaryButton = OutlinedButton;
+
+/* Ghost (tertiary: "Skip", "Cancel") */
+export function GhostButton({
+  title,
+  onPress,
+}: {
+  title: string;
+  onPress?: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.ghostBtn,
+        ...pressStyle(pressed),
+      ]}
+    >
+      <Text style={styles.ghostBtnText}>{title}</Text>
     </Pressable>
   );
 }
@@ -311,16 +423,119 @@ export function Divider({ label }: { label: string }) {
   );
 }
 
-/* ── Status Dot (Animated-ready) ─────────────────────── */
+/* ── Status Dot ──────────────────────────────────────── */
 export function StatusDot({ active, color }: { active?: boolean; color?: string }) {
   return (
     <View
       style={[
         styles.statusDot,
-        { backgroundColor: color ?? (active ? colors.positive : colors.labelTertiary) },
-        active && styles.statusDotGlow,
+        { backgroundColor: color ?? (active ? '#000000' : colors.inkFaint) },
       ]}
     />
+  );
+}
+
+/* ── Pulse Dot (§6) — the signature "AI is working" cue ── */
+const EASE_OUT = Easing.bezier(0.16, 1, 0.3, 1);
+
+export function PulseDot({ size = 13, active = true }: { size?: number; active?: boolean }) {
+  const [reduced, setReduced] = useState(false);
+  const pulse = useSharedValue(0);
+
+  React.useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((r) => {
+      if (mounted) setReduced(r);
+    });
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (r) => {
+      if (mounted) setReduced(r);
+    });
+    return () => {
+      mounted = false;
+      cancelAnimation(pulse);
+      sub.remove();
+    };
+  }, [pulse]);
+
+  React.useEffect(() => {
+    if (!active || reduced) {
+      cancelAnimation(pulse);
+      pulse.value = 0;
+      return;
+    }
+    pulse.value = 0;
+    pulse.value = withRepeat(
+      withTiming(1, { duration: 1800, easing: EASE_OUT }),
+      -1,
+      false,
+    );
+    return () => cancelAnimation(pulse);
+  }, [active, reduced, pulse]);
+
+  const haloStyle = useAnimatedStyle(() => ({
+    opacity: reduced ? 0 : 0.5 * (1 - pulse.value),
+    transform: [{ scale: 1 + 1.2 * pulse.value }],
+  }));
+
+  return (
+    <View style={[styles.pulseWrap, { width: size + 10, height: size + 10 }]}>
+      {active && !reduced && (
+        <Animated.View
+          style={[
+            styles.pulseHalo,
+            { width: size, height: size, borderRadius: size, backgroundColor: '#000000' },
+            haloStyle,
+          ]}
+        />
+      )}
+      <View
+        style={[
+          styles.pulseCore,
+          {
+            width: size,
+            height: size,
+            borderRadius: size,
+            borderWidth: size / 5,
+            backgroundColor: active ? '#000000' : colors.inkFaint,
+            borderColor: colors.surface,
+          },
+        ]}
+      />
+    </View>
+  );
+}
+
+/* ── Avatar (§3.6) ───────────────────────────────────── */
+export function Avatar({
+  initials,
+  size = 44,
+  pulsing = false,
+}: {
+  initials: string;
+  size?: number;
+  pulsing?: boolean;
+}) {
+  return (
+    <View style={{ width: size, height: size }}>
+      <View
+        style={[
+          styles.avatar,
+          {
+            width: size,
+            height: size,
+            borderRadius: size,
+            backgroundColor: '#F5F5F5',
+          },
+        ]}
+      >
+        <Text style={[styles.avatarInitial, { fontSize: size * 0.38 }]}>{initials}</Text>
+      </View>
+      {pulsing && (
+        <View style={styles.avatarPulseWrap}>
+          <PulseDot size={13} active />
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -344,7 +559,7 @@ const styles = StyleSheet.create({
   // ── Auth Screen ──
   authBg: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF',
   },
   authScroll: {
     flexGrow: 1,
@@ -356,60 +571,49 @@ const styles = StyleSheet.create({
   // ── Brand Mark ──
   logo: {
     alignSelf: 'flex-start',
-    borderRadius: radii.pill,
-    overflow: 'hidden',
-  },
-  logoBlur: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  logoInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  logoIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: spacing.lg,
   },
   logoText: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontFamily: fonts.bold,
+    fontSize: 20,
     letterSpacing: -0.5,
-    color: colors.labelPrimary,
+    color: '#000000',
   },
 
-  // ── Glass Card ──
-  glassCardOuter: {
-    borderRadius: radii.xl,
+  // ── Card ──
+  cardOuter: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
-    overflow: 'hidden',
+    borderColor: colors.border,
+    ...shadows.subtle,
   },
-  glassCardBlur: {
-    overflow: 'hidden',
+  cardContent: {
+    padding: spacing.xl,
   },
-  glassCardContent: {
-    padding: spacing.lg,
+  cardHighlighted: {
+    borderColor: '#000000',
   },
-  glassCardHighlighted: {
-    borderColor: colors.primaryBorder,
+
+  // ── Hero Card ──
+  heroCardOuter: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  heroCardContent: {
+    padding: spacing.xxl,
   },
 
   // ── Bento Card ──
   bentoCardOuter: {
-    borderRadius: radii.xl,
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     overflow: 'hidden',
-  },
-  bentoCardBlur: {
-    flex: 1,
-    overflow: 'hidden',
+    ...shadows.subtle,
   },
   bentoCardContent: {
     flex: 1,
@@ -421,11 +625,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
+    borderTopLeftRadius: radii.md,
+    borderTopRightRadius: radii.md,
   },
 
-  // ── Glass Pill ──
+  // ── Pills / Chips ──
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -437,25 +641,53 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   pillText: {
-    ...typography.caption2,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
+    fontSize: 11,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
+  },
+  filterChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  filterChipActive: {
+    backgroundColor: '#000000',
+    borderColor: '#000000',
+  },
+  filterChipText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.inkSoft,
+  },
+  filterChipTextActive: {
+    color: '#FFFFFF',
+    fontFamily: fonts.semibold,
   },
 
   // ── Segmented Control ──
   segmentedOuter: {
-    borderRadius: radii.sm,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.glassBorderLight,
-  },
-  segmentedBlur: {
-    padding: 3,
-  },
-  segmentedInner: {
     flexDirection: 'row',
-    gap: 3,
+    backgroundColor: colors.surfaceSunken,
+    borderRadius: radii.pill,
+    padding: 4,
+    position: 'relative',
+  },
+  segmentPill: {
+    position: 'absolute',
+    top: 4,
+    bottom: 4,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surface,
+    // Ink-tinted shadow per DESIGN.md §2.5
+    shadowColor: 'rgba(28,18,16,1)',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
   segmentBtn: {
     flex: 1,
@@ -463,88 +695,105 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: radii.xs,
-  },
-  segmentBtnActive: {
-    backgroundColor: colors.glassHeavy,
+    paddingVertical: 14,
+    borderRadius: radii.pill,
+    backgroundColor: 'transparent',
+    zIndex: 1,
   },
   segmentText: {
-    ...typography.caption,
-    color: colors.labelTertiary,
-    fontWeight: '600',
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.inkFaint,
   },
   segmentTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: colors.ink,
+    fontFamily: fonts.semibold,
+    fontSize: 15,
   },
 
   // ── Input ──
-  field: { marginBottom: spacing.lg },
+  field: { marginBottom: spacing.xl },
   label: {
-    ...typography.caption,
-    color: colors.labelSecondary,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.inkSoft,
     marginBottom: spacing.sm,
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.glass,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   inputWrapFocused: {
-    borderColor: colors.glassBorderFocused,
-    backgroundColor: colors.glassLight,
+    borderBottomColor: '#000000',
   },
   input: {
     flex: 1,
-    color: colors.labelPrimary,
+    color: '#000000',
+    fontFamily: fonts.regular,
     fontSize: 16,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
   },
 
-  // ── Primary Button ──
+  // ── Buttons ──
   primaryBtn: {
     flexDirection: 'row',
-    backgroundColor: colors.primary,
-    borderRadius: radii.md,
-    paddingVertical: 15,
+    backgroundColor: colorAccent,
+    borderRadius: radii.pill,
+    paddingVertical: 16,
+    paddingHorizontal: 22,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: spacing.md,
-    ...shadows.primaryBtn,
   },
   primaryBtnText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '600',
-    letterSpacing: -0.41,
+    color: '#000000',
+    fontFamily: fonts.semibold,
+    fontSize: 16,
   },
-
-  // ── Outlined Button ──
+  energyBtn: {
+    flexDirection: 'row',
+    backgroundColor: colorAccent,
+    borderRadius: radii.pill,
+    paddingVertical: 14,
+    paddingHorizontal: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+  },
+  energyBtnText: {
+    color: '#000000',
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+  },
   outlinedBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.glass,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.pill,
     paddingVertical: 15,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   outlinedBtnText: {
-    color: colors.labelPrimary,
-    fontSize: 17,
-    fontWeight: '600',
-    letterSpacing: -0.41,
+    color: '#000000',
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+  },
+  ghostBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.pill,
+  },
+  ghostBtnText: {
+    color: colors.inkSoft,
+    fontFamily: fonts.medium,
+    fontSize: 14,
   },
 
   // ── Divider ──
@@ -556,13 +805,14 @@ const styles = StyleSheet.create({
   },
   dividerLine: {
     flex: 1,
-    height: 0.5,
-    backgroundColor: colors.separator,
+    height: 1,
+    backgroundColor: colors.border,
   },
   dividerLabel: {
-    color: colors.labelTertiary,
+    color: colors.inkFaint,
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: fonts.medium,
+    letterSpacing: 0.3,
   },
 
   // ── Status Dot ──
@@ -571,10 +821,33 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  statusDotGlow: {
-    shadowColor: '#34C759',
-    shadowOpacity: 0.60,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 0 },
+
+  // ── Pulse Dot ──
+  pulseWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pulseCore: {
+    position: 'absolute',
+  },
+  pulseHalo: {
+    position: 'absolute',
+  },
+
+  // ── Avatar ──
+  avatar: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  avatarInitial: {
+    fontFamily: fonts.semibold,
+    color: '#000000',
+  },
+  avatarPulseWrap: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
   },
 });

@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
@@ -297,7 +296,7 @@ export default function VoiceInterviewScreen() {
       {/* Top Bar (ChatGPT Style) */}
       <View style={styles.topBar}>
         <Pressable style={styles.topIconBtn} onPress={() => router.back()}>
-          <Ionicons name="close" size={22} color={colors.labelPrimary} />
+          <Ionicons name="close" size={22} color={colors.ink} />
         </Pressable>
 
         <View style={styles.agentTitleCluster}>
@@ -313,7 +312,7 @@ export default function VoiceInterviewScreen() {
             router.replace('/(onboarding)/interview');
           }}
         >
-          <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.labelSecondary} />
+          <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.inkSoft} />
         </Pressable>
       </View>
 
@@ -328,11 +327,13 @@ export default function VoiceInterviewScreen() {
                 transform: [{ scale: haloScale2 }],
                 opacity: isMuted ? 0.05 : haloOpacity2,
                 backgroundColor:
-                  agentStatus === 'speaking'
-                    ? '#007AFF'
+                  isMuted
+                    ? colors.inkFaint
+                    : agentStatus === 'speaking'
+                    ? colors.primary
                     : agentStatus === 'processing'
-                    ? '#AF52DE'
-                    : '#5AC8FA',
+                    ? colors.energy
+                    : colors.primarySurface,
               },
             ]}
           />
@@ -345,11 +346,13 @@ export default function VoiceInterviewScreen() {
                 transform: [{ scale: haloScale1 }],
                 opacity: isMuted ? 0.08 : haloOpacity1,
                 backgroundColor:
-                  agentStatus === 'speaking'
-                    ? '#007AFF'
+                  isMuted
+                    ? colors.inkFaint
+                    : agentStatus === 'speaking'
+                    ? colors.primary
                     : agentStatus === 'processing'
-                    ? '#FF9500'
-                    : '#34C759',
+                    ? colors.energy
+                    : colors.primarySurface,
               },
             ]}
           />
@@ -361,11 +364,7 @@ export default function VoiceInterviewScreen() {
               {
                 transform: [{ scale: orbScale }, { rotate: spin }],
                 borderColor:
-                  agentStatus === 'speaking'
-                    ? 'rgba(0, 122, 255, 0.8)'
-                    : agentStatus === 'processing'
-                    ? 'rgba(175, 82, 222, 0.8)'
-                    : 'rgba(255, 255, 255, 0.8)',
+                  isMuted ? 'rgba(28, 18, 16, 0.40)' : 'rgba(28, 18, 16, 0.20)',
               },
             ]}
           >
@@ -374,13 +373,13 @@ export default function VoiceInterviewScreen() {
                 styles.orbGradientSimulation,
                 {
                   backgroundColor:
-                    agentStatus === 'speaking'
-                      ? '#007AFF'
+                    isMuted
+                      ? colors.ink
+                      : agentStatus === 'speaking'
+                      ? colors.primary
                       : agentStatus === 'processing'
-                      ? '#5856D6'
-                      : isMuted
-                      ? '#2C2C2E'
-                      : '#FFFFFF',
+                      ? colors.energy
+                      : colors.brandTint,
                 },
               ]}
             >
@@ -397,7 +396,9 @@ export default function VoiceInterviewScreen() {
                       : 'mic'
                   }
                   size={36}
-                  color={agentStatus === 'listening' && !isMuted ? '#000000' : '#FFFFFF'}
+                  color={
+                    !isMuted && agentStatus === 'listening' ? colors.primary : '#FFFFFF'
+                  }
                 />
               </View>
             </View>
@@ -423,7 +424,7 @@ export default function VoiceInterviewScreen() {
         {transcriptPreview ? (
           <GlassCard style={styles.brainReadyCard} highlighted elevated>
             <View style={styles.brainReadyHeader}>
-              <Ionicons name="sparkles" size={18} color={colors.positive} />
+              <Ionicons name="bulb-outline" size={18} color={colors.positive} />
               <Text style={styles.brainReadyTitle}>Business Brain Distilled!</Text>
             </View>
             <Text style={styles.brainReadyText}>{transcriptPreview}</Text>
@@ -460,71 +461,67 @@ export default function VoiceInterviewScreen() {
 
       {/* Bottom Floating Control Dock (ChatGPT Style) */}
       <View style={styles.bottomDockWrapper}>
-        <BlurView intensity={40} tint="dark" style={styles.bottomDockBlur}>
-          <View style={styles.bottomDock}>
-            {/* Keyboard / Text modal button */}
-            <Pressable style={styles.dockCircleBtn} onPress={() => setTextModalVisible(true)}>
-              <Ionicons name="keypad-outline" size={22} color={colors.labelPrimary} />
-            </Pressable>
+        <View style={styles.bottomDock}>
+          {/* Keyboard / Text modal button */}
+          <Pressable style={styles.dockCircleBtn} onPress={() => setTextModalVisible(true)}>
+            <Ionicons name="keypad-outline" size={22} color={colors.ink} />
+          </Pressable>
 
-            {/* Center Mic Mute / Unmute Button */}
-            <Pressable
-              style={[
-                styles.dockMainMicBtn,
-                isMuted && styles.dockMainMicBtnMuted,
-                agentStatus === 'listening' && !isMuted && styles.dockMainMicBtnActive,
-              ]}
-              onPress={toggleMute}
-            >
-              <Ionicons
-                name={isMuted ? 'mic-off' : 'mic'}
-                size={28}
-                color={isMuted ? colors.negative : '#FFFFFF'}
-              />
-            </Pressable>
+          {/* Center Mic Mute / Unmute Button */}
+          <Pressable
+            style={[
+              styles.dockMainMicBtn,
+              isMuted && styles.dockMainMicBtnMuted,
+              agentStatus === 'listening' && !isMuted && styles.dockMainMicBtnActive,
+            ]}
+            onPress={toggleMute}
+          >
+            <Ionicons
+              name={isMuted ? 'mic-off' : 'mic'}
+              size={28}
+              color={isMuted ? colors.negative : '#FFFFFF'}
+            />
+          </Pressable>
 
-            {/* End / Done Button */}
-            <Pressable style={styles.dockDoneBtn} onPress={handleFinish}>
-              <Ionicons name="checkmark" size={22} color="#FFFFFF" />
-            </Pressable>
-          </View>
-        </BlurView>
+          {/* End / Done Button */}
+          <Pressable style={styles.dockDoneBtn} onPress={handleFinish}>
+            <Ionicons name="checkmark" size={22} color="#FFFFFF" />
+          </Pressable>
+        </View>
       </View>
 
       {/* Quick Text Input Drawer Modal */}
       <Modal visible={textModalVisible} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalOuter}>
-            <BlurView intensity={50} tint="dark" style={styles.modalBlur}>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Type to Dexter</Text>
-                  <Pressable
-                    style={styles.modalCloseBtn}
-                    onPress={() => setTextModalVisible(false)}
-                  >
-                    <Ionicons name="close" size={20} color={colors.labelPrimary} />
-                  </Pressable>
-                </View>
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="Type your answer (e.g. products, target audience, voice)…"
-                  placeholderTextColor={colors.labelTertiary}
-                  value={userSpeechInput}
-                  onChangeText={setUserSpeechInput}
-                  multiline
-                  autoFocus
-                />
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Type to Dexter</Text>
                 <Pressable
-                  style={[styles.modalSendBtn, !userSpeechInput.trim() && { opacity: 0.4 }]}
-                  onPress={() => handleSendSpeech()}
-                  disabled={!userSpeechInput.trim()}
+                  style={styles.modalCloseBtn}
+                  onPress={() => setTextModalVisible(false)}
                 >
-                  <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
-                  <Text style={styles.modalSendText}>Send to Dexter</Text>
+                  <Ionicons name="close" size={20} color={colors.ink} />
                 </Pressable>
               </View>
-            </BlurView>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Type your answer (e.g. products, target audience, voice)…"
+                placeholderTextColor={colors.inkFaint}
+                value={userSpeechInput}
+                onChangeText={setUserSpeechInput}
+                multiline
+                autoFocus
+              />
+              <Pressable
+                style={[styles.modalSendBtn, !userSpeechInput.trim() && { opacity: 0.4 }]}
+                onPress={() => handleSendSpeech()}
+                disabled={!userSpeechInput.trim()}
+              >
+                <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+                <Text style={styles.modalSendText}>Send to Dexter</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>
@@ -533,7 +530,7 @@ export default function VoiceInterviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#000000' },
+  safeArea: { flex: 1, backgroundColor: colors.background },
 
   // ── Top Bar ──
   topBar: {
@@ -544,41 +541,38 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   topIconBtn: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: radii.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.surfaceSunken,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   agentTitleCluster: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceSunken,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.border,
     borderRadius: radii.pill,
     paddingHorizontal: spacing.lg,
-    paddingVertical: 6,
+    paddingVertical: spacing.sm,
   },
   statusLiveDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: radii.pill,
     backgroundColor: colors.positive,
   },
   agentTitleText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    letterSpacing: -0.2,
+    ...typography.h3,
+    color: colors.ink,
   },
   agentModeBadge: {
-    fontSize: 11,
-    fontWeight: '600',
+    ...typography.caption2,
     color: colors.primary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -617,8 +611,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    shadowColor: '#007AFF',
-    shadowOpacity: 0.6,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.4,
     shadowRadius: 30,
     shadowOffset: { width: 0, height: 0 },
     elevation: 15,
@@ -634,7 +628,7 @@ const styles = StyleSheet.create({
     width: ORB_SIZE * 0.7,
     height: ORB_SIZE * 0.7,
     borderRadius: (ORB_SIZE * 0.7) / 2,
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    backgroundColor: 'rgba(28, 18, 16, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -644,9 +638,7 @@ const styles = StyleSheet.create({
   },
   statusLabelText: {
     ...typography.subheading,
-    color: colors.labelSecondary,
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.inkSoft,
     letterSpacing: -0.2,
     textAlign: 'center',
   },
@@ -658,21 +650,20 @@ const styles = StyleSheet.create({
   },
   subtitlesCard: {
     padding: spacing.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.surfaceSunken,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   subtitleCaption: {
-    fontSize: 10,
-    fontWeight: '700',
+    ...typography.caption2,
     color: colors.primary,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   subtitleText: {
-    ...typography.callout,
-    color: colors.labelPrimary,
-    fontSize: 14,
-    lineHeight: 20,
+    ...typography.bodySmall,
+    color: colors.ink,
   },
   brainReadyCard: {
     gap: spacing.sm,
@@ -681,7 +672,7 @@ const styles = StyleSheet.create({
   brainReadyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm,
   },
   brainReadyTitle: {
     ...typography.subheading,
@@ -690,7 +681,7 @@ const styles = StyleSheet.create({
   },
   brainReadyText: {
     ...typography.caption,
-    color: colors.labelPrimary,
+    color: colors.ink,
     lineHeight: 18,
   },
   reviewBrainBtn: {
@@ -699,8 +690,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     backgroundColor: colors.primary,
-    borderRadius: radii.md,
-    paddingVertical: 12,
+    borderRadius: radii.pill,
+    paddingVertical: spacing.md,
     marginTop: 4,
     ...shadows.primaryBtn,
   },
@@ -719,17 +710,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   promptPill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.surfaceSunken,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: colors.border,
     paddingHorizontal: spacing.md,
-    paddingVertical: 6,
+    paddingVertical: spacing.xs,
   },
   promptPillText: {
     ...typography.caption2,
-    color: colors.labelSecondary,
-    fontSize: 11,
+    color: colors.inkSoft,
   },
 
   // ── Bottom Dock (ChatGPT Style) ──
@@ -739,11 +729,11 @@ const styles = StyleSheet.create({
     borderRadius: radii.xxxl,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
-  },
-  bottomDockBlur: {
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceSunken,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
+    ...shadows.md,
   },
   bottomDock: {
     flexDirection: 'row',
@@ -753,17 +743,17 @@ const styles = StyleSheet.create({
   dockCircleBtn: {
     width: 48,
     height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: radii.pill,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dockMainMicBtn: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: radii.pill,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -773,14 +763,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   dockMainMicBtnMuted: {
-    backgroundColor: colors.negativeSurface,
+    backgroundColor: colors.negativeFill,
     borderWidth: 1.5,
     borderColor: colors.negativeBorder,
   },
   dockDoneBtn: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: radii.pill,
     backgroundColor: colors.positive,
     alignItems: 'center',
     justifyContent: 'center',
@@ -788,13 +778,17 @@ const styles = StyleSheet.create({
   },
 
   // ── Text Modal ──
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modalBackdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   modalOuter: {
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.xl,
     overflow: 'hidden',
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: colors.border,
   },
-  modalBlur: {},
   modalContent: {
     padding: spacing.xxl,
     gap: spacing.md,
@@ -804,24 +798,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  modalTitle: { ...typography.heading, color: colors.labelPrimary },
+  modalTitle: { ...typography.h1, color: colors.ink },
   modalCloseBtn: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.glass,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surfaceSunken,
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalInput: {
-    backgroundColor: colors.glass,
+    backgroundColor: colors.surfaceSunken,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
-    color: colors.labelPrimary,
-    fontSize: 15,
+    ...typography.body,
     minHeight: 90,
     textAlignVertical: 'top',
   },
@@ -831,8 +824,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     backgroundColor: colors.primary,
-    borderRadius: radii.md,
-    paddingVertical: 14,
+    borderRadius: radii.pill,
+    paddingVertical: spacing.lg,
     ...shadows.primaryBtn,
   },
   modalSendText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },

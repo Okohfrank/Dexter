@@ -16,7 +16,7 @@ import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { generateNextPost } from '../../src/api/strategy';
 import { listBusinesses, createBusiness } from '../../src/api/business';
-import { listConnectedAccounts, mockConnectAccount } from '../../src/api/oauth';
+import { listConnectedAccounts } from '../../src/api/oauth';
 import { publishNow } from '../../src/api/publishing';
 import { GlassCard, GlassPill } from '../../src/components/ui';
 
@@ -106,13 +106,13 @@ export default function CreateScreen() {
         {/* Topic Input */}
         <GlassCard style={styles.topicCard} elevated>
           <View style={styles.sectionHeader}>
-            <Ionicons name="sparkles" size={18} color={colors.primary} />
+            <Ionicons name="create-outline" size={18} color={colors.primary} />
             <Text style={styles.sectionTitle}>Custom Topic or Angle (Optional)</Text>
           </View>
           <TextInput
             style={styles.topicInput}
             placeholder="e.g. 'Why founders should build in public in 2026' or leave empty for AI-chosen topic…"
-            placeholderTextColor={colors.labelTertiary}
+            placeholderTextColor={colors.inkFaint}
             value={topic}
             onChangeText={setTopic}
             multiline
@@ -142,10 +142,10 @@ export default function CreateScreen() {
           disabled={generating}
         >
           {generating ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color={colors.surface} />
           ) : (
             <>
-              <Ionicons name="flash" size={20} color="#FFFFFF" />
+              <Ionicons name="flash" size={20} color={colors.surface} />
               <Text style={styles.generateBtnText}>Draft & Queue Post with Dexter</Text>
             </>
           )}
@@ -175,10 +175,10 @@ export default function CreateScreen() {
                 disabled={publishing}
               >
                 {publishing ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={colors.surface} />
                 ) : (
                   <>
-                    <Ionicons name="send" size={16} color="#FFFFFF" />
+                    <Ionicons name="send" size={16} color={colors.surface} />
                     <Text style={styles.publishNowText}>Publish to LinkedIn Now</Text>
                   </>
                 )}
@@ -198,28 +198,27 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxxl + 60 },
   header: { gap: spacing.xs },
-  title: { ...typography.display, color: colors.labelPrimary },
-  subtitle: { ...typography.callout, color: colors.labelSecondary },
+  title: { ...typography.display, color: colors.ink },
+  subtitle: { ...typography.callout, color: colors.inkSoft },
 
   topicCard: { gap: spacing.md },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  sectionTitle: { ...typography.subheading, color: colors.labelPrimary, fontWeight: '700' },
+  sectionTitle: { ...typography.subheading, color: colors.ink, fontWeight: '700' },
   topicInput: {
-    backgroundColor: colors.glass,
+    ...typography.body,
+    backgroundColor: colors.surfaceSunken,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
-    color: colors.labelPrimary,
-    fontSize: 15,
     minHeight: 80,
     textAlignVertical: 'top',
   },
 
   pillarsCard: { gap: spacing.md },
   pillarChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  hintText: { ...typography.caption2, color: colors.labelTertiary, fontStyle: 'italic' },
+  hintText: { ...typography.caption2, color: colors.inkFaint, fontStyle: 'italic' },
 
   generateBtn: {
     flexDirection: 'row',
@@ -227,21 +226,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     backgroundColor: colors.primary,
-    borderRadius: radii.md,
+    borderRadius: radii.pill,
     paddingVertical: 16,
     ...shadows.primaryBtn,
   },
   generateBtnText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
+    ...typography.h3,
+    color: colors.surface,
   },
 
   resultCard: { gap: spacing.md },
   resultText: {
     ...typography.callout,
-    color: colors.labelPrimary,
-    lineHeight: 22,
+    color: colors.ink,
   },
   scheduleRow: {
     flexDirection: 'row',
@@ -263,27 +260,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     backgroundColor: colors.primary,
-    borderRadius: radii.md,
+    borderRadius: radii.pill,
     paddingVertical: 12,
     ...shadows.primaryBtn,
   },
   publishNowText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14,
+    ...typography.h3,
+    color: colors.surface,
   },
   viewFeedBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.glass,
-    borderRadius: radii.md,
+    backgroundColor: colors.surfaceSunken,
+    borderRadius: radii.pill,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
   },
   viewFeedText: {
-    color: colors.labelPrimary,
-    fontWeight: '600',
-    fontSize: 14,
+    ...typography.h3,
+    color: colors.ink,
   },
 });

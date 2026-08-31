@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows, fonts } from '../theme';
+import { colors, spacing, radii, typography, shadows } from '../theme';
 import type { Platform, ScheduledPost, PublishedPost } from '../types';
 
 type SocialPostPreviewProps = {
@@ -49,139 +48,134 @@ export function SocialPostPreview({
   };
 
   return (
-    <View style={styles.cardOuter}>
-      <BlurView intensity={20} tint="dark" style={styles.cardBlur}>
-        {/* Platform & Author Header */}
-        <View style={styles.header}>
-          <View style={styles.authorRow}>
-            <View style={styles.avatar}>
-              {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={styles.avatarImg} />
-              ) : (
-                <Text style={styles.avatarInitial}>
-                  {authorName.charAt(0).toUpperCase()}
-                </Text>
-              )}
-            </View>
-            <View style={styles.authorInfo}>
-              <View style={styles.nameRow}>
-                <Text style={styles.authorName} numberOfLines={1}>
-                  {post.author_name || authorName}
-                </Text>
-                <Text style={styles.connectionDegree}>• 1st</Text>
-              </View>
-              <Text style={styles.authorHeadline} numberOfLines={1}>
-                {post.author_headline || authorHeadline}
+    <View style={[styles.cardOuter, shadows.subtle]}>
+      {/* Platform & Author Header */}
+      <View style={styles.header}>
+        <View style={styles.authorRow}>
+          <View style={styles.avatar}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatarImg} />
+            ) : (
+              <Text style={styles.avatarInitial}>
+                {authorName.charAt(0).toUpperCase()}
               </Text>
-              <View style={styles.timestampRow}>
-                <Text style={styles.timestamp}>
-                  {formattedTime ||
-                    ('published_at' in post
-                      ? new Date(post.published_at).toLocaleDateString()
-                      : 'scheduled_for' in post
-                      ? new Date(post.scheduled_for).toLocaleDateString()
-                      : 'Now')}
-                </Text>
-                <Text style={styles.timestampDot}>•</Text>
-                <Ionicons name="globe-outline" size={12} color={colors.labelTertiary} />
-              </View>
-            </View>
+            )}
           </View>
-
-          <View style={styles.platformBadge}>
-            <Ionicons
-              name={
-                postPlatform === 'linkedin'
-                  ? 'logo-linkedin'
-                  : postPlatform === 'instagram'
-                  ? 'logo-instagram'
-                  : 'musical-notes-outline'
-              }
-              size={16}
-              color={postPlatform === 'linkedin' ? '#0A66C2' : colors.primary}
-            />
+          <View style={styles.authorInfo}>
+            <View style={styles.nameRow}>
+              <Text style={styles.authorName} numberOfLines={1}>
+                {post.author_name || authorName}
+              </Text>
+              <Text style={styles.connectionDegree}>• 1st</Text>
+            </View>
+            <Text style={styles.authorHeadline} numberOfLines={1}>
+              {post.author_headline || authorHeadline}
+            </Text>
+            <View style={styles.timestampRow}>
+              <Text style={styles.timestamp}>
+                {formattedTime ||
+                  ('published_at' in post
+                    ? new Date(post.published_at).toLocaleDateString()
+                    : 'scheduled_for' in post
+                    ? new Date(post.scheduled_for).toLocaleDateString()
+                    : 'Now')}
+              </Text>
+              <Text style={styles.timestampDot}>•</Text>
+              <Ionicons name="globe-outline" size={12} color={colors.inkFaint} />
+            </View>
           </View>
         </View>
 
-        {/* Post Text */}
-        <View style={styles.contentWrap}>{renderFormattedText(post.content_text)}</View>
+        <View style={styles.platformBadge}>
+          <Ionicons
+            name={
+              postPlatform === 'linkedin'
+                ? 'logo-linkedin'
+                : postPlatform === 'instagram'
+                ? 'logo-instagram'
+                : 'musical-notes-outline'
+            }
+            size={16}
+            color={postPlatform === 'linkedin' ? '#0A66C2' : colors.primary}
+          />
+        </View>
+      </View>
 
-        {/* Attached Media */}
-        {mediaUrl ? (
-          <Pressable style={styles.mediaContainer} onPress={onMediaPress}>
-            <Image source={{ uri: mediaUrl }} style={styles.mediaImage} resizeMode="cover" />
-            {isVideo && (
-              <View style={styles.videoOverlay}>
-                <View style={styles.playIconWrap}>
-                  <Ionicons name="play" size={24} color="#FFFFFF" />
-                </View>
-              </View>
-            )}
-          </Pressable>
-        ) : null}
+      {/* Post Text */}
+      <View style={styles.contentWrap}>{renderFormattedText(post.content_text)}</View>
 
-        {/* Engagement Stats Bar */}
-        {publishedPost && (
-          <>
-            <View style={styles.engagementBar}>
-              <View style={styles.reactionsCluster}>
-                <View style={[styles.reactionCircle, { backgroundColor: '#0A66C2' }]}>
-                  <Ionicons name="thumbs-up" size={10} color="#FFFFFF" />
-                </View>
-                <View style={[styles.reactionCircle, { backgroundColor: '#FF3B30', marginLeft: -4 }]}>
-                  <Ionicons name="heart" size={10} color="#FFFFFF" />
-                </View>
-                <View style={[styles.reactionCircle, { backgroundColor: '#FF9500', marginLeft: -4 }]}>
-                  <Ionicons name="bulb" size={10} color="#FFFFFF" />
-                </View>
-                <Text style={styles.reactionsCount}>
-                  {publishedPost.performance.likes}
-                </Text>
-              </View>
-              <View style={styles.commentsStats}>
-                <Text style={styles.statMetaText}>
-                  {publishedPost.performance.comments} comments • {publishedPost.performance.shares} reposts
-                </Text>
+      {/* Attached Media */}
+      {mediaUrl ? (
+        <Pressable style={styles.mediaContainer} onPress={onMediaPress}>
+          <Image source={{ uri: mediaUrl }} style={styles.mediaImage} resizeMode="cover" />
+          {isVideo && (
+            <View style={styles.videoOverlay}>
+              <View style={styles.playIconWrap}>
+                <Ionicons name="play" size={24} color="#FFFFFF" />
               </View>
             </View>
+          )}
+        </Pressable>
+      ) : null}
 
-            <View style={styles.divider} />
-
-            {/* Social Action Bar */}
-            <View style={styles.actionRow}>
-              <View style={styles.socialAction}>
-                <Ionicons name="thumbs-up-outline" size={15} color={colors.labelSecondary} />
-                <Text style={styles.actionText}>Like</Text>
+      {/* Engagement Stats Bar */}
+      {publishedPost && (
+        <>
+          <View style={styles.engagementBar}>
+            <View style={styles.reactionsCluster}>
+              <View style={[styles.reactionCircle, { backgroundColor: colors.brand }]}>
+                <Ionicons name="thumbs-up" size={10} color="#FFFFFF" />
               </View>
-              <View style={styles.socialAction}>
-                <Ionicons name="chatbubble-ellipses-outline" size={15} color={colors.labelSecondary} />
-                <Text style={styles.actionText}>Comment</Text>
+              <View style={[styles.reactionCircle, { backgroundColor: '#FF3B30', marginLeft: -4 }]}>
+                <Ionicons name="heart" size={10} color="#FFFFFF" />
               </View>
-              <View style={styles.socialAction}>
-                <Ionicons name="repeat-outline" size={16} color={colors.labelSecondary} />
-                <Text style={styles.actionText}>Repost</Text>
+              <View style={[styles.reactionCircle, { backgroundColor: '#FF9500', marginLeft: -4 }]}>
+                <Ionicons name="bulb" size={10} color="#FFFFFF" />
               </View>
-              <View style={styles.socialAction}>
-                <Ionicons name="paper-plane-outline" size={15} color={colors.labelSecondary} />
-                <Text style={styles.actionText}>Send</Text>
-              </View>
+              <Text style={styles.reactionsCount}>
+                {publishedPost.performance.likes}
+              </Text>
             </View>
-          </>
-        )}
-      </BlurView>
+            <View style={styles.commentsStats}>
+              <Text style={styles.statMetaText}>
+                {publishedPost.performance.comments} comments • {publishedPost.performance.shares} reposts
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Social Action Bar */}
+          <View style={styles.actionRow}>
+            <View style={styles.socialAction}>
+              <Ionicons name="thumbs-up-outline" size={15} color={colors.inkSoft} />
+              <Text style={styles.actionText}>Like</Text>
+            </View>
+            <View style={styles.socialAction}>
+              <Ionicons name="chatbubble-ellipses-outline" size={15} color={colors.inkSoft} />
+              <Text style={styles.actionText}>Comment</Text>
+            </View>
+            <View style={styles.socialAction}>
+              <Ionicons name="repeat-outline" size={16} color={colors.inkSoft} />
+              <Text style={styles.actionText}>Repost</Text>
+            </View>
+            <View style={styles.socialAction}>
+              <Ionicons name="paper-plane-outline" size={15} color={colors.inkSoft} />
+              <Text style={styles.actionText}>Send</Text>
+            </View>
+          </View>
+        </>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   cardOuter: {
-    borderRadius: radii.xl,
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
-    overflow: 'hidden',
-  },
-  cardBlur: {
-    paddingVertical: spacing.md,
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   header: {
@@ -189,6 +183,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
     marginBottom: spacing.sm,
   },
   authorRow: {
@@ -198,10 +193,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   avatar: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: radii.pill,
-    backgroundColor: colors.primarySurface,
+    backgroundColor: colors.brandTint,
     borderWidth: 1,
     borderColor: colors.primaryBorder,
     alignItems: 'center',
@@ -227,17 +222,17 @@ const styles = StyleSheet.create({
   },
   authorName: {
     ...typography.caption,
-    color: colors.labelPrimary,
+    color: colors.ink,
     fontWeight: '700',
     fontSize: 14,
   },
   connectionDegree: {
     ...typography.caption2,
-    color: colors.labelTertiary,
+    color: colors.inkFaint,
   },
   authorHeadline: {
     ...typography.caption2,
-    color: colors.labelSecondary,
+    color: colors.inkSoft,
     marginTop: 1,
   },
   timestampRow: {
@@ -248,18 +243,21 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     ...typography.caption2,
-    color: colors.labelTertiary,
+    color: colors.inkFaint,
   },
   timestampDot: {
     fontSize: 10,
-    color: colors.labelTertiary,
+    color: colors.inkFaint,
   },
   platformBadge: {
-    padding: 8,
+    width: 36,
+    height: 36,
     borderRadius: radii.pill,
-    backgroundColor: colors.glass,
+    backgroundColor: colors.surfaceSunken,
     borderWidth: 1,
-    borderColor: colors.glassBorderLight,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   contentWrap: {
     paddingHorizontal: spacing.lg,
@@ -267,18 +265,18 @@ const styles = StyleSheet.create({
   },
   postBodyText: {
     ...typography.callout,
-    color: colors.labelPrimary,
+    color: colors.ink,
     lineHeight: 22,
   },
   hashtagText: {
-    color: '#5AC8FA',
+    color: colors.brand,
     fontWeight: '600',
   },
   mediaContainer: {
     marginTop: spacing.md,
     width: '100%',
     height: 220,
-    backgroundColor: colors.skeleton,
+    backgroundColor: colors.surfaceSunken,
     position: 'relative',
   },
   mediaImage: {
@@ -287,7 +285,7 @@ const styles = StyleSheet.create({
   },
   videoOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.40)',
+    backgroundColor: 'rgba(28, 18, 16, 0.40)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -295,9 +293,9 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: radii.pill,
-    backgroundColor: 'rgba(0,0,0,0.60)',
+    backgroundColor: 'rgba(28, 18, 16, 0.60)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingLeft: 3,
@@ -324,7 +322,7 @@ const styles = StyleSheet.create({
   },
   reactionsCount: {
     ...typography.caption,
-    color: colors.labelSecondary,
+    color: colors.inkSoft,
     fontWeight: '600',
     marginLeft: 6,
   },
@@ -333,11 +331,11 @@ const styles = StyleSheet.create({
   },
   statMetaText: {
     ...typography.caption2,
-    color: colors.labelTertiary,
+    color: colors.inkFaint,
   },
   divider: {
     height: 0.5,
-    backgroundColor: colors.separator,
+    backgroundColor: colors.border,
     marginHorizontal: spacing.lg,
   },
   actionRow: {
@@ -357,7 +355,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     ...typography.caption,
-    color: colors.labelSecondary,
+    color: colors.inkSoft,
     fontWeight: '600',
     fontSize: 12,
   },

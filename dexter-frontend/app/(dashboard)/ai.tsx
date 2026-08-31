@@ -13,33 +13,26 @@ import {
   Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import * as Speech from "expo-speech";
 import { Audio } from "expo-av";
 import * as ImagePicker from "expo-image-picker";
-import {
-  colors,
-  spacing,
-  radii,
-  typography,
-  shadows,
-  fonts,
-} from "../../src/theme";
+import { colors, spacing, radii, typography, shadows } from "../../src/theme";
 import { useAppStore } from "../../src/store/app";
 import { useAuthStore } from "../../src/api/client";
 import { sendChatMessage } from "../../src/api/chat";
 import { publishPost, publishNow } from "../../src/api/publishing";
 import { transcribeAudio } from "../../src/api/voice";
+import { PulseDot } from "../../src/components/ui";
 import type { ChatMessage, ChatBrief } from "../../src/types";
 
 type AIState = "idle" | "listening" | "thinking" | "speaking";
 
 const QUICK_SUGGESTIONS = [
-  "🚀 Draft a thought-leadership post about AI agents",
-  "📸 Write a post based on my attached graphic",
-  "💡 Brainstorm 3 growth frameworks for B2B founders",
-  "✍️ Rewrite my next post to be punchier",
+  "Draft a thought-leadership post about AI agents",
+  "Write a post based on my attached graphic",
+  "Brainstorm 3 growth frameworks for B2B founders",
+  "Rewrite my next post to be punchier",
 ];
 
 export default function AICopilotScreen() {
@@ -83,13 +76,9 @@ export default function AICopilotScreen() {
 
   const handlePickImage = async () => {
     try {
-      const permission =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert(
-          "Permission Required",
-          "Please allow gallery access to attach images.",
-        );
+        Alert.alert("Permission Required", "Please allow gallery access to attach images.");
         return;
       }
 
@@ -156,22 +145,18 @@ export default function AICopilotScreen() {
         setActiveBrief(res.brief);
       }
 
+      setAiState("idle");
       if (isAutoSpeak) {
         speakText(res.reply);
-      } else {
-        setAiState("idle");
       }
     } catch (e: any) {
       const errorMsg = e.message || "Backend connection failed";
-      Alert.alert(
-        "AI Communication Error",
-        `Could not get a response from Dexter: ${errorMsg}`,
-      );
+      Alert.alert("AI Communication Error", `Could not get a response from Dexter: ${errorMsg}`);
       setMessages([
         ...newHistory,
         {
           role: "assistant",
-          content: `⚠️ Error communicating with AI: ${errorMsg}. Please check your backend connection.`,
+          content: `Error communicating with AI: ${errorMsg}. Please check your backend connection.`,
         },
       ]);
       setAiState("idle");
@@ -190,7 +175,6 @@ export default function AICopilotScreen() {
     }
 
     if (isVoiceActive) {
-      // User tapped to stop recording and send
       setIsVoiceActive(false);
       setAiState("thinking");
 
@@ -208,25 +192,18 @@ export default function AICopilotScreen() {
               await handleSend(transResult.transcript);
               return;
             } else {
-              Alert.alert(
-                "Voice Recognition",
-                "Could not detect clear speech. Please try speaking again.",
-              );
+              Alert.alert("Voice Recognition", "Could not detect clear speech. Please try speaking again.");
             }
           }
         }
       } catch (err: any) {
-        Alert.alert(
-          "Voice Recording Error",
-          `Voice processing failed: ${err.message || "Microphone error"}`,
-        );
+        Alert.alert("Voice Recording Error", `Voice processing failed: ${err.message || "Microphone error"}`);
       } finally {
         setAiState("idle");
       }
     } else {
       setIsVoiceActive(true);
       setAiState("listening");
-      // Speak a brief prompt to open the voice turn
       Speech.speak("I am listening. What would you like to post or update?", {
         onDone: () => {
           setAiState("listening");
@@ -239,10 +216,7 @@ export default function AICopilotScreen() {
     if (!activeBrief) return;
     const linkedin = connectedAccounts.find((a) => a.platform === "linkedin");
     if (!linkedin) {
-      Alert.alert(
-        "LinkedIn Not Connected",
-        "Please connect your LinkedIn account first before publishing.",
-      );
+      Alert.alert("LinkedIn Not Connected", "Please connect your LinkedIn account first before publishing.");
       return;
     }
 
@@ -256,11 +230,9 @@ export default function AICopilotScreen() {
 
       await publishNow(pubRes.post_id);
 
-      Alert.alert(
-        "🎉 Post is Live!",
-        "Your post was successfully published to your live LinkedIn feed!",
-        [{ text: "Awesome!", onPress: () => setActiveBrief(null) }],
-      );
+      Alert.alert("Post is Live!", "Your post was successfully published to your live LinkedIn feed!", [
+        { text: "Awesome!", onPress: () => setActiveBrief(null) },
+      ]);
     } catch (e: any) {
       Alert.alert("Publish Failed", e.message || "Could not publish post.");
     } finally {
@@ -270,55 +242,41 @@ export default function AICopilotScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        {/* Header */}
-        <View style={styles.headerOuter}>
-          <BlurView intensity={60} tint="dark" style={styles.headerBlur}>
-            <View style={styles.header}>
-              <View>
-                <Text style={styles.headerEyebrow}>DEXTER COPILOT</Text>
-                <Text style={styles.headerTitle}>AI Assistant</Text>
-              </View>
-              <View style={styles.headerActions}>
-                <Pressable
-                  style={[
-                    styles.audioToggleBtn,
-                    isAutoSpeak && styles.audioToggleActive,
-                  ]}
-                  onPress={() => {
-                    if (aiState === "speaking") Speech.stop();
-                    setIsAutoSpeak(!isAutoSpeak);
-                  }}
-                >
-                  <Ionicons
-                    name={isAutoSpeak ? "volume-high" : "volume-mute-outline"}
-                    size={18}
-                    color={isAutoSpeak ? colors.primary : colors.labelTertiary}
-                  />
-                </Pressable>
-                <View style={styles.statusPill}>
-                  <View
-                    style={[
-                      styles.statusDot,
-                      aiState !== "idle" && styles.statusDotActive,
-                    ]}
-                  />
-                  <Text style={styles.statusText}>
-                    {aiState === "listening"
-                      ? "Listening…"
-                      : aiState === "thinking"
-                        ? "Thinking…"
-                        : aiState === "speaking"
-                          ? "Speaking…"
-                          : "Ready"}
-                  </Text>
-                </View>
-              </View>
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        {/* Header (§8.3 copilot bar) */}
+        <View style={styles.header}>
+          <View style={styles.headerIdentity}>
+            <View style={styles.dexterAvatar}>
+              <PulseDot active={aiState === "thinking" || aiState === "listening"} size={12} />
             </View>
-          </BlurView>
+            <View>
+              <Text style={styles.headerTitle}>Dexter Copilot</Text>
+              <Text style={styles.headerSubtitle}>
+                {aiState === "listening"
+                  ? "Listening…"
+                  : aiState === "thinking"
+                    ? "Thinking…"
+                    : aiState === "speaking"
+                      ? "Speaking…"
+                      : "Always on"}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.headerActions}>
+            <Pressable
+              style={[styles.audioToggleBtn, isAutoSpeak && styles.audioToggleActive]}
+              onPress={() => {
+                if (aiState === "speaking") Speech.stop();
+                setIsAutoSpeak(!isAutoSpeak);
+              }}
+            >
+              <Ionicons
+                name={isAutoSpeak ? "volume-high" : "volume-mute-outline"}
+                size={18}
+                color={isAutoSpeak ? colors.primary : colors.inkFaint}
+              />
+            </Pressable>
+          </View>
         </View>
 
         {/* Chat History */}
@@ -333,26 +291,14 @@ export default function AICopilotScreen() {
             return (
               <View
                 key={idx}
-                style={[
-                  styles.messageBubbleWrap,
-                  isUser ? styles.userBubbleWrap : styles.assistantBubbleWrap,
-                ]}
+                style={[styles.messageBubbleWrap, isUser ? styles.userBubbleWrap : styles.assistantBubbleWrap]}
               >
                 {!isUser && (
                   <View style={styles.assistantAvatar}>
-                    <Ionicons
-                      name="sparkles"
-                      size={14}
-                      color={colors.primary}
-                    />
+                    <Ionicons name="bulb" size={14} color={colors.primary} />
                   </View>
                 )}
-                <View
-                  style={[
-                    styles.messageBubble,
-                    isUser ? styles.userBubble : styles.assistantBubble,
-                  ]}
-                >
+                <View style={[styles.messageBubble, isUser ? styles.userBubble : styles.assistantBubble]}>
                   {m.image_url && (
                     <Image
                       source={{ uri: m.image_url }}
@@ -360,27 +306,12 @@ export default function AICopilotScreen() {
                       resizeMode="cover"
                     />
                   )}
-                  <Text
-                    style={[
-                      styles.messageText,
-                      isUser
-                        ? styles.userMessageText
-                        : styles.assistantMessageText,
-                    ]}
-                  >
+                  <Text style={[styles.messageText, isUser ? styles.userMessageText : styles.assistantMessageText]}>
                     {m.content}
                   </Text>
                   {!isUser && (
-                    <Pressable
-                      style={styles.speakBubbleBtn}
-                      hitSlop={8}
-                      onPress={() => speakText(m.content)}
-                    >
-                      <Ionicons
-                        name="volume-medium-outline"
-                        size={15}
-                        color={colors.primary}
-                      />
+                    <Pressable style={styles.speakBubbleBtn} hitSlop={8} onPress={() => speakText(m.content)}>
+                      <Ionicons name="volume-medium-outline" size={15} color={colors.primary} />
                     </Pressable>
                   )}
                 </View>
@@ -391,39 +322,25 @@ export default function AICopilotScreen() {
           {/* Active Post Draft Card */}
           {activeBrief && (
             <View style={styles.briefCardOuter}>
-              <BlurView intensity={20} tint="dark" style={styles.briefCardBlur}>
-                <View style={styles.briefCardContent}>
-                  <View style={styles.briefHeader}>
-                    <Ionicons name="logo-linkedin" size={18} color="#0A66C2" />
-                    <Text style={styles.briefTitle}>
-                      Generated LinkedIn Post Draft
-                    </Text>
+              <View style={styles.briefCardContent}>
+                <View style={styles.briefHeader}>
+                  <View style={styles.briefIconWrap}>
+                    <Ionicons name="logo-linkedin" size={16} color="#0A66C2" />
                   </View>
-                  <Text style={styles.briefBody}>
-                    {activeBrief.content_text}
-                  </Text>
-                  <Pressable
-                    style={styles.briefPublishBtn}
-                    onPress={handlePublishBrief}
-                    disabled={publishing}
-                  >
-                    {publishing ? (
-                      <ActivityIndicator color="#FFFFFF" size="small" />
-                    ) : (
-                      <>
-                        <Ionicons
-                          name="paper-plane"
-                          size={16}
-                          color="#FFFFFF"
-                        />
-                        <Text style={styles.briefPublishBtnText}>
-                          Publish to LinkedIn Now
-                        </Text>
-                      </>
-                    )}
-                  </Pressable>
+                  <Text style={styles.briefTitle}>Generated LinkedIn Post Draft</Text>
                 </View>
-              </BlurView>
+                <Text style={styles.briefBody}>{activeBrief.content_text}</Text>
+                <Pressable style={styles.briefPublishBtn} onPress={handlePublishBrief} disabled={publishing}>
+                  {publishing ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <>
+                      <Ionicons name="paper-plane" size={16} color="#FFFFFF" />
+                      <Text style={styles.briefPublishBtnText}>Publish to LinkedIn Now</Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
             </View>
           )}
         </ScrollView>
@@ -431,23 +348,13 @@ export default function AICopilotScreen() {
         {/* Attached Image Preview */}
         {attachedImage && (
           <View style={styles.attachedPreviewRow}>
-            <Image
-              source={{ uri: attachedImage }}
-              style={styles.attachedThumbnail}
-            />
+            <Image source={{ uri: attachedImage }} style={styles.attachedThumbnail} />
             <View style={styles.attachedTextWrap}>
-              <Text style={styles.attachedTitle}>
-                Image Attached (Gemini Vision)
-              </Text>
-              <Text style={styles.attachedSub}>
-                Dexter will analyze this visual graphic
-              </Text>
+              <Text style={styles.attachedTitle}>Image Attached</Text>
+              <Text style={styles.attachedSub}>Dexter will analyze this visual graphic</Text>
             </View>
-            <Pressable
-              style={styles.removeAttachedBtn}
-              onPress={() => setAttachedImage(null)}
-            >
-              <Ionicons name="close-circle" size={20} color={colors.negative} />
+            <Pressable style={styles.removeAttachedBtn} onPress={() => setAttachedImage(null)}>
+              <Ionicons name="close-circle" size={20} color={colors.inkFaint} />
             </Pressable>
           </View>
         )}
@@ -460,72 +367,52 @@ export default function AICopilotScreen() {
           contentContainerStyle={styles.suggestionContent}
         >
           {QUICK_SUGGESTIONS.map((s, i) => (
-            <Pressable
-              key={i}
-              style={styles.suggestionChip}
-              onPress={() => handleSend(s)}
-            >
+            <Pressable key={i} style={styles.suggestionChip} onPress={() => handleSend(s)}>
               <Text style={styles.suggestionText}>{s}</Text>
             </Pressable>
           ))}
         </ScrollView>
 
-        {/* Input Bar */}
+        {/* Input Bar (§8.3 composer) */}
         <View style={styles.inputBarOuter}>
-          <BlurView intensity={60} tint="dark" style={styles.inputBarBlur}>
-            <View style={styles.inputBar}>
-              <Pressable style={styles.attachmentBtn} onPress={handlePickImage}>
-                <Ionicons
-                  name="image-outline"
-                  size={20}
-                  color={colors.primary}
-                />
-              </Pressable>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Ask Dexter to draft, edit, or schedule…"
-                placeholderTextColor={colors.labelTertiary}
-                value={inputText}
-                onChangeText={setInputText}
-                onSubmitEditing={() => handleSend()}
-                returnKeyType="send"
+          <View style={styles.inputBar}>
+            <Pressable style={styles.attachmentBtn} onPress={handlePickImage}>
+              <Ionicons name="image-outline" size={20} color={colors.primary} />
+            </Pressable>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Ask Dexter to draft, edit, or schedule…"
+              placeholderTextColor={colors.inkFaint}
+              value={inputText}
+              onChangeText={setInputText}
+              onSubmitEditing={() => handleSend()}
+              returnKeyType="send"
+              multiline
+            />
+            <Pressable
+              style={[
+                styles.actionBtn,
+                (isVoiceActive || aiState === "speaking") && styles.actionBtnActive,
+              ]}
+              onPress={handleVoiceToggle}
+            >
+              <Ionicons
+                name={aiState === "speaking" ? "volume-high" : isVoiceActive ? "mic" : "mic-outline"}
+                size={20}
+                color={isVoiceActive || aiState === "speaking" ? "#FFFFFF" : colors.primary}
               />
-              <Pressable
-                style={[
-                  styles.actionBtn,
-                  (isVoiceActive || aiState === "speaking") &&
-                    styles.actionBtnActive,
-                ]}
-                onPress={handleVoiceToggle}
-              >
-                <Ionicons
-                  name={
-                    aiState === "speaking"
-                      ? "volume-high"
-                      : isVoiceActive
-                        ? "mic"
-                        : "mic-outline"
-                  }
-                  size={20}
-                  color={
-                    isVoiceActive || aiState === "speaking"
-                      ? "#FFFFFF"
-                      : colors.primary
-                  }
-                />
-              </Pressable>
-              <Pressable
-                style={[
-                  styles.sendBtn,
-                  !inputText.trim() && !attachedImage && styles.sendBtnDisabled,
-                ]}
-                onPress={() => handleSend()}
-                disabled={!inputText.trim() && !attachedImage}
-              >
-                <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
-              </Pressable>
-            </View>
-          </BlurView>
+            </Pressable>
+            <Pressable
+              style={[
+                styles.sendBtn,
+                !inputText.trim() && !attachedImage && styles.sendBtnDisabled,
+              ]}
+              onPress={() => handleSend()}
+              disabled={!inputText.trim() && !attachedImage}
+            >
+              <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
+            </Pressable>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -536,237 +423,207 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1 },
 
-  headerOuter: { borderBottomWidth: 0.5, borderBottomColor: colors.separator },
-  headerBlur: {},
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  headerEyebrow: {
-    fontSize: 11,
-    color: colors.primary,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.labelPrimary,
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  audioToggleBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.glass,
+  headerIdentity: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  dexterAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.pill,
+    backgroundColor: colors.primarySurface,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
     alignItems: "center",
     justifyContent: "center",
   },
-  audioToggleActive: {
-    backgroundColor: colors.primarySurface,
-  },
-  statusPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: colors.glass,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  headerTitle: { ...typography.subheading, color: colors.ink },
+  headerSubtitle: { ...typography.caption2, color: colors.primary, marginTop: 1, fontSize: 11 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  audioToggleBtn: {
+    width: 36,
+    height: 36,
     borderRadius: radii.pill,
+    backgroundColor: colors.surfaceSunken,
     borderWidth: 1,
-    borderColor: colors.glassBorderLight,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.positive,
-  },
-  statusDotActive: { backgroundColor: colors.primary },
-  statusText: { fontSize: 12, color: colors.primary, fontWeight: "500" },
+  audioToggleActive: { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder },
 
   chatScroll: { flex: 1 },
   chatContent: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
-    paddingBottom: 20,
+    paddingBottom: spacing.lg,
+    gap: spacing.xs,
   },
   messageBubbleWrap: {
     flexDirection: "row",
-    marginVertical: 6,
-    maxWidth: "85%",
+    marginVertical: 5,
+    maxWidth: "88%",
   },
   userBubbleWrap: { alignSelf: "flex-end" },
-  assistantBubbleWrap: {
-    alignSelf: "flex-start",
-    alignItems: "flex-end",
-    gap: 6,
-  },
+  assistantBubbleWrap: { alignSelf: "flex-start", alignItems: "flex-end", gap: 6 },
   assistantAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: radii.pill,
     backgroundColor: colors.primarySurface,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 4,
   },
   messageBubble: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 18,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radii.md,
   },
   userBubble: {
     backgroundColor: colors.primary,
     borderBottomRightRadius: 4,
+    ...shadows.primaryBtn,
   },
   assistantBubble: {
-    backgroundColor: colors.glassHeavy,
+    backgroundColor: colors.surface,
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
+    ...shadows.subtle,
   },
   bubbleAttachedImage: {
     width: 200,
     height: 120,
-    borderRadius: radii.md,
-    marginBottom: 8,
+    borderRadius: radii.sm,
+    marginBottom: spacing.sm,
   },
-  speakBubbleBtn: {
-    alignSelf: "flex-end",
-    marginTop: 4,
-    paddingTop: 2,
-  },
+  speakBubbleBtn: { alignSelf: "flex-end", marginTop: 4, paddingTop: 2 },
   messageText: { fontSize: 15, lineHeight: 21 },
   userMessageText: { color: "#FFFFFF" },
-  assistantMessageText: { color: colors.labelPrimary },
+  assistantMessageText: { color: colors.ink },
 
   briefCardOuter: {
-    borderRadius: radii.xl,
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.primaryBorder,
     overflow: "hidden",
     marginTop: spacing.sm,
+    ...shadows.md,
   },
-  briefCardBlur: { overflow: "hidden" },
-  briefCardContent: { padding: spacing.md },
-  briefHeader: {
-    flexDirection: "row",
+  briefCardContent: { padding: spacing.lg, gap: spacing.sm },
+  briefHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  briefIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: radii.pill,
+    backgroundColor: colors.brandTint,
     alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
+    justifyContent: "center",
   },
-  briefTitle: { fontSize: 13, color: colors.labelPrimary, fontWeight: "600" },
-  briefBody: { fontSize: 13, color: colors.labelSecondary, lineHeight: 19 },
+  briefTitle: { ...typography.caption, color: colors.ink, fontWeight: "600" },
+  briefBody: { ...typography.bodySmall, color: colors.inkSoft, lineHeight: 19 },
   briefPublishBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    backgroundColor: "#0A66C2",
-    paddingVertical: 10,
-    borderRadius: radii.md,
-    marginTop: 12,
+    gap: spacing.sm,
+    backgroundColor: colors.brand,
+    paddingVertical: 12,
+    borderRadius: radii.pill,
+    marginTop: spacing.xs,
+    ...shadows.primaryBtn,
   },
-  briefPublishBtnText: { fontSize: 13, color: "#FFFFFF", fontWeight: "700" },
+  briefPublishBtnText: { ...typography.caption, color: "#FFFFFF", fontWeight: "700" },
 
   attachedPreviewRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.glass,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
     borderRadius: radii.md,
     marginHorizontal: spacing.lg,
-    padding: 8,
-    gap: 10,
+    padding: spacing.sm,
+    gap: spacing.md,
     marginBottom: 4,
+    ...shadows.subtle,
   },
-  attachedThumbnail: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.sm,
-  },
+  attachedThumbnail: { width: 44, height: 44, borderRadius: radii.sm },
   attachedTextWrap: { flex: 1 },
-  attachedTitle: {
-    fontSize: 12,
-    color: colors.labelPrimary,
-    fontWeight: "600",
-  },
-  attachedSub: { fontSize: 11, color: colors.labelSecondary },
+  attachedTitle: { ...typography.caption, color: colors.ink, fontWeight: "600" },
+  attachedSub: { ...typography.caption2, color: colors.inkSoft },
   removeAttachedBtn: { padding: 4 },
 
-  suggestionScroll: { maxHeight: 42, marginVertical: 4 },
-  suggestionContent: { paddingHorizontal: spacing.lg, gap: 8 },
+  suggestionScroll: { maxHeight: 46, marginVertical: 4 },
+  suggestionContent: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   suggestionChip: {
-    backgroundColor: colors.glass,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-  },
-  suggestionText: {
-    fontSize: 12,
-    color: colors.labelSecondary,
-    fontWeight: "500",
-  },
-
-  inputBarOuter: { borderTopWidth: 0.5, borderTopColor: colors.separator },
-  inputBarBlur: {},
-  inputBar: {
-    flexDirection: "row",
-    alignItems: "center",
+    backgroundColor: colors.surfaceSunken,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    gap: 8,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  suggestionText: { ...typography.caption2, color: colors.inkSoft, fontWeight: "500", fontSize: 11 },
+
+  inputBarOuter: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: spacing.sm,
+    marginBottom: Platform.OS === "ios" ? 84 : 76,
+  },
+  inputBar: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
   },
   attachmentBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: radii.pill,
     backgroundColor: colors.primarySurface,
     alignItems: "center",
     justifyContent: "center",
   },
   textInput: {
     flex: 1,
-    backgroundColor: colors.glass,
-    borderRadius: radii.pill,
+    backgroundColor: colors.surfaceSunken,
+    borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.glassBorderLight,
-    paddingHorizontal: 16,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 10,
     fontSize: 14,
-    color: colors.labelPrimary,
+    lineHeight: 20,
+    color: colors.ink,
+    maxHeight: 100,
   },
   actionBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: radii.pill,
     backgroundColor: colors.primarySurface,
     alignItems: "center",
     justifyContent: "center",
   },
-  actionBtnActive: {
-    backgroundColor: colors.primary,
-  },
+  actionBtnActive: { backgroundColor: colors.primary },
   sendBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: radii.pill,
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
+    ...shadows.primaryBtn,
   },
-  sendBtnDisabled: {
-    backgroundColor: colors.backgroundTertiary,
-  },
+  sendBtnDisabled: { backgroundColor: colors.border },
 });

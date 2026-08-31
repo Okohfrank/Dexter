@@ -1,31 +1,5 @@
-:root {
-  /* Dexter Glassmorphism Design System (No Gradients) */
-  --bg-base: #0B0D13;
-  --bg-alt: #11141D;
+@import './dexter-design-system.css';
 
-  --glass-surface: rgba(255, 255, 255, 0.05);
-  --glass-surface-elevated: rgba(255, 255, 255, 0.09);
-  --glass-surface-active: rgba(255, 255, 255, 0.14);
-
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-border-highlight: rgba(255, 255, 255, 0.24);
-
-  --primary: #6366F1;
-  --primary-dark: #4F46E5;
-  --primary-glass: rgba(99, 102, 241, 0.15);
-
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-
-  --positive: #10B981;
-  --positive-bg: rgba(16, 185, 129, 0.14);
-
-  --negative: #EF4444;
-  --negative-bg: rgba(239, 68, 68, 0.14);
-
-  --backdrop-blur: 16px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
-  --radius-pill: 999px;
-}
+/* Dexter tokens.css — legacy re-export of the machine-readable design system.
+ * Source of truth lives in dexter-design-system.css + src/theme/index.ts.
+ */

@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import {
   AuthScreen,
-  BrandMark,
   AuthTextInput,
   PrimaryButton,
 } from '../../src/components/ui';
-import { colors, spacing, typography, radii } from '../../src/theme';
+import { colors, spacing, fonts, radii } from '../../src/theme';
 import { forgotPassword } from '../../src/api/auth';
 
 export default function ForgotPasswordScreen() {
@@ -37,32 +35,26 @@ export default function ForgotPasswordScreen() {
 
   return (
     <AuthScreen>
-      <BrandMark />
       <View style={styles.header}>
         <Text style={styles.title}>Reset password</Text>
         <Text style={styles.subtitle}>
-          Enter your email and Dexter will send you instructions to reset your password.
+          Enter your email and we'll send you instructions to reset your password.
         </Text>
       </View>
 
       {sent ? (
-        <View style={styles.successCardOuter}>
-          <BlurView intensity={25} tint="dark" style={styles.successCardBlur}>
-            <View style={styles.successCardContent}>
-              <Ionicons name="checkmark-circle" size={24} color={colors.positive} />
-              <Text style={styles.successTitle}>Check your inbox</Text>
-              <Text style={styles.successText}>
-                We sent a password reset link to {email}.
-              </Text>
-              <PrimaryButton title="Back to sign in" onPress={() => router.replace('/login')} />
-            </View>
-          </BlurView>
+        <View style={styles.successCard}>
+          <Ionicons name="checkmark-circle" size={28} color="#000000" />
+          <Text style={styles.successTitle}>Check your inbox</Text>
+          <Text style={styles.successText}>
+            We sent a password reset link to {email}.
+          </Text>
+          <PrimaryButton title="Back to sign in" onPress={() => router.replace('/login')} />
         </View>
       ) : (
         <>
           <AuthTextInput
             label="Email"
-            icon="mail-outline"
             placeholder="you@company.com"
             value={email}
             onChangeText={setEmail}
@@ -71,13 +63,13 @@ export default function ForgotPasswordScreen() {
           />
 
           <PrimaryButton title="Send Reset Link" onPress={handleReset} disabled={loading} />
-          {loading && <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.sm }} />}
+          {loading && <ActivityIndicator color="#000000" style={{ marginTop: spacing.sm }} />}
 
           <View style={styles.footer}>
             <Link href="/login" asChild>
               <Pressable hitSlop={8} style={styles.backRow}>
-                <Ionicons name="arrow-back" size={16} color={colors.primary} />
-                <Text style={styles.footerLink}>Back to sign in</Text>
+                <Ionicons name="arrow-back" size={16} color="#000000" />
+                <Text style={styles.backText}>Back to sign in</Text>
               </Pressable>
             </Link>
           </View>
@@ -88,30 +80,44 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { marginTop: spacing.xl, marginBottom: spacing.xxl },
-  title: { ...typography.display, color: colors.labelPrimary },
+  header: {
+    marginTop: spacing.xl,
+    marginBottom: spacing.xxl,
+  },
+  title: {
+    fontFamily: fonts.bold,
+    fontSize: 28,
+    lineHeight: 34,
+    color: '#000000',
+  },
   subtitle: {
-    ...typography.body,
-    color: colors.labelSecondary,
-    marginTop: spacing.sm,
+    fontFamily: fonts.regular,
+    fontSize: 15,
     lineHeight: 22,
+    color: colors.inkSoft,
+    marginTop: spacing.sm,
   },
-  successCardOuter: {
-    borderRadius: radii.xl,
+  successCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
-    overflow: 'hidden',
-  },
-  successCardBlur: {
-    overflow: 'hidden',
-  },
-  successCardContent: {
+    borderColor: colors.border,
     padding: spacing.xl,
     alignItems: 'center',
     gap: spacing.sm,
   },
-  successTitle: { ...typography.heading, color: colors.labelPrimary, marginTop: 4 },
-  successText: { ...typography.body, color: colors.labelSecondary, textAlign: 'center' },
+  successTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 18,
+    color: '#000000',
+    marginTop: spacing.xs,
+  },
+  successText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.inkSoft,
+    textAlign: 'center',
+  },
   footer: {
     alignItems: 'center',
     marginTop: spacing.xxl,
@@ -121,5 +127,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  footerLink: { ...typography.body, color: colors.primary, fontWeight: '700' },
+  backText: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: '#000000',
+  },
 });

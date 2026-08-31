@@ -109,7 +109,7 @@ export default function SettingsScreen() {
               <Ionicons
                 name={autonomousMode ? 'rocket' : 'rocket-outline'}
                 size={22}
-                color={autonomousMode ? '#FFFFFF' : colors.primary}
+                color={autonomousMode ? colors.energy : colors.primary}
               />
             </View>
             <View style={styles.autonomyBody}>
@@ -123,9 +123,9 @@ export default function SettingsScreen() {
             <Switch
               value={autonomousMode}
               onValueChange={handleToggleAutonomous}
-              trackColor={{ false: colors.backgroundTertiary, true: colors.primary }}
+              trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#FFFFFF"
-              ios_backgroundColor={colors.backgroundTertiary}
+              ios_backgroundColor={colors.border}
             />
           </View>
         </GlassCard>
@@ -142,7 +142,7 @@ export default function SettingsScreen() {
                 <Text style={styles.settingLabel}>{row.label}</Text>
                 {row.subtitle && <Text style={styles.settingSubtitle}>{row.subtitle}</Text>}
               </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.labelTertiary} />
+              <Ionicons name="chevron-forward" size={18} color={colors.inkFaint} />
             </GlassCard>
           </Pressable>
         ))}
@@ -178,13 +178,12 @@ const styles = StyleSheet.create({
     ...shadows.primaryBtn,
   },
   avatarText: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    ...typography.heading,
+    color: colors.surface,
   },
   profileInfo: { flex: 1, gap: spacing.xs },
-  profileName: { ...typography.heading, color: colors.labelPrimary, fontSize: 18 },
-  profileEmail: { ...typography.caption, color: colors.labelSecondary },
+  profileName: { ...typography.h2, color: colors.ink },
+  profileEmail: { ...typography.caption, color: colors.inkSoft },
 
   autonomyCard: {},
   autonomyRow: {
@@ -195,22 +194,20 @@ const styles = StyleSheet.create({
   autonomyIconWrap: {
     width: 44,
     height: 44,
-    borderRadius: radii.md,
-    backgroundColor: colors.primary,
+    borderRadius: radii.pill,
+    backgroundColor: colors.primarySurface,
+    borderWidth: 1,
+    borderColor: colors.primaryBorder,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.primaryBtn,
+    ...shadows.subtle,
   },
   autonomyBody: { flex: 1 },
-  autonomyTitle: { ...typography.subheading, color: colors.labelPrimary, fontWeight: '700' },
-  autonomySubtitle: { ...typography.caption2, color: colors.labelSecondary, marginTop: 2 },
+  autonomyTitle: { ...typography.subheading, color: colors.ink, fontWeight: '700' },
+  autonomySubtitle: { ...typography.caption2, color: colors.inkSoft, marginTop: 2 },
 
   sectionLabel: {
-    ...typography.caption2,
-    color: colors.labelTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    fontWeight: '700',
+    ...typography.label,
     marginTop: spacing.sm,
   },
 
@@ -222,14 +219,14 @@ const styles = StyleSheet.create({
   settingIconWrap: {
     width: 40,
     height: 40,
-    borderRadius: radii.md,
+    borderRadius: radii.pill,
     backgroundColor: colors.primarySurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   settingBody: { flex: 1 },
-  settingLabel: { ...typography.subheading, color: colors.labelPrimary, fontWeight: '600' },
-  settingSubtitle: { ...typography.caption2, color: colors.labelSecondary, marginTop: 2 },
+  settingLabel: { ...typography.subheading, color: colors.ink, fontWeight: '600' },
+  settingSubtitle: { ...typography.caption2, color: colors.inkSoft, marginTop: 2 },
 
   logoutBtn: {
     flexDirection: 'row',
@@ -237,21 +234,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.lg,
-    borderRadius: radii.md,
+    borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: colors.negativeBorder,
     backgroundColor: colors.negativeSurface,
     marginTop: spacing.md,
   },
   logoutText: {
+    ...typography.h3,
     color: colors.negative,
-    fontSize: 15,
-    fontWeight: '600',
   },
 
   versionText: {
     ...typography.caption2,
-    color: colors.labelTertiary,
+    color: colors.inkFaint,
     textAlign: 'center',
   },
 });

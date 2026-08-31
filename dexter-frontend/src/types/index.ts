@@ -110,6 +110,14 @@ export type PublishedPost = {
   author_headline?: string;
 };
 
+/** Aggregate performance across published posts (backend /analytics/summary). */
+export type PerformanceSummary = {
+  total_posts: number;
+  total_impressions: number;
+  total_engagements: number;
+  avg_engagement_rate_pct: number;
+};
+
 /** Plain-language insight tied back to a user goal (not raw analytics). */
 export type LearningInsight = {
   id: string;

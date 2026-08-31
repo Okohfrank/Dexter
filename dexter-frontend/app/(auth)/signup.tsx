@@ -1,34 +1,39 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { Link, useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
+import { Ionicons } from '@expo/vector-icons';
 import {
   AuthScreen,
-  BrandMark,
   AuthTextInput,
   PrimaryButton,
-  OutlinedButton,
-  Divider,
+  SegmentedControl,
 } from '../../src/components/ui';
-import { colors, spacing, typography } from '../../src/theme';
-import { register, getLinkedInAuthorizationUrl } from '../../src/api/auth';
+import { colors, spacing, fonts } from '../../src/theme';
+import { register } from '../../src/api/auth';
 import { useAuthStore } from '../../src/api/client';
 
+type SignupMode = 'signup' | 'login';
+
 export default function SignupScreen() {
-  const [fullName, setFullName] = useState('');
+  const [mode, setMode] = useState<SignupMode>('signup');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleSignup = async () => {
-    if (!email || !password || !fullName.trim()) {
-      Alert.alert('Missing info', 'Please enter your full name, email, and password.');
+    if (!email.trim() || !password || !firstName.trim()) {
+      Alert.alert('Missing info', 'Please enter your first name, email, and password.');
       return;
     }
     setLoading(true);
     try {
-      const res = await register(email.trim(), password, fullName.trim());
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      const res = await register(email.trim(), password, fullName);
       useAuthStore.getState().setAuth({
         user: res.user,
         access_token: res.access_token,
@@ -36,41 +41,60 @@ export default function SignupScreen() {
       });
       router.replace('/(onboarding)');
     } catch (e: any) {
-      Alert.alert('Sign up failed', e.message || 'Could not connect to backend server. Please check your backend terminal.');
+      Alert.alert('Sign up failed', e.message || 'Could not connect to backend server.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLinkedIn = async () => {
-    Alert.alert(
-      'LinkedIn Sign Up',
-      'Please sign up with your name and email first, then link your LinkedIn account inside the onboarding channel setup!',
-    );
-  };
-
   return (
     <AuthScreen>
-      <BrandMark />
       <View style={styles.header}>
-        <Text style={styles.title}>Hire your AI Agent</Text>
+        <Text style={styles.title}>Get Started Now</Text>
         <Text style={styles.subtitle}>
-          Dexter plans, writes, and publishes thought-leadership content on your social accounts.
+          Create an account or log in to explore about our app
         </Text>
       </View>
 
-      <AuthTextInput
-        label="Full Name"
-        icon="person-outline"
-        placeholder="Alex Mercer"
-        value={fullName}
-        onChangeText={setFullName}
-        autoCapitalize="words"
+      <SegmentedControl
+        segments={[
+          { key: 'signup', label: 'Sign Up' },
+          { key: 'login', label: 'Log In' },
+        ]}
+        selected={mode}
+        onChange={(key) => {
+          const k = key as SignupMode;
+          setMode(k);
+          if (k === 'login') router.replace('/login');
+        }}
       />
+
+      <View style={styles.fieldsGap} />
+
+      <View style={styles.nameRow}>
+        <View style={styles.nameField}>
+          <AuthTextInput
+            label="Fast Name"
+            placeholder="Raj"
+            value={firstName}
+            onChangeText={setFirstName}
+            autoCapitalize="words"
+          />
+        </View>
+        <View style={styles.nameField}>
+          <AuthTextInput
+            label="Last Name"
+            placeholder="Sarkar"
+            value={lastName}
+            onChangeText={setLastName}
+            autoCapitalize="words"
+          />
+        </View>
+      </View>
+
       <AuthTextInput
-        label="Work Email"
-        icon="mail-outline"
-        placeholder="you@company.com"
+        label="Email"
+        placeholder="sarkarraj0766@gmail.com"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -78,9 +102,25 @@ export default function SignupScreen() {
         autoComplete="email"
         textContentType="emailAddress"
       />
+
+      <AuthTextInput
+        label="Birth of date"
+        placeholder="15/06/2000"
+        value={birthDate}
+        onChangeText={setBirthDate}
+        keyboardType="numbers-and-punctuation"
+      />
+
       <AuthTextInput
         label="Password"
-        icon="lock-closed-outline"
+        placeholder="(454) 726-0592"
+        value={phone}
+        onChangeText={setPhone}
+        keyboardType="phone-pad"
+      />
+
+      <AuthTextInput
+        label="Set Password"
         placeholder="••••••••"
         secure
         value={password}
@@ -89,39 +129,38 @@ export default function SignupScreen() {
         textContentType="newPassword"
       />
 
-      <PrimaryButton title="Get Started" onPress={handleSignup} disabled={loading} />
-      {loading && <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.sm }} />}
-
-      <Divider label="or sign up with" />
-      <OutlinedButton title="Continue with LinkedIn" icon="logo-linkedin" onPress={handleLinkedIn} />
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Already have an account? </Text>
-        <Link href="/login" asChild>
-          <Pressable hitSlop={8}>
-            <Text style={styles.footerLink}>Sign in</Text>
-          </Pressable>
-        </Link>
-      </View>
+      <PrimaryButton title="Sign Up" onPress={handleSignup} disabled={loading} />
+      {loading && <ActivityIndicator color="#000000" style={{ marginTop: spacing.sm }} />}
     </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { marginTop: spacing.xl, marginBottom: spacing.xxl },
-  title: { ...typography.display, color: colors.labelPrimary },
+  header: {
+    marginTop: spacing.xl,
+    marginBottom: spacing.xxl,
+  },
+  title: {
+    fontFamily: fonts.bold,
+    fontSize: 28,
+    lineHeight: 34,
+    color: '#000000',
+  },
   subtitle: {
-    ...typography.body,
-    color: colors.labelSecondary,
-    marginTop: spacing.sm,
+    fontFamily: fonts.regular,
+    fontSize: 15,
     lineHeight: 22,
+    color: colors.inkSoft,
+    marginTop: spacing.sm,
   },
-  footer: {
+  fieldsGap: {
+    height: spacing.xl,
+  },
+  nameRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: spacing.xxl,
+    gap: spacing.md,
   },
-  footerText: { ...typography.body, color: colors.labelSecondary },
-  footerLink: { ...typography.body, color: colors.primary, fontWeight: '700' },
+  nameField: {
+    flex: 1,
+  },
 });
