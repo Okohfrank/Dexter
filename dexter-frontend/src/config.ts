@@ -32,7 +32,7 @@ function resolveBaseUrl(): string {
   }
 
   // 5. Default fallback to detected LAN IP
-  return 'http://172.20.10.3:8000/api/v1';
+  return 'http://10.66.223.200:8000/api/v1';
 }
 
 export const API_BASE_URL: string = resolveBaseUrl();

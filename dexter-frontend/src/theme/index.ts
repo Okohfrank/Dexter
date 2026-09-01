@@ -6,14 +6,14 @@
  */
 
 /* ── Color Tokens (§2.1) ──────────────────────────────── */
-export const colorBg = '#FBF8F2';           // Screen background (legacy)
-export const colorBgAlt = '#F3EEE1';        // Section background, alt rows (legacy)
+export const colorBg = '#FFFFFF';           // Screen background (white)
+export const colorBgAlt = '#F5F5F5';        // Section background, alt rows (light gray)
 export const colorSurface = '#FFFFFF';      // Card surface
-export const colorSurfaceSunken = '#F6F3EA';// Inputs, inset areas (legacy)
+export const colorSurfaceSunken = '#F5F5F5';// Inputs, inset areas (light gray)
 export const colorInk = '#000000';          // Primary text — pure black
-export const colorInkSoft = '#888888';      // Secondary text — gray
+export const colorInkSoft = '#666666';      // Secondary text — gray
 export const colorInkFaint = '#999999';     // Placeholder, disabled, labels
-export const colorBorder = '#E0E0E0';       // Hairline borders — neutral gray
+export const colorBorder = '#DDDDDD';       // Hairline borders — neutral gray
 export const colorAccent = '#CDDC39';       // Lime/chartreuse — primary actions, active tabs
 export const colorAccentStrong = '#B8CC2A'; // Pressed/hover on accent elements
 export const colorBrand = '#CDDC39';        // Alias — lime (replaces indigo)
@@ -33,10 +33,10 @@ export const colorOnPositive = '#000000';   // Text on light gray
 export const colorOnEnergy = '#000000';     // Text on lime
 
 /* Dark surface set — pure black mode */
-export const colorBgDark = '#000000';
-export const colorSurfaceDark = '#111111';
+export const colorBgDark = '#1A1A1A';
+export const colorSurfaceDark = '#2A2A2A';
 export const colorInkDark = '#FFFFFF';
-export const colorBorderDark = '#333333';
+export const colorBorderDark = '#444444';
 
 /* Backward-compatible palette aliases (legacy screens reference these until restyled) */
 export const colors = {
@@ -53,15 +53,15 @@ export const colors = {
   labelTertiary: colorInkFaint,
   primary: colorAccent,            // lime
   primaryDark: colorAccentStrong,
-  primaryLight: '#E0E86B',
+  primaryLight: '#F5F8D0',
   primarySurface: '#F5F8D0',
-  primaryBorder: '#D4DF6B',
+  primaryBorder: '#CDDC39',
   accent: colorAccent,
   accentSurface: '#F5F8D0',
-  accentBorder: '#D4DF6B',
+  accentBorder: '#CDDC39',
   secondary: colorAccent,
   secondarySurface: '#F5F8D0',
-  secondaryBorder: '#D4DF6B',
+  secondaryBorder: '#CDDC39',
   positive: colorInk,
   positiveSurface: '#F5F5F5',
   positiveBorder: '#E0E0E0',
@@ -70,10 +70,10 @@ export const colors = {
   negativeBorder: '#E0E0E0',
   warning: colorAccent,
   warningSurface: '#F5F8D0',
-  warningBorder: '#D4DF6B',
+  warningBorder: '#CDDC39',
   highlight: '#F5F5F5',
   border: colorBorder,
-  borderLight: '#F0F0F0',
+  borderLight: '#F5F5F5',
   divider: colorBorder,
   separator: colorBorder,
   skeleton: '#F0F0F0',

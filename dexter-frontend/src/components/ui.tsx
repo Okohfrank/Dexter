@@ -26,7 +26,7 @@ import Animated, {
   Easing,
   cancelAnimation,
 } from 'react-native-reanimated';
-import { colors, spacing, radii, typography, fonts, shadows, motion, colorAccent } from '../theme';
+import { colors, spacing, radii, typography, fonts, shadows, motion, colorAccent, colorBrand, colorEnergy, colorInk } from '../theme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -201,61 +201,25 @@ export function SegmentedControl<T extends string>({
   selected: T;
   onChange: (key: T) => void;
 }) {
-  const segmentCount = segments.length;
-  const selectedIndex = segments.findIndex((s) => s.key === selected);
-
-  // Track layout widths for each segment
-  const [containerWidth, setContainerWidth] = useState(0);
-  const PILL_PADDING = 4; // inner padding of the outer track
-  const pillWidth = containerWidth > 0 ? (containerWidth - PILL_PADDING * 2) / segmentCount : 0;
-
-  // Animated X position of the sliding pill
-  const translateX = useSharedValue(0);
-
-  useEffect(() => {
-    if (pillWidth > 0) {
-      translateX.value = withTiming(PILL_PADDING + selectedIndex * pillWidth, {
-        duration: motion.durationBase,
-        easing: Easing.bezier(0.16, 1, 0.3, 1),
-      });
-    }
-  }, [selectedIndex, pillWidth]);
-
-  const pillAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-    width: pillWidth,
-  }));
-
   return (
-    <View
-      style={styles.segmentedOuter}
-      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
-    >
-      {/* Sliding white pill indicator */}
-      {pillWidth > 0 && (
-        <Animated.View style={[styles.segmentPill, pillAnimStyle]} />
-      )}
-
-      {/* Segment buttons */}
+    <View style={segStyles.track}>
       {segments.map((seg) => {
         const active = seg.key === selected;
         return (
           <Pressable
             key={seg.key}
-            style={({ pressed }) => [
-              styles.segmentBtn,
-              pressed && { opacity: 0.7 },
-            ]}
+            style={[segStyles.segment, active && segStyles.segmentActive]}
             onPress={() => onChange(seg.key)}
           >
             {seg.icon && (
               <Ionicons
                 name={seg.icon}
-                size={13}
-                color={active ? colors.ink : colors.inkFaint}
+                size={14}
+                color={active ? colors.ink : colors.inkSoft}
+                style={{ marginRight: 6 }}
               />
             )}
-            <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
+            <Text style={[segStyles.label, active && segStyles.labelActive]}>
               {seg.label}
             </Text>
           </Pressable>
@@ -264,6 +228,45 @@ export function SegmentedControl<T extends string>({
     </View>
   );
 }
+
+const segStyles = StyleSheet.create({
+  track: {
+    flexDirection: 'row',
+    backgroundColor: colors.surfaceSunken,
+    borderRadius: radii.pill,
+    padding: 4,
+  },
+  segment: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: radii.pill,
+    backgroundColor: 'transparent',
+  },
+  segmentActive: {
+    backgroundColor: colors.surface,
+    // shadow-sm (ink-tinted) per DESIGN.md §2.5
+    shadowColor: 'rgba(28,18,16,1)',
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  label: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.inkSoft,
+    textAlign: 'center',
+  },
+  labelActive: {
+    fontFamily: fonts.semibold,
+    color: colors.ink,
+  },
+});
 
 /* ── Text Input (§3.5) — underline style ──────────────── */
 type AuthInputProps = TextInputProps & {
@@ -303,37 +306,117 @@ export function AuthTextInput({ label, icon, secure, ...props }: AuthInputProps)
 }
 
 /* ── Buttons (§3.1) ──────────────────────────────────── */
-function pressStyle(focused: boolean) {
-  return [
-    { transform: [{ scale: focused ? 0.97 : 1 }] },
-    { opacity: focused ? 0.9 : 1 },
-  ];
-}
+const btnStyles = StyleSheet.create({
+  primary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#CDDC39',
+    borderRadius: 999,
+    paddingVertical: 14,
+    paddingHorizontal: 22,
+    height: 48,
+    width: '100%',
+  },
+  primaryText: {
+    color: '#000000',
+    fontFamily: fonts.bold,
+    fontWeight: '700',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  energy: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colorEnergy,
+    borderRadius: radii.pill,
+    paddingVertical: 14,
+    paddingHorizontal: 22,
+    minHeight: 48,
+    width: '100%',
+    alignSelf: 'stretch',
+    marginTop: spacing.md,
+  },
+  energyText: {
+    color: colorInk,
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  outlined: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radii.pill,
+    paddingVertical: 14,
+    paddingHorizontal: 22,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minHeight: 48,
+    width: '100%',
+    alignSelf: 'stretch',
+  },
+  outlinedText: {
+    color: colorInk,
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  ghost: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.pill,
+  },
+  ghostText: {
+    color: colors.inkSoft,
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+});
 
 export function PrimaryButton({
   title,
   onPress,
   disabled,
   icon,
+  style,
 }: {
   title: string;
   onPress?: () => void;
   disabled?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      style={({ pressed }) => [
-        styles.primaryBtn,
-        ...pressStyle(pressed),
-        disabled && { opacity: 0.45 },
-      ]}
-    >
-      {icon && <Ionicons name={icon} size={17} color={colors.surface} style={{ marginRight: 6 }} />}
-      <Text style={styles.primaryBtnText}>{title}</Text>
-    </Pressable>
+    <View style={{ marginTop: spacing.md, width: '100%' }}>
+      <View style={btnStyles.primary}>
+        <Pressable
+          onPress={onPress}
+          disabled={disabled}
+          style={({ pressed }) => [
+            {
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: 1,
+            },
+            pressed && { opacity: 0.8 },
+            disabled && { opacity: 0.45 },
+            style,
+          ]}
+        >
+          {icon && <Ionicons name={icon} size={17} color="#000000" style={{ marginRight: 6 }} />}
+          <Text style={btnStyles.primaryText}>{title}</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
@@ -343,24 +426,27 @@ export function EnergyButton({
   onPress,
   disabled,
   icon,
+  style,
 }: {
   title: string;
   onPress?: () => void;
   disabled?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [
-        styles.energyBtn,
-        ...pressStyle(pressed),
+        btnStyles.energy,
+        pressed && { transform: [{ scale: 0.97 }] },
         disabled && { opacity: 0.45 },
+        style,
       ]}
     >
-      {icon && <Ionicons name={icon} size={17} color={colors.ink} style={{ marginRight: 6 }} />}
-      <Text style={styles.energyBtnText}>{title}</Text>
+      {icon && <Ionicons name={icon} size={17} color={colorInk} style={{ marginRight: 6 }} />}
+      <Text style={btnStyles.energyText}>{title}</Text>
     </Pressable>
   );
 }
@@ -370,21 +456,24 @@ export function OutlinedButton({
   title,
   icon,
   onPress,
+  style,
 }: {
   title: string;
   icon?: keyof typeof Ionicons.glyphMap;
   onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
-        styles.outlinedBtn,
-        ...pressStyle(pressed),
+        btnStyles.outlined,
+        pressed && { transform: [{ scale: 0.97 }] },
+        style,
       ]}
     >
-      {icon && <Ionicons name={icon} size={18} color={colors.ink} style={{ marginRight: 6 }} />}
-      <Text style={styles.outlinedBtnText}>{title}</Text>
+      {icon && <Ionicons name={icon} size={18} color={colorInk} style={{ marginRight: 6 }} />}
+      <Text style={btnStyles.outlinedText}>{title}</Text>
     </Pressable>
   );
 }
@@ -395,19 +484,22 @@ export const SecondaryButton = OutlinedButton;
 export function GhostButton({
   title,
   onPress,
+  style,
 }: {
   title: string;
   onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
-        styles.ghostBtn,
-        ...pressStyle(pressed),
+        btnStyles.ghost,
+        pressed && { transform: [{ scale: 0.97 }] },
+        style,
       ]}
     >
-      <Text style={styles.ghostBtnText}>{title}</Text>
+      <Text style={btnStyles.ghostText}>{title}</Text>
     </Pressable>
   );
 }
@@ -563,7 +655,7 @@ const styles = StyleSheet.create({
   },
   authScroll: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: spacing.xxl,
     paddingVertical: spacing.xxl,
   },
@@ -668,48 +760,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
   },
 
-  // ── Segmented Control ──
-  segmentedOuter: {
-    flexDirection: 'row',
-    backgroundColor: colors.surfaceSunken,
-    borderRadius: radii.pill,
-    padding: 4,
-    position: 'relative',
-  },
-  segmentPill: {
-    position: 'absolute',
-    top: 4,
-    bottom: 4,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surface,
-    // Ink-tinted shadow per DESIGN.md §2.5
-    shadowColor: 'rgba(28,18,16,1)',
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  segmentBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 14,
-    borderRadius: radii.pill,
-    backgroundColor: 'transparent',
-    zIndex: 1,
-  },
-  segmentText: {
-    fontFamily: fonts.medium,
-    fontSize: 15,
-    color: colors.inkFaint,
-  },
-  segmentTextActive: {
-    color: colors.ink,
-    fontFamily: fonts.semibold,
-    fontSize: 15,
-  },
+  // ── Segmented Control ── (styles moved to segStyles above component)
 
   // ── Input ──
   field: { marginBottom: spacing.xl },
@@ -745,12 +796,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
+    alignSelf: 'stretch',
     marginTop: spacing.md,
   },
   primaryBtnText: {
     color: '#000000',
     fontFamily: fonts.semibold,
     fontSize: 16,
+    textAlign: 'center',
   },
   energyBtn: {
     flexDirection: 'row',

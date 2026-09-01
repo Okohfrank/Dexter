@@ -146,7 +146,11 @@ export default function LoginScreen() {
         </Link>
       </View>
 
-      <PrimaryButton title="Log In" onPress={handleLogin} disabled={loading} />
+      <PrimaryButton 
+        title="Log In" 
+        onPress={handleLogin} 
+        disabled={loading}
+      />
       {loading && <ActivityIndicator color="#000000" style={{ marginTop: spacing.sm }} />}
 
       <Divider label="Or Sign In With" />

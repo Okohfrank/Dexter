@@ -4,40 +4,40 @@
  */
 
 :root {
-  /* ── 2.1 Color ── */
-  --color-bg: #FBF8F2;
-  --color-bg-alt: #F3EEE1;
+  /* ── 2.1 Color (Monochrome + Lime Accent) ── */
+  --color-bg: #FFFFFF;
+  --color-bg-alt: #F5F5F5;
   --color-surface: #FFFFFF;
-  --color-surface-sunken: #F6F3EA;
+  --color-surface-sunken: #F5F5F5;
 
-  --color-ink: #1C1210;
-  --color-ink-soft: #5C534E;
-  --color-ink-faint: #9A928A;
+  --color-ink: #000000;
+  --color-ink-soft: #666666;
+  --color-ink-faint: #999999;
 
-  --color-border: #EAE3D4;
+  --color-border: #DDDDDD;
 
-  --color-brand: #3943B7;
-  --color-brand-tint: #E7E8FA;
-  --color-brand-strong: #2C3391;
+  --color-brand: #CDDC39;
+  --color-brand-tint: #F5F8D0;
+  --color-brand-strong: #B8CC2A;
 
-  --color-premium: #6B2737;
-  --color-energy: #E08E45;
+  --color-premium: #000000;
+  --color-energy: #CDDC39;
 
-  --color-positive-text: #3E8F45;
-  --color-positive-fill: #BDF7B7;
-  --color-negative-text: #B23B3B;
-  --color-negative-fill: #F6DEDE;
-  --color-highlight-bg: #F8F4A6;
+  --color-positive-text: #000000;
+  --color-positive-fill: #F5F5F5;
+  --color-negative-text: #000000;
+  --color-negative-fill: #F5F5F5;
+  --color-highlight-bg: #F5F5F5;
 
-  --color-on-highlight: #6B5E00;
-  --color-on-positive: #3E8F45;
-  --color-on-energy: #8A4A15;
+  --color-on-highlight: #000000;
+  --color-on-positive: #000000;
+  --color-on-energy: #000000;
 
   /* Dark surface set (opt-in per screen) */
-  --color-bg-dark: #17151F;
-  --color-surface-dark: #201D2C;
-  --color-ink-dark: #F5F2EA;
-  --color-border-dark: #34303F;
+  --color-bg-dark: #1A1A1A;
+  --color-surface-dark: #2A2A2A;
+  --color-ink-dark: #FFFFFF;
+  --color-border-dark: #444444;
 
   /* ── 2.3 Spacing (4px base scale) ── */
   --space-1: 4px;
@@ -57,10 +57,10 @@
   --radius-lg: 28px;
   --radius-full: 999px;
 
-  /* ── 2.5 Shadow (always tinted with ink) ── */
-  --shadow-sm: 0 1px 2px rgba(28, 18, 16, 0.05);
-  --shadow-md: 0 8px 24px -8px rgba(43, 15, 22, 0.14), 0 1px 2px rgba(28, 18, 16, 0.04);
-  --shadow-lg: 0 20px 48px -12px rgba(43, 15, 22, 0.20);
+  /* ── 2.5 Shadow (neutral black for monochrome) ── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.10), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 20px 48px -12px rgba(0, 0, 0, 0.15);
 
   /* ── 2.6 Motion ── */
   --duration-fast: 150ms;

@@ -11,7 +11,7 @@ Companion file: `dexter-design-system.css` contains the same tokens as CSS custo
 
 1. **Never hardcode a color, font size, spacing value, or radius.** Every value used in a screen must trace back to a token defined in Section 2. If a design need isn't covered by an existing token, that is a signal to add a token here first — not to invent a one-off value inline.
 2. **Never introduce a new font.** Only `Fraunces` (display) and `Inter` (UI/body) exist in this product. No system-default fallback fonts in final screens.
-3. **Never use pure black shadows or pure white (`#000000` / `#FFFFFF` as shadow color).** All shadows are tinted per Section 5.4.
+3. **Shadows use neutral black** (`rgba(0,0,0,X)`) **for clean monochrome aesthetic.** No tinted shadows per Section 2.5.
 4. **Never use sharp corners on interactive surfaces.** Minimum radius on any tappable element is `--radius-sm` (12px). Cards are `--radius-md` (20px) or `--radius-lg` (28px). Buttons, chips, inputs, nav are `--radius-full`.
 5. **The pulse-dot signature (Section 6) appears only where Dexter is actively "present"** — the avatar, the copilot bar, and the Business Brain header. Do not decorate other elements with it; overuse kills the signature.
 6. **Every screen must be reviewed against the reference patterns in Section 8 before being marked done.** If a screen doesn't resemble one of the named patterns, it's off-spec.
@@ -20,11 +20,11 @@ Companion file: `dexter-design-system.css` contains the same tokens as CSS custo
 
 ## 1. Design Philosophy
 
-Dexter is an **AI employee**, not a scheduling tool. The visual language needs to feel like a competent, premium colleague working alongside the user — calm, confident, editorial — not like a generic SaaS analytics dashboard.
+Dexter is an **AI employee**, not a scheduling tool. The visual language needs to feel like a competent, modern colleague working alongside the user — clean, confident, accessible — not like a generic SaaS analytics dashboard.
 
-- **Warm, not corporate.** Background is warm paper (`#FBF8F2`), not stark white or cold gray.
+- **Clean, not warm.** Background is pure white or light gray, not warm paper. Monochrome + lime accent creates a modern, accessible interface.
 - **Editorial confidence.** The `Fraunces` display serif appears on greetings and hero numbers to give the product a "thought-leadership" voice, matching what Dexter writes for the user.
-- **Data should feel calm, not busy.** Bento cards with generous padding, soft tinted shadows, one accent color doing the "action" work (indigo) — never more than one loud color per screen.
+- **Data should feel calm, not busy.** Bento cards with generous padding, subtle shadows, one accent color doing the "action" work (lime) — never more than one loud color per screen.
 - **The agent is visible but not intrusive.** The pulse-dot is the only recurring "AI is here" cue. No sparkle icons scattered everywhere, no gradient-text "AI magic" clichés.
 
 ---
@@ -37,26 +37,26 @@ Dexter is an **AI employee**, not a scheduling tool. The visual language needs t
 
 | Token | Hex | Usage |
 |---|---|---|
-| `color-bg` | `#FBF8F2` | Screen background |
-| `color-bg-alt` | `#F3EEE1` | Section background, alt rows |
+| `color-bg` | `#FFFFFF` | Screen background |
+| `color-bg-alt` | `#F5F5F5` | Section background, alt rows |
 | `color-surface` | `#FFFFFF` | Card surface |
-| `color-surface-sunken` | `#F6F3EA` | Inputs, inset areas |
-| `color-ink` | `#1C1210` | Primary text |
-| `color-ink-soft` | `#5C534E` | Secondary text |
-| `color-ink-faint` | `#9A928A` | Placeholder, disabled, labels |
-| `color-border` | `#EAE3D4` | Hairline borders |
-| `color-brand` (indigo) | `#3943B7` | Primary actions, links, AI/active states |
-| `color-brand-tint` | `#E7E8FA` | Brand background wash, icon chips |
-| `color-brand-strong` | `#2C3391` | Pressed/hover on brand elements |
-| `color-premium` (burgundy) | `#6B2737` | Agency/premium tier dark cards |
-| `color-energy` (orange) | `#E08E45` | CTA highlight, autonomous-mode-on, warnings |
-| `color-positive` | `#3E8F45` (text) / `#BDF7B7` (fill) | Growth metrics, published status |
-| `color-negative` | `#B23B3B` (text) / `#F6DEDE` (fill) | Failed publish, down metrics |
-| `color-highlight-bg` (pale yellow) | `#F8F4A6` | Badge fills, soft attention — **fills only, never body text on white** |
+| `color-surface-sunken` | `#F5F5F5` | Inputs, inset areas |
+| `color-ink` | `#000000` | Primary text |
+| `color-ink-soft` | `#666666` | Secondary text |
+| `color-ink-faint` | `#999999` | Placeholder, disabled, labels |
+| `color-border` | `#DDDDDD` | Hairline borders |
+| `color-brand` (lime) | `#CDDC39` | Primary actions, links, AI/active states |
+| `color-brand-tint` | `#F5F8D0` | Brand background wash, icon chips |
+| `color-brand-strong` | `#B8CC2A` | Pressed/hover on brand elements |
+| `color-premium` (black) | `#000000` | Agency/premium tier dark cards |
+| `color-energy` (lime) | `#CDDC39` | CTA highlight, autonomous-mode-on, warnings |
+| `color-positive` | `#000000` (text) / `#F5F5F5` (fill) | Growth metrics, published status |
+| `color-negative` | `#000000` (text) / `#F5F5F5` (fill) | Failed publish, down metrics |
+| `color-highlight-bg` (light gray) | `#F5F5F5` | Badge fills, soft attention — **fills only, never body text on white** |
 
-Dark surface set (agency/analytics/night mode): `bg-dark #17151F`, `surface-dark #201D2C`, `ink-dark #F5F2EA`, `border-dark #34303F`.
+Dark surface set (night mode, optional): `bg-dark #1A1A1A`, `surface-dark #2A2A2A`, `ink-dark #FFFFFF`, `border-dark #444444`.
 
-**Rule:** exactly one accent color carries the "primary action" job per screen — indigo. Orange and burgundy are for specific semantic states (energy/CTA, premium tier), not decoration. If a screen has three different colored buttons competing for attention, that's a bug, not a design choice.
+**Rule:** exactly one accent color carries the "primary action" job per screen — lime. All semantic colors are black/gray/white for monochrome simplicity. If a screen has three different colored buttons competing for attention, that's a bug, not a design choice.
 
 ### 2.2 Typography
 
@@ -89,10 +89,10 @@ Default gap between bento cards: `space-3` (12px).
 - `radius-lg` 28px — hero/feature card, bottom sheets
 - `radius-full` 999px — buttons, pills, nav, avatars
 
-### 2.5 Shadow (always tinted with the ink color, never neutral black)
-- `shadow-sm`: `0 1px 2px rgba(28,18,16,0.05)` — resting card
-- `shadow-md`: `0 8px 24px -8px rgba(43,15,22,0.14), 0 1px 2px rgba(28,18,16,0.04)` — raised card, copilot bar
-- `shadow-lg`: `0 20px 48px -12px rgba(43,15,22,0.20)` — bottom nav, modals, sheets
+### 2.5 Shadow (neutral black for clean monochrome aesthetic)
+- `shadow-sm`: `0 1px 2px rgba(0,0,0,0.05)` — resting card
+- `shadow-md`: `0 8px 24px -8px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.04)` — raised card, copilot bar
+- `shadow-lg`: `0 20px 48px -12px rgba(0,0,0,0.15)` — bottom nav, modals, sheets
 
 ### 2.6 Motion
 - `duration-fast` 150ms — button press, chip select
