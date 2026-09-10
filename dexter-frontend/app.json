@@ -4,9 +4,9 @@
     "slug": "dexter-frontend",
     "scheme": "dexter",
     "version": "1.0.0",
-    "sdkVersion": "54.0.0",
+    "sdkVersion": "57.0.0",
     "extra": {
-      "apiBaseUrl": "http://10.66.223.200:8000/api/v1"
+      "apiBaseUrl": "http://10.188.191.200:8000/api/v1"
     },
     "experiments": {
       "typedRoutes": true
@@ -32,8 +32,9 @@
     "plugins": [
       "expo-router",
       "expo-web-browser",
-      "expo-font"
+      "expo-font",
+      "expo-splash-screen",
+      "expo-status-bar"
     ]
   }
 }
-

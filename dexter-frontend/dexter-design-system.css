@@ -5,38 +5,38 @@
 
 :root {
   /* ── 2.1 Color (Monochrome + Lime Accent) ── */
-  --color-bg: #FFFFFF;
-  --color-bg-alt: #F5F5F5;
-  --color-surface: #FFFFFF;
-  --color-surface-sunken: #F5F5F5;
+  --color-bg: #ffffff;
+  --color-bg-alt: #f5f5f5;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f5f5f5;
 
   --color-ink: #000000;
   --color-ink-soft: #666666;
   --color-ink-faint: #999999;
 
-  --color-border: #DDDDDD;
+  --color-border: #dddddd;
 
-  --color-brand: #CDDC39;
-  --color-brand-tint: #F5F8D0;
-  --color-brand-strong: #B8CC2A;
+  --color-brand: #cddc39;
+  --color-brand-tint: #f5f8d0;
+  --color-brand-strong: #b8cc2a;
 
   --color-premium: #000000;
-  --color-energy: #CDDC39;
+  --color-energy: #cddc39;
 
   --color-positive-text: #000000;
-  --color-positive-fill: #F5F5F5;
+  --color-positive-fill: #f5f5f5;
   --color-negative-text: #000000;
-  --color-negative-fill: #F5F5F5;
-  --color-highlight-bg: #F5F5F5;
+  --color-negative-fill: #f5f5f5;
+  --color-highlight-bg: #f5f5f5;
 
   --color-on-highlight: #000000;
   --color-on-positive: #000000;
   --color-on-energy: #000000;
 
   /* Dark surface set (opt-in per screen) */
-  --color-bg-dark: #1A1A1A;
-  --color-surface-dark: #2A2A2A;
-  --color-ink-dark: #FFFFFF;
+  --color-bg-dark: #1a1a1a;
+  --color-surface-dark: #2a2a2a;
+  --color-ink-dark: #ffffff;
   --color-border-dark: #444444;
 
   /* ── 2.3 Spacing (4px base scale) ── */
@@ -59,7 +59,8 @@
 
   /* ── 2.5 Shadow (neutral black for monochrome) ── */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.10), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md:
+    0 8px 24px -8px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 20px 48px -12px rgba(0, 0, 0, 0.15);
 
   /* ── 2.6 Motion ── */
@@ -68,8 +69,8 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ── 2.2 Typography ── */
-  --font-display: 'Fraunces', serif;
-  --font-ui: 'Inter', system-ui, sans-serif;
+  --font-display: "Fraunces", serif;
+  --font-ui: "Inter", system-ui, sans-serif;
   --type-display-large: 700 40px/1.08 var(--font-display);
   --type-display-medium: 600 32px/1.12 var(--font-display);
   --type-display-small: 600 26px/1.18 var(--font-display);

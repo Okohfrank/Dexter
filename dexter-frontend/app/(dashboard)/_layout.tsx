@@ -6,8 +6,8 @@ import { colors, spacing, radii, shadows } from '../../src/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Keep width comfortably inset from both edges (capsule floating dock)
-const NAVBAR_INSET = Math.max(28, (SCREEN_WIDTH - 360) / 2);
+// Keep the pill inset from both screen edges and lifted above the content.
+const NAVBAR_INSET = Math.max(20, (SCREEN_WIDTH - 360) / 2);
 
 type TabDef = {
   name: string;
@@ -59,6 +59,7 @@ export default function DashboardLayout() {
                     name={focused ? tab.iconActive : tab.icon}
                     size={21}
                     color={focused ? colors.ink : colors.inkFaint}
+                    style={focused ? styles.tabIconActive : undefined}
                   />
                 </View>
               );
@@ -80,23 +81,25 @@ export default function DashboardLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 28 : 20,
+    bottom: Platform.OS === 'ios' ? 28 : 18,
     left: NAVBAR_INSET,
     right: NAVBAR_INSET,
-    height: 64,
+    height: 72,
     borderRadius: radii.pill,
     backgroundColor: colors.ink,
-    paddingTop: 4,
-    paddingBottom: 4,
-    paddingHorizontal: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingHorizontal: 10,
     overflow: 'visible',
     ...shadows.lg,
-    elevation: 12,
+    elevation: 8,
+    borderWidth: 0,
   },
   tabItem: {
     height: 56,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 0,
   },
   tabContent: {
     width: 44,
@@ -104,13 +107,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.pill,
+    backgroundColor: 'transparent',
   },
   tabContentActive: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.brand,
+    ...shadows.md,
+    elevation: 4,
+    borderWidth: 0,
   },
   specialButtonContainer: {
     width: 56,
-    height: 48,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -123,6 +130,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.border,
-    ...shadows.primaryBtn,
+    ...shadows.md,
+    elevation: 4,
   },
 });

@@ -1,9 +1,10 @@
 # Dexter — Design.md
+
 **Version 1.0 — Strict implementation spec. Do not deviate without checking with the product owner.**
 
 This document is the single source of truth for how Dexter looks and behaves visually. It supersedes any default styling choices, component libraries, or "best guess" design decisions. If something is not specified here, stop and ask — do not invent a new pattern.
 
-Companion file: `dexter-design-system.css` contains the same tokens as CSS custom properties. This document is the *why* and *exact spec*; the CSS file is the *machine-readable source*. Values must match between the two at all times.
+Companion file: `dexter-design-system.css` contains the same tokens as CSS custom properties. This document is the _why_ and _exact spec_; the CSS file is the _machine-readable source_. Values must match between the two at all times.
 
 ---
 
@@ -31,28 +32,28 @@ Dexter is an **AI employee**, not a scheduling tool. The visual language needs t
 
 ## 2. Design Tokens
 
-*(Full machine-readable version lives in `dexter-design-system.css`. Values here must stay in sync.)*
+_(Full machine-readable version lives in `dexter-design-system.css`. Values here must stay in sync.)_
 
 ### 2.1 Color
 
-| Token | Hex | Usage |
-|---|---|---|
-| `color-bg` | `#FFFFFF` | Screen background |
-| `color-bg-alt` | `#F5F5F5` | Section background, alt rows |
-| `color-surface` | `#FFFFFF` | Card surface |
-| `color-surface-sunken` | `#F5F5F5` | Inputs, inset areas |
-| `color-ink` | `#000000` | Primary text |
-| `color-ink-soft` | `#666666` | Secondary text |
-| `color-ink-faint` | `#999999` | Placeholder, disabled, labels |
-| `color-border` | `#DDDDDD` | Hairline borders |
-| `color-brand` (lime) | `#CDDC39` | Primary actions, links, AI/active states |
-| `color-brand-tint` | `#F5F8D0` | Brand background wash, icon chips |
-| `color-brand-strong` | `#B8CC2A` | Pressed/hover on brand elements |
-| `color-premium` (black) | `#000000` | Agency/premium tier dark cards |
-| `color-energy` (lime) | `#CDDC39` | CTA highlight, autonomous-mode-on, warnings |
-| `color-positive` | `#000000` (text) / `#F5F5F5` (fill) | Growth metrics, published status |
-| `color-negative` | `#000000` (text) / `#F5F5F5` (fill) | Failed publish, down metrics |
-| `color-highlight-bg` (light gray) | `#F5F5F5` | Badge fills, soft attention — **fills only, never body text on white** |
+| Token                             | Hex                                 | Usage                                                                  |
+| --------------------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
+| `color-bg`                        | `#FFFFFF`                           | Screen background                                                      |
+| `color-bg-alt`                    | `#F5F5F5`                           | Section background, alt rows                                           |
+| `color-surface`                   | `#FFFFFF`                           | Card surface                                                           |
+| `color-surface-sunken`            | `#F5F5F5`                           | Inputs, inset areas                                                    |
+| `color-ink`                       | `#000000`                           | Primary text                                                           |
+| `color-ink-soft`                  | `#666666`                           | Secondary text                                                         |
+| `color-ink-faint`                 | `#999999`                           | Placeholder, disabled, labels                                          |
+| `color-border`                    | `#DDDDDD`                           | Hairline borders                                                       |
+| `color-brand` (lime)              | `#CDDC39`                           | Primary actions, links, AI/active states                               |
+| `color-brand-tint`                | `#F5F8D0`                           | Brand background wash, icon chips                                      |
+| `color-brand-strong`              | `#B8CC2A`                           | Pressed/hover on brand elements                                        |
+| `color-premium` (black)           | `#000000`                           | Agency/premium tier dark cards                                         |
+| `color-energy` (lime)             | `#CDDC39`                           | CTA highlight, autonomous-mode-on, warnings                            |
+| `color-positive`                  | `#000000` (text) / `#F5F5F5` (fill) | Growth metrics, published status                                       |
+| `color-negative`                  | `#000000` (text) / `#F5F5F5` (fill) | Failed publish, down metrics                                           |
+| `color-highlight-bg` (light gray) | `#F5F5F5`                           | Badge fills, soft attention — **fills only, never body text on white** |
 
 Dark surface set (night mode, optional): `bg-dark #1A1A1A`, `surface-dark #2A2A2A`, `ink-dark #FFFFFF`, `border-dark #444444`.
 
@@ -60,23 +61,24 @@ Dark surface set (night mode, optional): `bg-dark #1A1A1A`, `surface-dark #2A2A2
 
 ### 2.2 Typography
 
-| Role | Font | Weight/Size/Line-height |
-|---|---|---|
-| Display Large | Fraunces | 700 / 40px / 1.08 |
-| Display Medium | Fraunces | 600 / 32px / 1.12 |
-| Display Small | Fraunces | 600 / 26px / 1.18 |
-| H1 | Inter | 700 / 22px / 1.25 |
-| H2 | Inter | 600 / 18px / 1.3 |
-| H3 | Inter | 600 / 15px / 1.35 |
-| Body | Inter | 400 / 15px / 1.55 |
-| Body Small | Inter | 400 / 13px / 1.5 |
-| Label (eyebrow, uppercase) | Inter | 600 / 12px / 1.3, tracking +0.06em |
-| Stat number | Inter | 700 / 28px / 1.1, tabular numerals on |
-| Caption | Inter | 500 / 11px / 1.4 |
+| Role                       | Font     | Weight/Size/Line-height               |
+| -------------------------- | -------- | ------------------------------------- |
+| Display Large              | Fraunces | 700 / 40px / 1.08                     |
+| Display Medium             | Fraunces | 600 / 32px / 1.12                     |
+| Display Small              | Fraunces | 600 / 26px / 1.18                     |
+| H1                         | Inter    | 700 / 22px / 1.25                     |
+| H2                         | Inter    | 600 / 18px / 1.3                      |
+| H3                         | Inter    | 600 / 15px / 1.35                     |
+| Body                       | Inter    | 400 / 15px / 1.55                     |
+| Body Small                 | Inter    | 400 / 13px / 1.5                      |
+| Label (eyebrow, uppercase) | Inter    | 600 / 12px / 1.3, tracking +0.06em    |
+| Stat number                | Inter    | 700 / 28px / 1.1, tabular numerals on |
+| Caption                    | Inter    | 500 / 11px / 1.4                      |
 
 **Rule:** Fraunces appears on **at most one or two elements per screen** — a greeting ("Good morning, Carles") or a hero stat. It never appears in body copy, buttons, or dense lists. If a screen has more than two Fraunces elements, that's overuse.
 
 ### 2.3 Spacing (4px base scale)
+
 `4 · 8 · 12 · 16 · 20 · 24 · 32 · 40 · 48 · 64` px — named `space-1` through `space-10`.
 
 Default screen padding: `space-4` (16px) horizontal, `space-6` (24px) top.
@@ -84,17 +86,20 @@ Default card padding: `space-5` (20px).
 Default gap between bento cards: `space-3` (12px).
 
 ### 2.4 Radius
+
 - `radius-sm` 12px — chips, inputs, small tappable rows
 - `radius-md` 20px — standard card
 - `radius-lg` 28px — hero/feature card, bottom sheets
 - `radius-full` 999px — buttons, pills, nav, avatars
 
 ### 2.5 Shadow (neutral black for clean monochrome aesthetic)
+
 - `shadow-sm`: `0 1px 2px rgba(0,0,0,0.05)` — resting card
 - `shadow-md`: `0 8px 24px -8px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.04)` — raised card, copilot bar
 - `shadow-lg`: `0 20px 48px -12px rgba(0,0,0,0.15)` — bottom nav, modals, sheets
 
 ### 2.6 Motion
+
 - `duration-fast` 150ms — button press, chip select
 - `duration-base` 240ms — card transitions, sheet open
 - Easing: `cubic-bezier(0.16, 1, 0.3, 1)` (ease-out) everywhere. No linear or default ease.
@@ -105,6 +110,7 @@ Default gap between bento cards: `space-3` (12px).
 ## 3. Component Specifications
 
 ### 3.1 Buttons
+
 - Primary: indigo fill, white text, full pill radius, 14px vertical / 22px horizontal padding, `H3` weight text.
 - Energy: orange fill, dark ink text — reserved for "Go live" / "Enable autonomous mode" / urgent CTAs only.
 - Secondary: white fill, 1px border `color-border`, ink text.
@@ -113,27 +119,33 @@ Default gap between bento cards: `space-3` (12px).
 - Press state: scale to 0.97, 150ms.
 
 ### 3.2 Cards
+
 - Standard bento card: white surface, `radius-md`, `shadow-sm`, 1px `color-border`, `space-5` padding.
 - Hero card (dashboard top, Business Brain summary): `radius-lg`, `shadow-md`, `space-6` padding.
 - Premium card (agency tier): burgundy fill, off-white text (`#FFF1F2`), same radius rules.
 - Cards never nest a card of the same elevation inside another — a card can contain chips, stats, and rows, not another bordered card.
 
 ### 3.3 Stat card
+
 Structure, top to bottom: small icon chip (36×36, brand tint background) → uppercase label (`Label` token, faint ink) → big number (`Stat number` token, tabular) → small delta pill (green up / red down) + meta caption.
 
 ### 3.4 Chips, badges, status pills
+
 - Filter chip: pill, sunken surface background, 1px border, `Caption` text, 6×12px padding.
 - Active chip: filled with `color-ink`, text inverts to `color-bg`.
 - Status pill (publishing queue): draft = neutral sunken, scheduled = pale-yellow fill, published = mint fill/green text, failed = red-tint fill/red text.
 
 ### 3.5 Inputs
+
 - Standard input: sunken surface, full pill radius, 14×18px padding, focus state = 4px brand-tint ring + brand border.
 - **Copilot / "Ask Dexter" bar**: see Section 8.3 — this is a distinct, more prominent pattern, not a standard input.
 
 ### 3.6 Avatar + pulse-dot
+
 44px circle, brand-tint background, initials or icon in brand color. Pulse-dot: 13px indigo circle at bottom-right with a 2.5px surface-color ring, plus a soft expanding-opacity glow animation (1.8s loop). Only shown when Dexter is actively processing (e.g., generating a draft, running the interview, analyzing performance) — not a permanent decoration.
 
 ### 3.7 Bottom navigation
+
 Fixed floating pill, dark ink background, `shadow-lg`, 8px internal padding, 44px circular tap targets, active item = light background chip that lifts out from the dark bar.
 
 ---
@@ -181,14 +193,17 @@ Do not add sparkle icons, gradient text, or robot emoji as substitute "AI" cues 
 Every screen in the app must map to one of these named patterns. If a new screen doesn't fit, define a new named pattern here before building it — don't build an unnamed one-off.
 
 ### 8.1 Bento Dashboard Pattern
+
 Used for: Home dashboard, Analytics summary.
 Structure: hero card (greeting in Fraunces + primary stat) → 2-column grid of stat cards → full-width list/timeline card below. Reference: the fintech/sales bento screenshots provided earlier in this project.
 
 ### 8.2 Review/Detail Pattern
+
 Used for: Business Brain review, Post/draft review, Strategy calendar detail.
 Structure: header with title + overflow menu → hero content card → supporting stat row → primary + secondary action buttons pinned at the bottom.
 
 ### 8.3 AI Chat Sheet Pattern (reference: Klarna assistant screen)
+
 Used for: Copilot drawer, onboarding interview kickoff, "Ask Dexter" entry point.
 
 This is the most specific pattern in the app and must match this structure exactly:
@@ -228,6 +243,7 @@ This is the most specific pattern in the app and must match this structure exact
 ```
 
 Exact spec, adapted from the reference screenshot:
+
 - Icon badge: 48px circle, `color-brand` fill, white icon mark, centered horizontally, `space-7` top margin from safe area.
 - Close (X): top-right, 24px icon, ink color, tappable 44×44 area.
 - Greeting: `Display Small` (Fraunces, 26px), `color-ink`, left-aligned, `space-6` top margin below icon, max 2 lines.
@@ -239,6 +255,7 @@ Exact spec, adapted from the reference screenshot:
 This pattern is reserved for AI-entry-point screens only — do not reuse the stacked full-width pill-row layout for settings menus or generic lists.
 
 ### 8.4 Queue/List Pattern
+
 Used for: Publishing queue, notification feed, media library.
 Structure: section header → list of rows in a single card, each row = avatar/thumbnail + title/meta + status pill, divided by 1px `color-border` hairlines (not separate cards per row).
 
@@ -247,6 +264,7 @@ Structure: section header → list of rows in a single card, each row = avatar/t
 ## 9. Do / Don't Summary
 
 **Do:**
+
 - Reuse the five named patterns above for every screen.
 - Keep one accent (indigo) as the "primary action" color per screen.
 - Use Fraunces sparingly, on greetings/hero numbers only.
@@ -254,6 +272,7 @@ Structure: section header → list of rows in a single card, each row = avatar/t
 - Match the AI Chat Sheet pattern exactly for any Dexter-entry-point screen.
 
 **Don't:**
+
 - Don't invent new corner radii, spacing values, or colors outside Section 2.
 - Don't add sparkle/robot iconography as a stand-in for the pulse-dot signature.
 - Don't place text directly on raw highlight/positive fill colors — use the paired text tokens.

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,9 +13,9 @@ import {
   StyleProp,
   Dimensions,
   AccessibilityInfo,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -25,10 +25,22 @@ import Animated, {
   withSpring,
   Easing,
   cancelAnimation,
-} from 'react-native-reanimated';
-import { colors, spacing, radii, typography, fonts, shadows, motion, colorAccent, colorBrand, colorEnergy, colorInk } from '../theme';
+} from "react-native-reanimated";
+import {
+  colors,
+  spacing,
+  radii,
+  typography,
+  fonts,
+  shadows,
+  motion,
+  colorAccent,
+  colorBrand,
+  colorEnergy,
+  colorInk,
+} from "../theme";
 
-const { width: SCREEN_W } = Dimensions.get('window');
+const { width: SCREEN_W } = Dimensions.get("window");
 
 /* ── Screen Wrapper (Auth) ───────────────────────────── */
 export function AuthScreen({ children }: { children: React.ReactNode }) {
@@ -37,7 +49,7 @@ export function AuthScreen({ children }: { children: React.ReactNode }) {
       <SafeAreaView style={styles.flex}>
         <KeyboardAvoidingView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           <ScrollView
             contentContainerStyle={styles.authScroll}
@@ -106,11 +118,11 @@ export function HeroCard({
 }
 
 /* ── Bento Card (Variable-size grid card) ────────────── */
-export type BentoSize = '1x1' | '2x1' | '1x2' | '2x2' | 'full';
+export type BentoSize = "1x1" | "2x1" | "1x2" | "2x2" | "full";
 
 export function BentoCard({
   children,
-  size = '1x1',
+  size = "1x1",
   style,
   accentColor,
 }: {
@@ -131,7 +143,11 @@ export function BentoCard({
       ]}
     >
       <View style={styles.bentoCardContent}>
-        {accentColor && <View style={[styles.bentoAccentStrip, { backgroundColor: accentColor }]} />}
+        {accentColor && (
+          <View
+            style={[styles.bentoAccentStrip, { backgroundColor: accentColor }]}
+          />
+        )}
         {children}
       </View>
     </View>
@@ -142,24 +158,34 @@ export function BentoCard({
 export function GlassPill({
   label,
   icon,
-  variant = 'default',
+  variant = "default",
 }: {
   label: string;
   icon?: keyof typeof Ionicons.glyphMap;
-  variant?: 'default' | 'positive' | 'primary' | 'warning' | 'negative';
+  variant?: "default" | "positive" | "primary" | "warning" | "negative";
 }) {
   const variantStyles = {
-    default: { bg: '#F5F5F5', border: colors.border, text: colors.inkSoft },
-    positive: { bg: '#F5F5F5', border: '#E0E0E0', text: '#000000' },
-    primary: { bg: '#F5F8D0', border: '#D4DF6B', text: '#000000' },
-    warning: { bg: '#F5F5F5', border: '#E0E0E0', text: '#000000' },
-    negative: { bg: '#F5F5F5', border: '#E0E0E0', text: '#000000' },
+    default: { bg: "#F5F5F5", border: colors.border, text: colors.inkSoft },
+    positive: { bg: "#F5F5F5", border: "#E0E0E0", text: "#000000" },
+    primary: { bg: "#F5F8D0", border: "#D4DF6B", text: "#000000" },
+    warning: { bg: "#F5F5F5", border: "#E0E0E0", text: "#000000" },
+    negative: { bg: "#F5F5F5", border: "#E0E0E0", text: "#000000" },
   }[variant];
 
   return (
-    <View style={[styles.pill, { backgroundColor: variantStyles.bg, borderColor: variantStyles.border }]}>
+    <View
+      style={[
+        styles.pill,
+        {
+          backgroundColor: variantStyles.bg,
+          borderColor: variantStyles.border,
+        },
+      ]}
+    >
       {icon && <Ionicons name={icon} size={12} color={variantStyles.text} />}
-      <Text style={[styles.pillText, { color: variantStyles.text }]}>{label}</Text>
+      <Text style={[styles.pillText, { color: variantStyles.text }]}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -186,7 +212,11 @@ export function FilterChip({
         pressed && { transform: [{ scale: 0.97 }] },
       ]}
     >
-      <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
+      <Text
+        style={[styles.filterChipText, active && styles.filterChipTextActive]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -231,26 +261,26 @@ export function SegmentedControl<T extends string>({
 
 const segStyles = StyleSheet.create({
   track: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: colors.surfaceSunken,
     borderRadius: radii.pill,
     padding: 4,
   },
   segment: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: 44,
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: radii.pill,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   segmentActive: {
     backgroundColor: colors.surface,
     // shadow-sm (ink-tinted) per DESIGN.md §2.5
-    shadowColor: 'rgba(28,18,16,1)',
+    shadowColor: "rgba(28,18,16,1)",
     shadowOpacity: 0.05,
     shadowRadius: 2,
     shadowOffset: { width: 0, height: 1 },
@@ -260,7 +290,7 @@ const segStyles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 15,
     color: colors.inkSoft,
-    textAlign: 'center',
+    textAlign: "center",
   },
   labelActive: {
     fontFamily: fonts.semibold,
@@ -275,7 +305,12 @@ type AuthInputProps = TextInputProps & {
   secure?: boolean;
 };
 
-export function AuthTextInput({ label, icon, secure, ...props }: AuthInputProps) {
+export function AuthTextInput({
+  label,
+  icon,
+  secure,
+  ...props
+}: AuthInputProps) {
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(!!secure);
 
@@ -294,7 +329,7 @@ export function AuthTextInput({ label, icon, secure, ...props }: AuthInputProps)
         {secure && (
           <Pressable hitSlop={8} onPress={() => setHidden((h) => !h)}>
             <Ionicons
-              name={hidden ? 'eye-outline' : 'eye-off-outline'}
+              name={hidden ? "eye-outline" : "eye-off-outline"}
               size={18}
               color={colors.inkFaint}
             />
@@ -308,34 +343,35 @@ export function AuthTextInput({ label, icon, secure, ...props }: AuthInputProps)
 /* ── Buttons (§3.1) ──────────────────────────────────── */
 const btnStyles = StyleSheet.create({
   primary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#CDDC39',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
     borderRadius: 999,
     paddingVertical: 14,
     paddingHorizontal: 22,
-    height: 48,
-    width: '100%',
+    minHeight: 48,
+    width: "100%",
+    marginTop: spacing.md,
   },
   primaryText: {
-    color: '#000000',
+    color: "#000000",
     fontFamily: fonts.bold,
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   energy: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colorEnergy,
     borderRadius: radii.pill,
     paddingVertical: 14,
     paddingHorizontal: 22,
     minHeight: 48,
-    width: '100%',
-    alignSelf: 'stretch',
+    width: "100%",
+    alignSelf: "stretch",
     marginTop: spacing.md,
   },
   energyText: {
@@ -343,12 +379,12 @@ const btnStyles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: 15,
     lineHeight: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   outlined: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.surface,
     borderRadius: radii.pill,
     paddingVertical: 14,
@@ -356,19 +392,19 @@ const btnStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     minHeight: 48,
-    width: '100%',
-    alignSelf: 'stretch',
+    width: "100%",
+    alignSelf: "stretch",
   },
   outlinedText: {
     color: colorInk,
     fontFamily: fonts.semibold,
     fontSize: 15,
     lineHeight: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   ghost: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 12,
     paddingHorizontal: spacing.md,
     borderRadius: radii.pill,
@@ -377,7 +413,7 @@ const btnStyles = StyleSheet.create({
     color: colors.inkSoft,
     fontFamily: fonts.medium,
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
 
@@ -395,28 +431,36 @@ export function PrimaryButton({
   style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <View style={{ marginTop: spacing.md, width: '100%' }}>
-      <View style={btnStyles.primary}>
-        <Pressable
-          onPress={onPress}
-          disabled={disabled}
-          style={({ pressed }) => [
-            {
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flex: 1,
-            },
-            pressed && { opacity: 0.8 },
-            disabled && { opacity: 0.45 },
-            style,
-          ]}
-        >
-          {icon && <Ionicons name={icon} size={17} color="#000000" style={{ marginRight: 6 }} />}
-          <Text style={btnStyles.primaryText}>{title}</Text>
-        </Pressable>
-      </View>
-    </View>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [
+        btnStyles.primary,
+        pressed && { opacity: 0.8 },
+        disabled && { opacity: 0.45 },
+        style,
+      ]}
+    >
+      {icon && (
+        <Ionicons
+          name={icon}
+          size={17}
+          color={colors.ink}
+          style={{ marginRight: 6 }}
+        />
+      )}
+      <Text
+        style={{
+          color: colors.ink,
+          fontFamily: fonts.bold,
+          fontWeight: "700",
+          fontSize: 16,
+          textAlign: "center",
+        }}
+      >
+        {title}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -445,7 +489,14 @@ export function EnergyButton({
         style,
       ]}
     >
-      {icon && <Ionicons name={icon} size={17} color={colorInk} style={{ marginRight: 6 }} />}
+      {icon && (
+        <Ionicons
+          name={icon}
+          size={17}
+          color={colorInk}
+          style={{ marginRight: 6 }}
+        />
+      )}
       <Text style={btnStyles.energyText}>{title}</Text>
     </Pressable>
   );
@@ -472,7 +523,14 @@ export function OutlinedButton({
         style,
       ]}
     >
-      {icon && <Ionicons name={icon} size={18} color={colorInk} style={{ marginRight: 6 }} />}
+      {icon && (
+        <Ionicons
+          name={icon}
+          size={18}
+          color={colorInk}
+          style={{ marginRight: 6 }}
+        />
+      )}
       <Text style={btnStyles.outlinedText}>{title}</Text>
     </Pressable>
   );
@@ -516,12 +574,18 @@ export function Divider({ label }: { label: string }) {
 }
 
 /* ── Status Dot ──────────────────────────────────────── */
-export function StatusDot({ active, color }: { active?: boolean; color?: string }) {
+export function StatusDot({
+  active,
+  color,
+}: {
+  active?: boolean;
+  color?: string;
+}) {
   return (
     <View
       style={[
         styles.statusDot,
-        { backgroundColor: color ?? (active ? '#000000' : colors.inkFaint) },
+        { backgroundColor: color ?? (active ? "#000000" : colors.inkFaint) },
       ]}
     />
   );
@@ -530,7 +594,13 @@ export function StatusDot({ active, color }: { active?: boolean; color?: string 
 /* ── Pulse Dot (§6) — the signature "AI is working" cue ── */
 const EASE_OUT = Easing.bezier(0.16, 1, 0.3, 1);
 
-export function PulseDot({ size = 13, active = true }: { size?: number; active?: boolean }) {
+export function PulseDot({
+  size = 13,
+  active = true,
+}: {
+  size?: number;
+  active?: boolean;
+}) {
   const [reduced, setReduced] = useState(false);
   const pulse = useSharedValue(0);
 
@@ -539,9 +609,12 @@ export function PulseDot({ size = 13, active = true }: { size?: number; active?:
     AccessibilityInfo.isReduceMotionEnabled().then((r) => {
       if (mounted) setReduced(r);
     });
-    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (r) => {
-      if (mounted) setReduced(r);
-    });
+    const sub = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      (r) => {
+        if (mounted) setReduced(r);
+      },
+    );
     return () => {
       mounted = false;
       cancelAnimation(pulse);
@@ -575,7 +648,12 @@ export function PulseDot({ size = 13, active = true }: { size?: number; active?:
         <Animated.View
           style={[
             styles.pulseHalo,
-            { width: size, height: size, borderRadius: size, backgroundColor: '#000000' },
+            {
+              width: size,
+              height: size,
+              borderRadius: size,
+              backgroundColor: "#000000",
+            },
             haloStyle,
           ]}
         />
@@ -588,7 +666,7 @@ export function PulseDot({ size = 13, active = true }: { size?: number; active?:
             height: size,
             borderRadius: size,
             borderWidth: size / 5,
-            backgroundColor: active ? '#000000' : colors.inkFaint,
+            backgroundColor: active ? "#000000" : colors.inkFaint,
             borderColor: colors.surface,
           },
         ]}
@@ -616,11 +694,13 @@ export function Avatar({
             width: size,
             height: size,
             borderRadius: size,
-            backgroundColor: '#F5F5F5',
+            backgroundColor: "#F5F5F5",
           },
         ]}
       >
-        <Text style={[styles.avatarInitial, { fontSize: size * 0.38 }]}>{initials}</Text>
+        <Text style={[styles.avatarInitial, { fontSize: size * 0.38 }]}>
+          {initials}
+        </Text>
       </View>
       {pulsing && (
         <View style={styles.avatarPulseWrap}>
@@ -637,11 +717,14 @@ const BENTO_PADDING = spacing.lg;
 const BENTO_COL = (SCREEN_W - BENTO_PADDING * 2 - BENTO_GAP) / 2;
 
 const bentoDimensions: Record<BentoSize, ViewStyle> = {
-  '1x1': { width: BENTO_COL, height: BENTO_COL },
-  '2x1': { width: SCREEN_W - BENTO_PADDING * 2, height: BENTO_COL * 0.55 },
-  '1x2': { width: BENTO_COL, height: BENTO_COL * 2 + BENTO_GAP },
-  '2x2': { width: SCREEN_W - BENTO_PADDING * 2, height: BENTO_COL * 2 + BENTO_GAP },
-  'full': { width: SCREEN_W - BENTO_PADDING * 2 },
+  "1x1": { width: BENTO_COL, height: BENTO_COL },
+  "2x1": { width: SCREEN_W - BENTO_PADDING * 2, height: BENTO_COL * 0.55 },
+  "1x2": { width: BENTO_COL, height: BENTO_COL * 2 + BENTO_GAP },
+  "2x2": {
+    width: SCREEN_W - BENTO_PADDING * 2,
+    height: BENTO_COL * 2 + BENTO_GAP,
+  },
+  full: { width: SCREEN_W - BENTO_PADDING * 2 },
 };
 
 /* ── Styles ──────────────────────────────────────────── */
@@ -651,30 +734,30 @@ const styles = StyleSheet.create({
   // ── Auth Screen ──
   authBg: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   authScroll: {
     flexGrow: 1,
-    justifyContent: 'flex-start',
+    justifyContent: "flex-start",
     paddingHorizontal: spacing.xxl,
     paddingVertical: spacing.xxl,
   },
 
   // ── Brand Mark ──
   logo: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginBottom: spacing.lg,
   },
   logoText: {
     fontFamily: fonts.bold,
     fontSize: 20,
     letterSpacing: -0.5,
-    color: '#000000',
+    color: "#000000",
   },
 
   // ── Card ──
   cardOuter: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
@@ -684,12 +767,12 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   cardHighlighted: {
-    borderColor: '#000000',
+    borderColor: "#000000",
   },
 
   // ── Hero Card ──
   heroCardOuter: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.border,
@@ -700,11 +783,11 @@ const styles = StyleSheet.create({
 
   // ── Bento Card ──
   bentoCardOuter: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
-    overflow: 'hidden',
+    overflow: "hidden",
     ...shadows.subtle,
   },
   bentoCardContent: {
@@ -712,7 +795,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   bentoAccentStrip: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -723,32 +806,32 @@ const styles = StyleSheet.create({
 
   // ── Pills / Chips ──
   pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     borderRadius: radii.pill,
     borderWidth: 1,
     paddingHorizontal: spacing.md,
     paddingVertical: 4,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   pillText: {
     fontFamily: fonts.semibold,
     fontSize: 11,
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   filterChip: {
     paddingHorizontal: spacing.md,
     paddingVertical: 6,
     borderRadius: radii.pill,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     borderWidth: 1,
     borderColor: colors.border,
   },
   filterChipActive: {
-    backgroundColor: '#000000',
-    borderColor: '#000000',
+    backgroundColor: "#000000",
+    borderColor: "#000000",
   },
   filterChipText: {
     fontFamily: fonts.medium,
@@ -756,7 +839,7 @@ const styles = StyleSheet.create({
     color: colors.inkSoft,
   },
   filterChipTextActive: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontFamily: fonts.semibold,
   },
 
@@ -771,17 +854,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   inputWrapFocused: {
-    borderBottomColor: '#000000',
+    borderBottomColor: "#000000",
   },
   input: {
     flex: 1,
-    color: '#000000',
+    color: "#000000",
     fontFamily: fonts.regular,
     fontSize: 16,
     paddingVertical: spacing.md,
@@ -789,57 +872,57 @@ const styles = StyleSheet.create({
 
   // ── Buttons ──
   primaryBtn: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: colorAccent,
     borderRadius: radii.pill,
     paddingVertical: 16,
     paddingHorizontal: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    alignSelf: 'stretch',
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    alignSelf: "stretch",
     marginTop: spacing.md,
   },
   primaryBtnText: {
-    color: '#000000',
+    color: "#000000",
     fontFamily: fonts.semibold,
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   energyBtn: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: colorAccent,
     borderRadius: radii.pill,
     paddingVertical: 14,
     paddingHorizontal: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: spacing.md,
   },
   energyBtnText: {
-    color: '#000000',
+    color: "#000000",
     fontFamily: fonts.semibold,
     fontSize: 15,
   },
   outlinedBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.sm,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: radii.pill,
     paddingVertical: 15,
     borderWidth: 1,
     borderColor: colors.border,
   },
   outlinedBtnText: {
-    color: '#000000',
+    color: "#000000",
     fontFamily: fonts.semibold,
     fontSize: 15,
   },
   ghostBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 12,
     paddingHorizontal: spacing.md,
     borderRadius: radii.pill,
@@ -852,8 +935,8 @@ const styles = StyleSheet.create({
 
   // ── Divider ──
   dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.md,
     marginVertical: spacing.xl,
   },
@@ -878,29 +961,29 @@ const styles = StyleSheet.create({
 
   // ── Pulse Dot ──
   pulseWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   pulseCore: {
-    position: 'absolute',
+    position: "absolute",
   },
   pulseHalo: {
-    position: 'absolute',
+    position: "absolute",
   },
 
   // ── Avatar ──
   avatar: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.border,
   },
   avatarInitial: {
     fontFamily: fonts.semibold,
-    color: '#000000',
+    color: "#000000",
   },
   avatarPulseWrap: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     right: 0,
   },

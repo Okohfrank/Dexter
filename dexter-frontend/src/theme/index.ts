@@ -6,44 +6,44 @@
  */
 
 /* ── Color Tokens (§2.1) ──────────────────────────────── */
-export const colorBg = '#FFFFFF';           // Screen background (white)
-export const colorBgAlt = '#F5F5F5';        // Section background, alt rows (light gray)
-export const colorSurface = '#FFFFFF';      // Card surface
-export const colorSurfaceSunken = '#F5F5F5';// Inputs, inset areas (light gray)
-export const colorInk = '#000000';          // Primary text — pure black
-export const colorInkSoft = '#666666';      // Secondary text — gray
-export const colorInkFaint = '#999999';     // Placeholder, disabled, labels
-export const colorBorder = '#DDDDDD';       // Hairline borders — neutral gray
-export const colorAccent = '#CDDC39';       // Lime/chartreuse — primary actions, active tabs
-export const colorAccentStrong = '#B8CC2A'; // Pressed/hover on accent elements
-export const colorBrand = '#CDDC39';        // Alias — lime (replaces indigo)
-export const colorBrandTint = '#F5F8D0';    // Lime tint background
-export const colorBrandStrong = '#B8CC2A';  // Alias — pressed lime
-export const colorPremium = '#000000';      // Black (replaces burgundy)
-export const colorEnergy = '#CDDC39';       // Lime (replaces orange)
-export const colorPositiveText = '#000000'; // Black (replaces green)
-export const colorPositiveFill = '#F5F5F5'; // Light gray (replaces mint)
-export const colorNegativeText = '#000000'; // Black (replaces red)
-export const colorNegativeFill = '#F5F5F5'; // Light gray (replaces red tint)
-export const colorHighlightBg = '#F5F5F5';  // Light gray (replaces yellow)
+export const colorBg = "#FFFFFF"; // Screen background (white)
+export const colorBgAlt = "#F5F5F5"; // Section background, alt rows (light gray)
+export const colorSurface = "#FFFFFF"; // Card surface
+export const colorSurfaceSunken = "#F5F5F5"; // Inputs, inset areas (light gray)
+export const colorInk = "#000000"; // Primary text — pure black
+export const colorInkSoft = "#666666"; // Secondary text — gray
+export const colorInkFaint = "#999999"; // Placeholder, disabled, labels
+export const colorBorder = "#DDDDDD"; // Hairline borders — neutral gray
+export const colorAccent = "#CDDC39"; // Lime/chartreuse — primary actions, active tabs
+export const colorAccentStrong = "#B8CC2A"; // Pressed/hover on accent elements
+export const colorBrand = "#CDDC39"; // Alias — lime (replaces indigo)
+export const colorBrandTint = "#F5F8D0"; // Lime tint background
+export const colorBrandStrong = "#B8CC2A"; // Alias — pressed lime
+export const colorPremium = "#000000"; // Black (replaces burgundy)
+export const colorEnergy = "#CDDC39"; // Lime (replaces orange)
+export const colorPositiveText = "#000000"; // Black (replaces green)
+export const colorPositiveFill = "#F5F5F5"; // Light gray (replaces mint)
+export const colorNegativeText = "#000000"; // Black (replaces red)
+export const colorNegativeFill = "#F5F5F5"; // Light gray (replaces red tint)
+export const colorHighlightBg = "#F5F5F5"; // Light gray (replaces yellow)
 
 /* Paired darker text tokens for colored fills (§5) */
-export const colorOnHighlight = '#000000';  // Text on light gray
-export const colorOnPositive = '#000000';   // Text on light gray
-export const colorOnEnergy = '#000000';     // Text on lime
+export const colorOnHighlight = "#000000"; // Text on light gray
+export const colorOnPositive = "#000000"; // Text on light gray
+export const colorOnEnergy = "#000000"; // Text on lime
 
 /* Dark surface set — pure black mode */
-export const colorBgDark = '#1A1A1A';
-export const colorSurfaceDark = '#2A2A2A';
-export const colorInkDark = '#FFFFFF';
-export const colorBorderDark = '#444444';
+export const colorBgDark = "#1A1A1A";
+export const colorSurfaceDark = "#2A2A2A";
+export const colorInkDark = "#FFFFFF";
+export const colorBorderDark = "#444444";
 
 /* Backward-compatible palette aliases (legacy screens reference these until restyled) */
 export const colors = {
-  background: colorSurface,        // white (was warm paper)
-  backgroundAlt: '#F5F5F5',
+  background: colorSurface, // white (was warm paper)
+  backgroundAlt: "#F5F5F5",
   surface: colorSurface,
-  surfaceSunken: '#F5F5F5',
+  surfaceSunken: "#F5F5F5",
   textPrimary: colorInk,
   textSecondary: colorInkSoft,
   textMuted: colorInkFaint,
@@ -51,53 +51,53 @@ export const colors = {
   labelPrimary: colorInk,
   labelSecondary: colorInkSoft,
   labelTertiary: colorInkFaint,
-  primary: colorAccent,            // lime
+  primary: colorAccent, // lime
   primaryDark: colorAccentStrong,
-  primaryLight: '#F5F8D0',
-  primarySurface: '#F5F8D0',
-  primaryBorder: '#CDDC39',
+  primaryLight: "#F5F8D0",
+  primarySurface: "#F5F8D0",
+  primaryBorder: "#CDDC39",
   accent: colorAccent,
-  accentSurface: '#F5F8D0',
-  accentBorder: '#CDDC39',
+  accentSurface: "#F5F8D0",
+  accentBorder: "#CDDC39",
   secondary: colorAccent,
-  secondarySurface: '#F5F8D0',
-  secondaryBorder: '#CDDC39',
+  secondarySurface: "#F5F8D0",
+  secondaryBorder: "#CDDC39",
   positive: colorInk,
-  positiveSurface: '#F5F5F5',
-  positiveBorder: '#E0E0E0',
+  positiveSurface: "#F5F5F5",
+  positiveBorder: "#E0E0E0",
   negative: colorInk,
-  negativeSurface: '#F5F5F5',
-  negativeBorder: '#E0E0E0',
+  negativeSurface: "#F5F5F5",
+  negativeBorder: "#E0E0E0",
   warning: colorAccent,
-  warningSurface: '#F5F8D0',
-  warningBorder: '#CDDC39',
-  highlight: '#F5F5F5',
+  warningSurface: "#F5F8D0",
+  warningBorder: "#CDDC39",
+  highlight: "#F5F5F5",
   border: colorBorder,
-  borderLight: '#F5F5F5',
+  borderLight: "#F5F5F5",
   divider: colorBorder,
   separator: colorBorder,
-  skeleton: '#F0F0F0',
-  overlay: 'rgba(0, 0, 0, 0.5)',
-  glass: '#F5F5F5',
-  glassLight: '#FAFAFA',
-  glassHeavy: '#FFFFFF',
+  skeleton: "#F0F0F0",
+  overlay: "rgba(0, 0, 0, 0.5)",
+  glass: "#F5F5F5",
+  glassLight: "#FAFAFA",
+  glassHeavy: "#FFFFFF",
   glassBorder: colorBorder,
-  glassBorderLight: '#F0F0F0',
+  glassBorderLight: "#F0F0F0",
   glassBorderFocused: colorAccent,
-  surfaceAlt: '#F5F5F5',
-  surfacePressed: '#E8E8E8',
-  surfaceHover: '#F0F0F0',
+  surfaceAlt: "#F5F5F5",
+  surfacePressed: "#E8E8E8",
+  surfaceHover: "#F0F0F0",
   systemBlue: colorAccent,
   systemGreen: colorInk,
   systemRed: colorInk,
   systemOrange: colorAccent,
-  systemYellow: '#F5F5F5',
+  systemYellow: "#F5F5F5",
   systemPurple: colorInk,
   systemPink: colorInk,
   systemTeal: colorAccent,
   systemIndigo: colorAccent,
   backgroundPrimary: colorSurface,
-  backgroundSecondary: '#F5F5F5',
+  backgroundSecondary: "#F5F5F5",
   backgroundTertiary: colorBorder,
   backgroundElevated: colorSurface,
   /* DESIGN.md §2.1 semantic names */
@@ -106,13 +106,13 @@ export const colors = {
   inkFaint: colorInkFaint,
   accentStrong: colorAccentStrong,
   brand: colorAccent,
-  brandTint: '#F5F8D0',
+  brandTint: "#F5F8D0",
   brandStrong: colorAccentStrong,
   energy: colorAccent,
   premium: colorInk,
-  positiveFill: '#F5F5F5',
-  negativeFill: '#F5F5F5',
-  highlightFill: '#F5F5F5',
+  positiveFill: "#F5F5F5",
+  negativeFill: "#F5F5F5",
+  highlightFill: "#F5F5F5",
   onHighlight: colorInk,
   onPositive: colorInk,
   onEnergy: colorInk,
@@ -135,57 +135,72 @@ export const space9 = 48;
 export const space10 = 64;
 
 export const spacing = {
-  xs: space1,     // 4
-  sm: space2,     // 8
-  md: space3,     // 12
-  lg: space4,     // 16
-  xl: space5,     // 20
-  xxl: space6,    // 24
-  xxxl: space7,   // 32
-  xxxxl: space8,  // 40
+  xs: space1, // 4
+  sm: space2, // 8
+  md: space3, // 12
+  lg: space4, // 16
+  xl: space5, // 20
+  xxl: space6, // 24
+  xxxl: space7, // 32
+  xxxxl: space8, // 40
   // Legacy alias for the old 48px bucket
-  huge: space9,   // 48
+  huge: space9, // 48
 };
 
 /* ── Radius (§2.4) ───────────────────────────────────── */
-export const radiusSm = 12;    // chips, inputs, small tappable rows
-export const radiusMd = 20;    // standard card
-export const radiusLg = 28;    // hero/feature card, bottom sheets
+export const radiusSm = 12; // chips, inputs, small tappable rows
+export const radiusMd = 20; // standard card
+export const radiusLg = 28; // hero/feature card, bottom sheets
 export const radiusFull = 999; // buttons, pills, nav, avatars
 
 export const radii = {
-  xs: radiusSm,   // 12 — minimum for any tappable element
-  sm: radiusSm,   // 12
-  md: radiusMd,   // 20
-  lg: radiusLg,   // 28
-  xl: radiusLg,   // 28
-  xxl: radiusLg,  // 28
+  xs: radiusSm, // 12 — minimum for any tappable element
+  sm: radiusSm, // 12
+  md: radiusMd, // 20
+  lg: radiusLg, // 28
+  xl: radiusLg, // 28
+  xxl: radiusLg, // 28
   xxxl: radiusLg, // 28 — legacy alias for bottom sheet top corners
   pill: radiusFull, // 999
 };
 
 /* ── Shadow (§2.5) — neutral black ────────────────────── */
-const SHADOW_SM: [number, number, number, string] = [0, 1, 2, 'rgba(0, 0, 0, 0.05)'];
-const SHADOW_MD: [number, number, number, string] = [0, 8, 24, 'rgba(0, 0, 0, 0.10)'];
-const SHADOW_LG: [number, number, number, string] = [0, 20, 48, 'rgba(0, 0, 0, 0.15)'];
+const SHADOW_SM: [number, number, number, string] = [
+  0,
+  1,
+  2,
+  "rgba(0, 0, 0, 0.05)",
+];
+const SHADOW_MD: [number, number, number, string] = [
+  0,
+  8,
+  24,
+  "rgba(0, 0, 0, 0.10)",
+];
+const SHADOW_LG: [number, number, number, string] = [
+  0,
+  20,
+  48,
+  "rgba(0, 0, 0, 0.15)",
+];
 
 export const shadows = {
   sm: {
-    shadowColor: '#000000',
+    shadowColor: "#000000",
     shadowOpacity: 0.05,
     shadowRadius: SHADOW_SM[2],
     shadowOffset: { width: SHADOW_SM[0], height: SHADOW_SM[1] },
     elevation: 2,
   },
   md: {
-    shadowColor: '#000000',
-    shadowOpacity: 0.10,
+    shadowColor: "#000000",
+    shadowOpacity: 0.1,
     shadowRadius: SHADOW_MD[2],
     shadowOffset: { width: SHADOW_MD[0], height: SHADOW_MD[1] },
     elevation: 4,
   },
   lg: {
-    shadowColor: '#000000',
+    shadowColor: "#000000",
     shadowOpacity: 0.15,
     shadowRadius: SHADOW_LG[2],
     shadowOffset: { width: SHADOW_LG[0], height: SHADOW_LG[1] },
@@ -193,28 +208,28 @@ export const shadows = {
   },
   // Legacy aliases
   card: {
-    shadowColor: '#000000',
+    shadowColor: "#000000",
     shadowOpacity: 0.05,
     shadowRadius: SHADOW_SM[2],
     shadowOffset: { width: SHADOW_SM[0], height: SHADOW_SM[1] },
     elevation: 2,
   },
   elevated: {
-    shadowColor: '#000000',
-    shadowOpacity: 0.10,
+    shadowColor: "#000000",
+    shadowOpacity: 0.1,
     shadowRadius: SHADOW_MD[2],
     shadowOffset: { width: SHADOW_MD[0], height: SHADOW_MD[1] },
     elevation: 4,
   },
   primaryBtn: {
-    shadowColor: '#000000',
+    shadowColor: "#000000",
     shadowOpacity: 0.08,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
   },
   subtle: {
-    shadowColor: '#000000',
+    shadowColor: "#000000",
     shadowOpacity: 0.05,
     shadowRadius: SHADOW_SM[2],
     shadowOffset: { width: SHADOW_SM[0], height: SHADOW_SM[1] },
@@ -237,12 +252,12 @@ export const motion = {
 };
 
 /* ── Fonts (§2.2) — Fraunces (display) + Inter (UI/body) only ── */
-export const fontFamilyDisplay = 'Fraunces_700Bold';
-export const fontFamilyDisplayMedium = 'Fraunces_600SemiBold';
-export const fontFamilyRegular = 'Inter_400Regular';
-export const fontFamilyMedium = 'Inter_500Medium';
-export const fontFamilySemiBold = 'Inter_600SemiBold';
-export const fontFamilyBold = 'Inter_700Bold';
+export const fontFamilyDisplay = "Fraunces_700Bold";
+export const fontFamilyDisplayMedium = "Fraunces_600SemiBold";
+export const fontFamilyRegular = "Inter_400Regular";
+export const fontFamilyMedium = "Inter_500Medium";
+export const fontFamilySemiBold = "Inter_600SemiBold";
+export const fontFamilyBold = "Inter_700Bold";
 
 /* Backward-compatible font aliases */
 export const fonts = {
@@ -321,7 +336,7 @@ export const typography = {
     lineHeight: 15.6,
     letterSpacing: 0.6,
     color: colorInkFaint,
-    textTransform: 'uppercase' as const,
+    textTransform: "uppercase" as const,
   },
   stat: {
     fontFamily: fontFamilyBold,
@@ -329,7 +344,7 @@ export const typography = {
     lineHeight: 30.8,
     letterSpacing: -0.3,
     color: colorInk,
-    fontVariant: ['tabular-nums'] as ['tabular-nums'],
+    fontVariant: ["tabular-nums"] as ["tabular-nums"],
   },
   caption2: {
     fontFamily: fontFamilyMedium,
@@ -404,7 +419,7 @@ export const glass = {
     borderRadius: radiusMd,
     borderWidth: 1,
     borderColor: colorBorder,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
     ...shadows.sm,
   },
   cardLight: {
@@ -412,14 +427,14 @@ export const glass = {
     borderRadius: radiusMd,
     borderWidth: 1,
     borderColor: colorBorder,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
   },
   cardHeavy: {
     backgroundColor: colorSurface,
     borderRadius: radiusMd,
     borderWidth: 1,
     borderColor: colorBorder,
-    overflow: 'hidden' as const,
+    overflow: "hidden" as const,
     ...shadows.md,
   },
   pill: {

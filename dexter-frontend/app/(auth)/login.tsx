@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { Link, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
+import { Link, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import {
   AuthScreen,
   AuthTextInput,
@@ -9,34 +16,35 @@ import {
   OutlinedButton,
   Divider,
   SegmentedControl,
-} from '../../src/components/ui';
-import { colors, spacing, typography, fonts } from '../../src/theme';
-import { login, register, getMe } from '../../src/api/auth';
-import { listBusinesses, createBusiness } from '../../src/api/business';
-import { listConnectedAccounts } from '../../src/api/oauth';
-import { useAuthStore } from '../../src/api/client';
-import { useAppStore } from '../../src/store/app';
+} from "../../src/components/ui";
+import { colors, spacing, typography, fonts } from "../../src/theme";
+import { login, register, getMe } from "../../src/api/auth";
+import { listBusinesses, createBusiness } from "../../src/api/business";
+import { listConnectedAccounts } from "../../src/api/oauth";
+import { useAuthStore } from "../../src/api/client";
+import { useAppStore } from "../../src/store/app";
 
-type LoginMode = 'phone' | 'email';
+type LoginMode = "phone" | "email";
 
 export default function LoginScreen() {
-  const [mode, setMode] = useState<LoginMode>('phone');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [mode, setMode] = useState<LoginMode>("phone");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleLogin = async () => {
-    const identifier = mode === 'email' ? email : phone;
+    const identifier = mode === "email" ? email : phone;
     if (!identifier || !password) {
-      Alert.alert('Missing info', 'Please fill in all fields.');
+      Alert.alert("Missing info", "Please fill in all fields.");
       return;
     }
     setLoading(true);
     try {
-      const loginEmail = mode === 'email' ? email.trim() : `${phone.trim()}@dexter.local`;
+      const loginEmail =
+        mode === "email" ? email.trim() : `${phone.trim()}@dexter.local`;
       const res = await login(loginEmail, password);
       useAuthStore.getState().setTokens({
         access_token: res.access_token,
@@ -54,28 +62,30 @@ export default function LoginScreen() {
         const businesses = await listBusinesses();
         if (businesses.length > 0) {
           useAppStore.getState().setBusiness(businesses[0]);
-          const accounts = await listConnectedAccounts(businesses[0].id).catch(() => []);
+          const accounts = await listConnectedAccounts(businesses[0].id).catch(
+            () => [],
+          );
           useAppStore.getState().setConnectedAccounts(accounts);
-          router.replace('/(dashboard)');
+          router.replace("/(dashboard)");
         } else {
-          router.replace('/(onboarding)');
+          router.replace("/(onboarding)");
         }
       } catch {
-        router.replace('/(dashboard)');
+        router.replace("/(dashboard)");
       }
     } catch (e: any) {
-      Alert.alert('Login failed', e.message);
+      Alert.alert("Login failed", e.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = () => {
-    Alert.alert('Google Sign-In', 'Google sign-in coming soon.');
+    Alert.alert("Google Sign-In", "Google sign-in coming soon.");
   };
 
   const handleFacebookLogin = () => {
-    Alert.alert('Facebook Sign-In', 'Facebook sign-in coming soon.');
+    Alert.alert("Facebook Sign-In", "Facebook sign-in coming soon.");
   };
 
   return (
@@ -87,8 +97,8 @@ export default function LoginScreen() {
 
       <SegmentedControl
         segments={[
-          { key: 'phone', label: 'Phone Number' },
-          { key: 'email', label: 'Email' },
+          { key: "phone", label: "Phone Number" },
+          { key: "email", label: "Email" },
         ]}
         selected={mode}
         onChange={(key) => setMode(key as LoginMode)}
@@ -96,7 +106,7 @@ export default function LoginScreen() {
 
       <View style={styles.fieldsGap} />
 
-      {mode === 'phone' ? (
+      {mode === "phone" ? (
         <AuthTextInput
           label="Phone Number"
           placeholder="+8801775472701"
@@ -134,8 +144,12 @@ export default function LoginScreen() {
           onPress={() => setRemember(!remember)}
           hitSlop={8}
         >
-          <View style={[styles.checkboxBox, remember && styles.checkboxChecked]}>
-            {remember && <Ionicons name="checkmark" size={12} color="#000000" />}
+          <View
+            style={[styles.checkboxBox, remember && styles.checkboxChecked]}
+          >
+            {remember && (
+              <Ionicons name="checkmark" size={12} color="#000000" />
+            )}
           </View>
           <Text style={styles.checkboxLabel}>Remember me</Text>
         </Pressable>
@@ -146,12 +160,10 @@ export default function LoginScreen() {
         </Link>
       </View>
 
-      <PrimaryButton 
-        title="Log In" 
-        onPress={handleLogin} 
-        disabled={loading}
-      />
-      {loading && <ActivityIndicator color="#000000" style={{ marginTop: spacing.sm }} />}
+      <PrimaryButton title="Log In" onPress={handleLogin} disabled={loading} />
+      {loading && (
+        <ActivityIndicator color="#000000" style={{ marginTop: spacing.sm }} />
+      )}
 
       <Divider label="Or Sign In With" />
 
@@ -187,7 +199,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 28,
     lineHeight: 34,
-    color: '#000000',
+    color: "#000000",
   },
   subtitle: {
     fontFamily: fonts.regular,
@@ -200,15 +212,15 @@ const styles = StyleSheet.create({
     height: spacing.xl,
   },
   optionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: spacing.sm,
     marginBottom: spacing.md,
   },
   checkbox: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
   },
   checkboxBox: {
@@ -217,35 +229,35 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 1.5,
     borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   checkboxChecked: {
-    backgroundColor: '#CDDC39',
-    borderColor: '#CDDC39',
+    backgroundColor: "#CDDC39",
+    borderColor: "#CDDC39",
   },
   checkboxLabel: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: '#000000',
+    color: "#000000",
   },
   forgotText: {
     fontFamily: fonts.medium,
     fontSize: 14,
-    color: '#000000',
-    fontWeight: '600',
+    color: "#000000",
+    fontWeight: "600",
   },
   socialRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.md,
   },
   socialBtn: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.sm,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     paddingVertical: 14,
     borderWidth: 1,
@@ -254,12 +266,12 @@ const styles = StyleSheet.create({
   socialBtnText: {
     fontFamily: fonts.semibold,
     fontSize: 15,
-    color: '#000000',
+    color: "#000000",
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: spacing.xxl,
   },
   footerText: {
@@ -270,6 +282,6 @@ const styles = StyleSheet.create({
   footerLink: {
     fontFamily: fonts.semibold,
     fontSize: 15,
-    color: '#000000',
+    color: "#000000",
   },
 });
