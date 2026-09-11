@@ -15,7 +15,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Speech from "expo-speech";
-import { Audio } from "expo-av";
 import * as ImagePicker from "expo-image-picker";
 import { colors, spacing, radii, typography, shadows } from "../../src/theme";
 import { useAppStore } from "../../src/store/app";
@@ -55,7 +54,7 @@ export default function AICopilotScreen() {
   const [isVoiceActive, setIsVoiceActive] = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
-  const recordingRef = useRef<Audio.Recording | null>(null);
+  const recordingRef = useRef<any>(null);
 
   const speakText = (text: string) => {
     try {
@@ -183,7 +182,7 @@ export default function AICopilotScreen() {
           const rec = recordingRef.current;
           recordingRef.current = null;
           await rec.stopAndUnloadAsync();
-          await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+          try { const { Audio } = require("expo-av"); await Audio.setAudioModeAsync({ allowsRecordingIOS: false }); } catch {}
           const uri = rec.getURI();
 
           if (uri) {

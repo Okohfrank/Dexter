@@ -1,13 +1,13 @@
 import React from 'react';
-import { StyleSheet, Platform, View, Text, Dimensions } from 'react-native';
+import { StyleSheet, Platform, Pressable, View, Text, Dimensions } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radii, shadows } from '../../src/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Keep the pill inset from both screen edges and lifted above the content.
-const NAVBAR_INSET = Math.max(20, (SCREEN_WIDTH - 360) / 2);
+// Keep the pill inset from both screen edges so it never touches the extreme ends.
+const NAVBAR_INSET = Math.max(24, (SCREEN_WIDTH - 360) / 2);
 
 type TabDef = {
   name: string;
@@ -19,10 +19,10 @@ type TabDef = {
 
 const TABS: TabDef[] = [
   { name: 'index', title: 'Home', icon: 'home-outline', iconActive: 'home' },
-  { name: 'ai', title: 'Explore', icon: 'compass-outline', iconActive: 'compass' },
-  { name: 'create', title: 'Create', icon: 'swap-horizontal', iconActive: 'swap-horizontal', isSpecial: true },
-  { name: 'media', title: 'Analyze', icon: 'analytics-outline', iconActive: 'analytics' },
-  { name: 'settings', title: 'Jobs', icon: 'briefcase-outline', iconActive: 'briefcase' },
+  { name: 'ai', title: 'Copilot', icon: 'chatbubble-ellipses-outline', iconActive: 'chatbubble-ellipses' },
+  { name: 'create', title: 'Create', icon: 'create-outline', iconActive: 'create-outline', isSpecial: true },
+  { name: 'media', title: 'Media', icon: 'images-outline', iconActive: 'images' },
+  { name: 'settings', title: 'Settings', icon: 'settings-outline', iconActive: 'settings' },
 ];
 
 export default function DashboardLayout() {
@@ -32,7 +32,7 @@ export default function DashboardLayout() {
         headerShown: false,
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: colors.ink,
-        tabBarInactiveTintColor: colors.inkFaint,
+        tabBarInactiveTintColor: colors.surface,
         tabBarShowLabel: false,
         tabBarItemStyle: styles.tabItem,
       }}
@@ -43,12 +43,23 @@ export default function DashboardLayout() {
           name={tab.name}
           options={{
             title: tab.title,
+            tabBarButton: tab.isSpecial
+              ? (props) => (
+                  <Pressable
+                    {...props}
+                    style={({ pressed }) => [
+                      styles.specialTabButton,
+                      pressed && styles.specialTabButtonPressed,
+                    ]}
+                  />
+                )
+              : undefined,
             tabBarIcon: ({ focused }) => {
               if (tab.isSpecial) {
                 return (
                   <View style={styles.specialButtonContainer}>
                     <View style={styles.specialButton}>
-                      <Ionicons name="swap-horizontal" size={22} color={colors.surface} />
+                      <Ionicons name={tab.icon} size={23} color={colors.ink} />
                     </View>
                   </View>
                 );
@@ -57,10 +68,10 @@ export default function DashboardLayout() {
                 <View style={[styles.tabContent, focused && styles.tabContentActive]}>
                   <Ionicons
                     name={focused ? tab.iconActive : tab.icon}
-                    size={21}
-                    color={focused ? colors.ink : colors.inkFaint}
-                    style={focused ? styles.tabIconActive : undefined}
+                    size={20}
+                    color={focused ? colors.ink : colors.surface}
                   />
+                  {focused && <Text style={styles.activeTabLabel}>{tab.title}</Text>}
                 </View>
               );
             },
@@ -81,28 +92,27 @@ export default function DashboardLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 28 : 18,
+    bottom: Platform.OS === 'ios' ? 28 : 20,
     left: NAVBAR_INSET,
     right: NAVBAR_INSET,
-    height: 72,
+    height: 68,
     borderRadius: radii.pill,
     backgroundColor: colors.ink,
-    paddingTop: 8,
-    paddingBottom: 8,
-    paddingHorizontal: 10,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
     overflow: 'visible',
+    borderWidth: 0,
     ...shadows.lg,
     elevation: 8,
-    borderWidth: 0,
   },
   tabItem: {
-    height: 56,
+    height: 54,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 0,
   },
   tabContent: {
-    width: 44,
+    minWidth: 44,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
@@ -110,27 +120,40 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   tabContentActive: {
-    backgroundColor: colors.brand,
-    ...shadows.md,
-    elevation: 4,
-    borderWidth: 0,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  activeTabLabel: {
+    color: colors.ink,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
   },
   specialButtonContainer: {
     width: 56,
-    height: 56,
+    height: 68,
     alignItems: 'center',
     justifyContent: 'center',
+    transform: [{ translateY: -14 }],
+  },
+  specialTabButton: {
+    height: 54,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  specialTabButtonPressed: {
+    transform: [{ scale: 0.97 }],
   },
   specialButton: {
-    width: 48,
-    height: 48,
+    width: 56,
+    height: 56,
     borderRadius: radii.pill,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 0,
     ...shadows.md,
-    elevation: 4,
+    elevation: 6,
   },
 });

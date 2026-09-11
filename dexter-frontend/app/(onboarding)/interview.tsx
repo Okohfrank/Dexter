@@ -15,7 +15,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Speech from "expo-speech";
-import { Audio } from "expo-av";
 import {
   colors,
   spacing,
@@ -56,7 +55,11 @@ export default function InterviewScreen() {
   const voiceStreamRef = useRef<ReturnType<typeof connectVoiceStream> | null>(
     null,
   );
-  const recordingRef = useRef<Audio.Recording | null>(null);
+  const recordingRef = useRef<any>(null);
+
+  const getAudio = async () => {
+    try { return require("expo-av").Audio; } catch { return null; }
+  };
 
   const speak = (text: string) => {
     try {
@@ -80,6 +83,11 @@ export default function InterviewScreen() {
   const startMicRecording = async () => {
     try {
       Speech.stop();
+      const Audio = await getAudio();
+      if (!Audio) {
+        Alert.alert("Audio Not Available", "Audio recording is not available in this build.");
+        return;
+      }
       const perm = await Audio.requestPermissionsAsync();
       if (!perm.granted) {
         Alert.alert(
@@ -122,7 +130,7 @@ export default function InterviewScreen() {
       const rec = recordingRef.current;
       recordingRef.current = null;
       await rec.stopAndUnloadAsync();
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+      try { const Audio = await getAudio(); if (Audio) await Audio.setAudioModeAsync({ allowsRecordingIOS: false }); } catch {}
       const uri = rec.getURI();
 
       if (uri) {
