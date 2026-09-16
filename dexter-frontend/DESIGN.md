@@ -23,9 +23,9 @@ Companion file: `dexter-design-system.css` contains the same tokens as CSS custo
 
 Dexter is an **AI employee**, not a scheduling tool. The visual language needs to feel like a competent, modern colleague working alongside the user — clean, confident, accessible — not like a generic SaaS analytics dashboard.
 
-- **Clean, not warm.** Background is pure white or light gray, not warm paper. Monochrome + lime accent creates a modern, accessible interface.
+- **Clean, not warm.** Background is pure white or light gray, not warm paper. Strict monochrome with muted gray tones creates a modern, editorial, and accessible interface.
 - **Editorial confidence.** The `Fraunces` display serif appears on greetings and hero numbers to give the product a "thought-leadership" voice, matching what Dexter writes for the user.
-- **Data should feel calm, not busy.** Bento cards with generous padding, subtle shadows, one accent color doing the "action" work (lime) — never more than one loud color per screen.
+- **Data should feel calm, not busy.** Bento cards with generous padding, subtle shadows, and crisp monochrome contrast with muted secondary fills.
 - **The agent is visible but not intrusive.** The pulse-dot is the only recurring "AI is here" cue. No sparkle icons scattered everywhere, no gradient-text "AI magic" clichés.
 
 ---
@@ -46,18 +46,18 @@ _(Full machine-readable version lives in `dexter-design-system.css`. Values here
 | `color-ink-soft`                  | `#666666`                           | Secondary text                                                         |
 | `color-ink-faint`                 | `#999999`                           | Placeholder, disabled, labels                                          |
 | `color-border`                    | `#DDDDDD`                           | Hairline borders                                                       |
-| `color-brand` (lime)              | `#CDDC39`                           | Primary actions, links, AI/active states                               |
-| `color-brand-tint`                | `#F5F8D0`                           | Brand background wash, icon chips                                      |
-| `color-brand-strong`              | `#B8CC2A`                           | Pressed/hover on brand elements                                        |
+| `color-brand` (black)             | `#000000`                           | Primary actions, links, active states                                  |
+| `color-brand-tint` (muted gray)   | `#F5F5F5`                           | Subtle background wash, icon chips                                     |
+| `color-brand-strong`              | `#262626`                           | Pressed/hover on brand elements                                        |
 | `color-premium` (black)           | `#000000`                           | Agency/premium tier dark cards                                         |
-| `color-energy` (lime)             | `#CDDC39`                           | CTA highlight, autonomous-mode-on, warnings                            |
+| `color-energy` (black)            | `#000000`                           | CTA highlight, autonomous-mode-on                                      |
 | `color-positive`                  | `#000000` (text) / `#F5F5F5` (fill) | Growth metrics, published status                                       |
 | `color-negative`                  | `#000000` (text) / `#F5F5F5` (fill) | Failed publish, down metrics                                           |
 | `color-highlight-bg` (light gray) | `#F5F5F5`                           | Badge fills, soft attention — **fills only, never body text on white** |
 
 Dark surface set (night mode, optional): `bg-dark #1A1A1A`, `surface-dark #2A2A2A`, `ink-dark #FFFFFF`, `border-dark #444444`.
 
-**Rule:** exactly one accent color carries the "primary action" job per screen — lime. All semantic colors are black/gray/white for monochrome simplicity. If a screen has three different colored buttons competing for attention, that's a bug, not a design choice.
+**Rule:** Pure monochrome design system with muted tones. Black (`#000000`) carries the primary action job per screen with crisp white text. Muted grays (`#F5F5F5`, `#DDDDDD`) provide secondary structure.
 
 ### 2.2 Typography
 
@@ -287,3 +287,5 @@ Structure: section header → list of rows in a single card, each row = avatar/t
 - Load `Fraunces` and `Inter` via `@expo-google-fonts/fraunces` and `@expo-google-fonts/inter`; block render until fonts are loaded (`useFonts` + `SplashScreen.preventAutoHideAsync`).
 - Use `react-native-reanimated` for the pulse-dot loop animation (opacity + scale), respecting `AccessibilityInfo.isReduceMotionEnabled()`.
 - Shadows: use `shadowColor` (ink-tinted, not black) + `shadowOpacity`/`shadowRadius`/`shadowOffset` on iOS, `elevation` + a tinted overlay on Android since Android elevation shadows are always neutral gray by default.
+- Primitives come from React Native Reusables (`src/components/rnr/`: `button`, `text`, `input`, `card`, `avatar`, `icon`), themed to the tokens in Section 2 via CSS vars in `global.css` + `tailwind.config.js`. Never use stock Reusables/zinc styling — radius stays full-pill for buttons/inputs, cards stay `radius-md` with `space-5` padding. Legacy `src/components/ui.tsx` remains for Dexter signatures only (`PulseDot`, copilot bar, bottom nav).
+- Overlays require `PortalHost` in `app/_layout.tsx`. New screens prefer RNR primitives; do not add one-off `StyleSheet` buttons/inputs/cards.

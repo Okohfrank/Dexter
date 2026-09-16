@@ -1,91 +1,97 @@
+const { hairlineWidth } = require('nativewind/theme');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './app/**/*.{js,jsx,ts,tsx}',
     './src/**/*.{js,jsx,ts,tsx}',
+    './components/**/*.{js,jsx,ts,tsx}',
   ],
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
       colors: {
-        /* ── Apple System Colors ── */
-        'system-blue': '#007AFF',
-        'system-green': '#34C759',
-        'system-red': '#FF3B30',
-        'system-orange': '#FF9500',
-        'system-yellow': '#FFCC00',
-        'system-purple': '#AF52DE',
-        'system-pink': '#FF2D55',
-        'system-teal': '#5AC8FA',
-        'system-indigo': '#5856D6',
-
-        /* ── Apple Dark Backgrounds ── */
-        'apple-bg': '#000000',
-        'apple-bg-primary': '#1C1C1E',
-        'apple-bg-secondary': '#2C2C2E',
-        'apple-bg-tertiary': '#3A3A3C',
-        'apple-bg-elevated': '#1C1C1E',
-
-        /* ── Glass Surfaces ── */
-        'glass': 'rgba(255, 255, 255, 0.08)',
-        'glass-light': 'rgba(255, 255, 255, 0.12)',
-        'glass-heavy': 'rgba(255, 255, 255, 0.18)',
-        'glass-border': 'rgba(255, 255, 255, 0.15)',
-        'glass-border-light': 'rgba(255, 255, 255, 0.08)',
-
-        /* ── Apple Typography Colors ── */
-        'label-primary': '#FFFFFF',
-        'label-secondary': 'rgba(235, 235, 245, 0.60)',
-        'label-tertiary': 'rgba(235, 235, 245, 0.30)',
-        'label-quaternary': 'rgba(235, 235, 245, 0.18)',
-
-        /* ── Apple Separators ── */
-        'separator': 'rgba(84, 84, 88, 0.65)',
-        'separator-opaque': '#38383A',
-
-        /* ── Functional ── */
-        'positive': '#34C759',
-        'positive-surface': 'rgba(52, 199, 89, 0.15)',
-        'negative': '#FF3B30',
-        'negative-surface': 'rgba(255, 59, 48, 0.15)',
-        'warning': '#FF9500',
-        'warning-surface': 'rgba(255, 149, 0, 0.15)',
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: '#FFFFFF',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
       },
       borderRadius: {
-        'apple-sm': '10px',
-        'apple-md': '13px',
-        'apple-lg': '16px',
-        'apple-xl': '22px',
-        'apple-2xl': '28px',
-        'apple-3xl': '39px',
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+        // Dexter DESIGN.md §2.4 tokens
+        'dex-sm': '12px',
+        'dex-md': '20px',
+        'dex-lg': '28px',
+        'dex-full': '999px',
+      },
+      borderWidth: {
+        hairline: hairlineWidth(),
       },
       fontFamily: {
-        'sf-display': ['System'],
-        'sf-text': ['System'],
-      },
-      fontSize: {
-        'apple-title1': ['28px', { lineHeight: '34px', fontWeight: '700' }],
-        'apple-title2': ['22px', { lineHeight: '28px', fontWeight: '700' }],
-        'apple-title3': ['20px', { lineHeight: '25px', fontWeight: '600' }],
-        'apple-headline': ['17px', { lineHeight: '22px', fontWeight: '600' }],
-        'apple-body': ['17px', { lineHeight: '22px', fontWeight: '400' }],
-        'apple-callout': ['16px', { lineHeight: '21px', fontWeight: '400' }],
-        'apple-subhead': ['15px', { lineHeight: '20px', fontWeight: '400' }],
-        'apple-footnote': ['13px', { lineHeight: '18px', fontWeight: '400' }],
-        'apple-caption1': ['12px', { lineHeight: '16px', fontWeight: '400' }],
-        'apple-caption2': ['11px', { lineHeight: '13px', fontWeight: '400' }],
+        display: ['Fraunces_700Bold', 'serif'],
+        sans: ['Inter_400Regular', 'system-ui', 'sans-serif'],
       },
       spacing: {
-        'apple-xs': '4px',
-        'apple-sm': '8px',
-        'apple-md': '12px',
-        'apple-lg': '16px',
-        'apple-xl': '20px',
-        'apple-2xl': '24px',
-        'apple-3xl': '32px',
-        'apple-4xl': '48px',
+        // Dexter DESIGN.md §2.3 (4px base scale)
+        'dex-1': '4px',
+        'dex-2': '8px',
+        'dex-3': '12px',
+        'dex-4': '16px',
+        'dex-5': '20px',
+        'dex-6': '24px',
+        'dex-7': '32px',
+        'dex-8': '40px',
+      },
+      keyframes: {
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
+      },
+      animation: {
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
       },
     },
   },
-  plugins: [],
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
+  plugins: [require('tailwindcss-animate')],
 };

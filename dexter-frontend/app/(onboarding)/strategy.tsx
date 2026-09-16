@@ -194,6 +194,19 @@ export default function StrategyReviewScreen() {
             <Text style={styles.hint}>
               You maintain full supervisory control. Override or pause at any time from your dashboard.
             </Text>
+
+            <Pressable
+              style={styles.dashboardBtn}
+              onPress={() => {
+                if (plan) {
+                  setContentPlan({ ...plan, frequencyPerWeek: frequency });
+                }
+                router.replace('/(dashboard)');
+              }}
+            >
+              <Text style={styles.dashboardBtnText}>Go to Dashboard</Text>
+              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+            </Pressable>
           </>
         )}
       </ScrollView>
@@ -349,4 +362,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: spacing.lg,
   },
+  dashboardBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    borderRadius: radii.pill,
+    paddingVertical: 15,
+    marginTop: spacing.md,
+    ...shadows.primaryBtn,
+  },
+  dashboardBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });

@@ -4,7 +4,7 @@
  */
 
 :root {
-  /* ── 2.1 Color (Monochrome + Lime Accent) ── */
+  /* ── 2.1 Color (Strict Monochrome + Muted Tones) ── */
   --color-bg: #ffffff;
   --color-bg-alt: #f5f5f5;
   --color-surface: #ffffff;
@@ -16,12 +16,12 @@
 
   --color-border: #dddddd;
 
-  --color-brand: #cddc39;
-  --color-brand-tint: #f5f8d0;
-  --color-brand-strong: #b8cc2a;
+  --color-brand: #000000;
+  --color-brand-tint: #f5f5f5;
+  --color-brand-strong: #262626;
 
   --color-premium: #000000;
-  --color-energy: #cddc39;
+  --color-energy: #000000;
 
   --color-positive-text: #000000;
   --color-positive-fill: #f5f5f5;
@@ -31,7 +31,7 @@
 
   --color-on-highlight: #000000;
   --color-on-positive: #000000;
-  --color-on-energy: #000000;
+  --color-on-energy: #ffffff;
 
   /* Dark surface set (opt-in per screen) */
   --color-bg-dark: #1a1a1a;

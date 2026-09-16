@@ -5,23 +5,39 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   AuthScreen,
   AuthTextInput,
+  DatePickerField,
   PrimaryButton,
+  Divider,
   SegmentedControl,
 } from '../../src/components/ui';
 import { colors, spacing, fonts } from '../../src/theme';
-import { register } from '../../src/api/auth';
+import { register, login, getMe } from '../../src/api/auth';
+import { listBusinesses } from '../../src/api/business';
+import { listConnectedAccounts } from '../../src/api/oauth';
 import { useAuthStore } from '../../src/api/client';
+import { useAppStore } from '../../src/store/app';
 
-type SignupMode = 'signup' | 'login';
+type AuthTab = 'signup' | 'login';
+type LoginMode = 'phone' | 'email';
 
 export default function SignupScreen() {
-  const [mode, setMode] = useState<SignupMode>('signup');
+  const [tab, setTab] = useState<AuthTab>('signup');
+  const [loginMode, setLoginMode] = useState<LoginMode>('phone');
+
+  // Sign up fields
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+
+  // Login fields
+  const [loginPhone, setLoginPhone] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [remember, setRemember] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -47,12 +63,69 @@ export default function SignupScreen() {
     }
   };
 
+  const handleLogin = async () => {
+    const identifier = loginMode === 'email' ? loginEmail : loginPhone;
+    if (!identifier || !loginPassword) {
+      Alert.alert('Missing info', 'Please fill in all fields.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const loginEmailVal =
+        loginMode === 'email' ? loginEmail.trim() : `${loginPhone.trim()}@dexter.local`;
+      const res = await login(loginEmailVal, loginPassword);
+      useAuthStore.getState().setTokens({
+        access_token: res.access_token,
+        refresh_token: res.refresh_token,
+      });
+      try {
+        const me = await getMe();
+        useAuthStore.getState().setAuth({
+          user: me,
+          access_token: res.access_token,
+          refresh_token: res.refresh_token,
+        });
+      } catch {}
+      try {
+        const businesses = await listBusinesses();
+        if (businesses.length > 0) {
+          useAppStore.getState().setBusiness(businesses[0]);
+          const accounts = await listConnectedAccounts(businesses[0].id).catch(
+            () => [],
+          );
+          useAppStore.getState().setConnectedAccounts(accounts);
+          router.replace('/(dashboard)');
+        } else {
+          router.replace('/(onboarding)');
+        }
+      } catch {
+        router.replace('/(dashboard)');
+      }
+    } catch (e: any) {
+      Alert.alert('Login failed', e.message || 'Failed to log in.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    Alert.alert('Google Sign-In', 'Google sign-in coming soon.');
+  };
+
+  const handleFacebookLogin = () => {
+    Alert.alert('Facebook Sign-In', 'Facebook sign-in coming soon.');
+  };
+
   return (
     <AuthScreen>
       <View style={styles.header}>
-        <Text style={styles.title}>Get Started Now</Text>
+        <Text style={styles.title}>
+          {tab === 'signup' ? 'Get Started Now' : 'Welcome Back'}
+        </Text>
         <Text style={styles.subtitle}>
-          Create an account or log in to explore about our app
+          {tab === 'signup'
+            ? 'Create an account or log in to explore Dexter'
+            : 'Login to access your Dexter account'}
         </Text>
       </View>
 
@@ -61,76 +134,181 @@ export default function SignupScreen() {
           { key: 'signup', label: 'Sign Up' },
           { key: 'login', label: 'Log In' },
         ]}
-        selected={mode}
-        onChange={(key) => {
-          const k = key as SignupMode;
-          setMode(k);
-          if (k === 'login') router.replace('/login');
-        }}
+        selected={tab}
+        onChange={(key) => setTab(key as AuthTab)}
       />
 
       <View style={styles.fieldsGap} />
 
-      <View style={styles.nameRow}>
-        <View style={styles.nameField}>
+      {tab === 'signup' ? (
+        <>
+          <View style={styles.nameRow}>
+            <View style={styles.nameField}>
+              <AuthTextInput
+                label="First Name"
+                placeholder="Raj"
+                value={firstName}
+                onChangeText={setFirstName}
+                autoCapitalize="words"
+              />
+            </View>
+            <View style={styles.nameField}>
+              <AuthTextInput
+                label="Last Name"
+                placeholder="Sarkar"
+                value={lastName}
+                onChangeText={setLastName}
+                autoCapitalize="words"
+              />
+            </View>
+          </View>
+
           <AuthTextInput
-            label="Fast Name"
-            placeholder="Raj"
-            value={firstName}
-            onChangeText={setFirstName}
-            autoCapitalize="words"
+            label="Email"
+            placeholder="sarkarraj0766@gmail.com"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoComplete="email"
+            textContentType="emailAddress"
           />
-        </View>
-        <View style={styles.nameField}>
+
+          <DatePickerField
+            label="Date of Birth"
+            value={birthDate}
+            onChange={setBirthDate}
+            placeholder="Select date of birth"
+          />
+
           <AuthTextInput
-            label="Last Name"
-            placeholder="Sarkar"
-            value={lastName}
-            onChangeText={setLastName}
-            autoCapitalize="words"
+            label="Phone Number"
+            placeholder="(454) 726-0592"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
           />
-        </View>
-      </View>
 
-      <AuthTextInput
-        label="Email"
-        placeholder="sarkarraj0766@gmail.com"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        autoComplete="email"
-        textContentType="emailAddress"
-      />
+          <AuthTextInput
+            label="Set Password"
+            placeholder="••••••••"
+            secure
+            value={password}
+            onChangeText={setPassword}
+            autoCapitalize="none"
+            textContentType="newPassword"
+          />
 
-      <AuthTextInput
-        label="Birth of date"
-        placeholder="15/06/2000"
-        value={birthDate}
-        onChangeText={setBirthDate}
-        keyboardType="numbers-and-punctuation"
-      />
+          <PrimaryButton title="Sign Up" onPress={handleSignup} disabled={loading} />
+          {loading && (
+            <ActivityIndicator color="#000000" style={{ marginTop: spacing.sm }} />
+          )}
 
-      <AuthTextInput
-        label="Password"
-        placeholder="(454) 726-0592"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-      />
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <Pressable hitSlop={8} onPress={() => setTab('login')}>
+              <Text style={styles.footerLink}>Log In</Text>
+            </Pressable>
+          </View>
+        </>
+      ) : (
+        <>
+          <SegmentedControl
+            segments={[
+              { key: 'phone', label: 'Phone Number' },
+              { key: 'email', label: 'Email' },
+            ]}
+            selected={loginMode}
+            onChange={(key) => setLoginMode(key as LoginMode)}
+          />
 
-      <AuthTextInput
-        label="Set Password"
-        placeholder="••••••••"
-        secure
-        value={password}
-        onChangeText={setPassword}
-        autoCapitalize="none"
-        textContentType="newPassword"
-      />
+          <View style={styles.subFieldsGap} />
 
-      <PrimaryButton title="Sign Up" onPress={handleSignup} disabled={loading} />
-      {loading && <ActivityIndicator color="#000000" style={{ marginTop: spacing.sm }} />}
+          {loginMode === 'phone' ? (
+            <AuthTextInput
+              label="Phone Number"
+              placeholder="+8801775472701"
+              value={loginPhone}
+              onChangeText={setLoginPhone}
+              keyboardType="phone-pad"
+            />
+          ) : (
+            <AuthTextInput
+              label="Email"
+              placeholder="you@company.com"
+              value={loginEmail}
+              onChangeText={setLoginEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoComplete="email"
+              textContentType="emailAddress"
+            />
+          )}
+
+          <AuthTextInput
+            label="Password"
+            placeholder="••••••••"
+            secure
+            value={loginPassword}
+            onChangeText={setLoginPassword}
+            autoCapitalize="none"
+            autoComplete="current-password"
+            textContentType="password"
+          />
+
+          <View style={styles.optionsRow}>
+            <Pressable
+              style={styles.checkbox}
+              onPress={() => setRemember(!remember)}
+              hitSlop={8}
+            >
+              <View
+                style={[styles.checkboxBox, remember && styles.checkboxChecked]}
+              >
+                {remember && (
+                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                )}
+              </View>
+              <Text style={styles.checkboxLabel}>Remember me</Text>
+            </Pressable>
+            <Link href="/(auth)/forgot-password" asChild>
+              <Pressable hitSlop={8}>
+                <Text style={styles.forgotText}>Forget password?</Text>
+              </Pressable>
+            </Link>
+          </View>
+
+          <PrimaryButton
+            title="Log In"
+            onPress={handleLogin}
+            disabled={loading}
+            testID="login-button"
+          />
+          {loading && (
+            <ActivityIndicator color="#000000" style={{ marginTop: spacing.sm }} />
+          )}
+
+          <Divider label="Or Sign In With" />
+
+          <View style={styles.socialRow}>
+            <Pressable style={styles.socialBtn} onPress={handleGoogleLogin}>
+              <Ionicons name="logo-google" size={18} color="#000000" />
+              <Text style={styles.socialBtnText}>Google</Text>
+            </Pressable>
+            <Pressable style={styles.socialBtn} onPress={handleFacebookLogin}>
+              <Ionicons name="logo-facebook" size={18} color="#000000" />
+              <Text style={styles.socialBtnText}>Facebook</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Pressable hitSlop={8} onPress={() => setTab('signup')}>
+              <Text style={styles.footerLink}>Sign Up</Text>
+            </Pressable>
+          </View>
+        </>
+      )}
     </AuthScreen>
   );
 }
@@ -154,7 +332,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   fieldsGap: {
-    height: spacing.xl,
+    height: spacing.md,
+  },
+  subFieldsGap: {
+    height: spacing.sm,
   },
   nameRow: {
     flexDirection: 'row',
@@ -162,5 +343,79 @@ const styles = StyleSheet.create({
   },
   nameField: {
     flex: 1,
+  },
+  optionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  checkbox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  checkboxBox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#000000',
+    borderColor: '#000000',
+  },
+  checkboxLabel: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: '#000000',
+  },
+  forgotText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: '#000000',
+    fontWeight: '600',
+  },
+  socialRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  socialBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  socialBtnText: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: '#000000',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: spacing.xxl,
+    marginBottom: spacing.lg,
+  },
+  footerText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.inkSoft,
+  },
+  footerLink: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: '#000000',
   },
 });

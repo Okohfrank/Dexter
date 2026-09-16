@@ -11,18 +11,63 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows } from '../../src/theme';
+import { colors, spacing, radii, shadows, typography } from '../../src/theme';
 import { useAuthStore } from '../../src/api/client';
 import { useAppStore } from '../../src/store/app';
-import { GlassCard, GlassPill } from '../../src/components/ui';
+import { GlassCard } from '../../src/components/ui';
 
 type SettingRow = {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   subtitle?: string;
-  onPress?: () => void;
-  danger?: boolean;
+  onPress: () => void;
 };
+
+function SettingsSection({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionLabel}>{label}</Text>
+      <View style={styles.groupCard}>{children}</View>
+    </View>
+  );
+}
+
+function GroupedNavigationRow({
+  row,
+  hasDivider = false,
+}: {
+  row: SettingRow;
+  hasDivider?: boolean;
+}) {
+  return (
+    <>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={row.label}
+        onPress={row.onPress}
+        style={({ pressed }) => [styles.settingRow, pressed && styles.rowPressed]}
+      >
+        <Ionicons name={row.icon} size={20} color={colors.inkSoft} />
+        <View style={styles.settingBody}>
+          <Text style={styles.settingLabel}>{row.label}</Text>
+          {row.subtitle && (
+            <Text numberOfLines={1} style={styles.settingSubtitle}>
+              {row.subtitle}
+            </Text>
+          )}
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={colors.inkFaint} />
+      </Pressable>
+      {hasDivider && <View style={styles.rowDivider} />}
+    </>
+  );
+}
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -57,103 +102,94 @@ export default function SettingsScreen() {
           { text: 'Enable', onPress: () => setAutonomousMode(true) },
         ],
       );
-    } else {
-      setAutonomousMode(false);
+      return;
     }
+    setAutonomousMode(false);
   };
 
-  const settingRows: SettingRow[] = [
+  const configurationRows: SettingRow[] = [
     {
       icon: 'hardware-chip-outline',
       label: 'Business Brain',
-      subtitle: 'Review or update how Dexter understands your brand',
+      subtitle: 'How Dexter understands your brand',
       onPress: () => router.push('/(onboarding)/brain'),
     },
     {
       icon: 'bar-chart-outline',
       label: 'Content Strategy',
-      subtitle: 'Posting frequency, pillars, and scheduling windows',
+      subtitle: 'Pillars, cadence, and scheduling windows',
       onPress: () => router.push('/(onboarding)/strategy'),
     },
-    {
-      icon: 'link-outline',
-      label: 'Connected Accounts',
-      subtitle: 'Manage LinkedIn and other platform connections',
-      onPress: () => router.push('/(onboarding)'),
-    },
   ];
+
+  const connectedAccountsRow: SettingRow = {
+    icon: 'link-outline',
+    label: 'Connected Accounts',
+    subtitle: 'Manage LinkedIn and platform connections',
+    onPress: () => router.push('/(onboarding)'),
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Profile Card */}
-        <GlassCard style={styles.profileCard} elevated>
+        <GlassCard style={styles.profileCard}>
           <View style={styles.avatarCircle}>
             <Text style={styles.avatarText}>
               {(user?.full_name ?? 'U').charAt(0).toUpperCase()}
             </Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{user?.full_name ?? 'Founder'}</Text>
-            <Text style={styles.profileEmail}>{user?.email ?? ''}</Text>
-            {business && (
-              <GlassPill label={business.name} variant="primary" />
-            )}
+            <Text numberOfLines={1} style={styles.profileName}>
+              {user?.full_name ?? 'Founder'}
+            </Text>
+            <Text numberOfLines={1} style={styles.profileSubtitle}>
+              {user?.email ?? business?.name ?? 'Your Dexter workspace'}
+            </Text>
           </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.inkFaint} />
         </GlassCard>
 
-        {/* Autonomous Mode Toggle */}
-        <GlassCard style={styles.autonomyCard} highlighted={autonomousMode}>
+        <SettingsSection label="Configuration">
+          {configurationRows.map((row, index) => (
+            <GroupedNavigationRow
+              key={row.label}
+              row={row}
+              hasDivider={index < configurationRows.length - 1}
+            />
+          ))}
+        </SettingsSection>
+
+        <SettingsSection label="Automation">
           <View style={styles.autonomyRow}>
-            <View style={styles.autonomyIconWrap}>
-              <Ionicons
-                name={autonomousMode ? 'rocket' : 'rocket-outline'}
-                size={22}
-                color={autonomousMode ? colors.energy : colors.primary}
-              />
-            </View>
-            <View style={styles.autonomyBody}>
-              <Text style={styles.autonomyTitle}>Autonomous Mode</Text>
-              <Text style={styles.autonomySubtitle}>
+            <Ionicons name="rocket-outline" size={20} color={colors.inkSoft} />
+            <View style={styles.settingBody}>
+              <Text style={styles.settingLabel}>Autonomous Mode</Text>
+              <Text numberOfLines={1} style={styles.settingSubtitle}>
                 {autonomousMode
-                  ? 'Dexter is actively creating and publishing content'
-                  : 'Enable to let Dexter operate independently'}
+                  ? 'Dexter is creating and publishing content'
+                  : 'Let Dexter operate independently'}
               </Text>
             </View>
             <Switch
               value={autonomousMode}
               onValueChange={handleToggleAutonomous}
               trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor="#FFFFFF"
+              thumbColor={colors.surface}
               ios_backgroundColor={colors.border}
             />
           </View>
-        </GlassCard>
+        </SettingsSection>
 
-        {/* Settings List */}
-        <Text style={styles.sectionLabel}>Configuration</Text>
-        {settingRows.map((row, i) => (
-          <Pressable key={i} onPress={row.onPress}>
-            <GlassCard style={styles.settingRow}>
-              <View style={styles.settingIconWrap}>
-                <Ionicons name={row.icon} size={20} color={colors.primary} />
-              </View>
-              <View style={styles.settingBody}>
-                <Text style={styles.settingLabel}>{row.label}</Text>
-                {row.subtitle && <Text style={styles.settingSubtitle}>{row.subtitle}</Text>}
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.inkFaint} />
-            </GlassCard>
-          </Pressable>
-        ))}
+        <SettingsSection label="Accounts">
+          <GroupedNavigationRow row={connectedAccountsRow} />
+        </SettingsSection>
 
-        {/* Logout */}
         <Pressable style={styles.logoutBtn} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={18} color={colors.negative} />
           <Text style={styles.logoutText}>Sign Out</Text>
         </Pressable>
 
-        <Text style={styles.versionText}>Dexter v1.0.0 • Autonomous Brand Agent</Text>
+        <Text style={styles.versionText}>Dexter v1.0.0 â€¢ Autonomous Brand Agent</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -161,72 +197,68 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxxl + 60 },
-
+  scroll: {
+    paddingTop: spacing.xxl,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.huge + spacing.xxxxl + spacing.sm,
+  },
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.lg,
+    gap: spacing.md,
+    marginBottom: spacing.xl,
   },
   avatarCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.primaryBtn,
-  },
-  avatarText: {
-    ...typography.heading,
-    color: colors.surface,
-  },
-  profileInfo: { flex: 1, gap: spacing.xs },
-  profileName: { ...typography.h2, color: colors.ink },
-  profileEmail: { ...typography.caption, color: colors.inkSoft },
-
-  autonomyCard: {},
-  autonomyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  autonomyIconWrap: {
-    width: 44,
-    height: 44,
+    width: spacing.huge,
+    height: spacing.huge,
     borderRadius: radii.pill,
     backgroundColor: colors.primarySurface,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.subtle,
   },
-  autonomyBody: { flex: 1 },
-  autonomyTitle: { ...typography.subheading, color: colors.ink, fontWeight: '700' },
-  autonomySubtitle: { ...typography.caption2, color: colors.inkSoft, marginTop: 2 },
+  avatarText: { ...typography.h2, color: colors.ink },
+  profileInfo: { flex: 1 },
+  profileName: { ...typography.h3, color: colors.ink },
+  profileSubtitle: { ...typography.caption, color: colors.inkSoft, marginTop: spacing.xs },
 
+  section: { marginBottom: spacing.xl },
   sectionLabel: {
     ...typography.label,
-    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
   },
-
+  groupCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+    ...shadows.sm,
+  },
   settingRow: {
+    minHeight: spacing.huge + spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
   },
-  settingIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primarySurface,
-    alignItems: 'center',
-    justifyContent: 'center',
+  rowPressed: { opacity: 0.7 },
+  rowDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginLeft: spacing.xl,
   },
   settingBody: { flex: 1 },
-  settingLabel: { ...typography.subheading, color: colors.ink, fontWeight: '600' },
-  settingSubtitle: { ...typography.caption2, color: colors.inkSoft, marginTop: 2 },
+  settingLabel: { ...typography.h3, color: colors.ink },
+  settingSubtitle: { ...typography.caption2, color: colors.inkSoft, marginTop: spacing.xs },
+  autonomyRow: {
+    minHeight: spacing.huge + spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
 
   logoutBtn: {
     flexDirection: 'row',
@@ -238,13 +270,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.negativeBorder,
     backgroundColor: colors.negativeSurface,
-    marginTop: spacing.md,
+    marginBottom: spacing.xl,
   },
-  logoutText: {
-    ...typography.h3,
-    color: colors.negative,
-  },
-
+  logoutText: { ...typography.h3, color: colors.negative },
   versionText: {
     ...typography.caption2,
     color: colors.inkFaint,

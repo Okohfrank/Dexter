@@ -1,159 +1,217 @@
-import React from 'react';
-import { StyleSheet, Platform, Pressable, View, Text, Dimensions } from 'react-native';
+import React, { useEffect } from 'react';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, shadows } from '../../src/theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// Keep the pill inset from both screen edges so it never touches the extreme ends.
-const NAVBAR_INSET = Math.max(24, (SCREEN_WIDTH - 360) / 2);
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { fonts, radii } from '../../src/theme';
 
 type TabDef = {
   name: string;
   title: string;
   icon: keyof typeof Ionicons.glyphMap;
-  iconActive: keyof typeof Ionicons.glyphMap;
-  isSpecial?: boolean;
+};
+
+type FloatingTabBarProps = {
+  state: {
+    index: number;
+    routes: Array<{ key: string; name: string; params?: object }>;
+  };
+  descriptors: Record<
+    string,
+    {
+      options: {
+        tabBarAccessibilityLabel?: string;
+        tabBarButtonTestID?: string;
+      };
+    }
+  >;
+  navigation: {
+    emit: (event: {
+      type: 'tabPress' | 'tabLongPress';
+      target: string;
+      canPreventDefault?: boolean;
+    }) => unknown;
+    navigate: (name: string, params?: object) => void;
+  };
 };
 
 const TABS: TabDef[] = [
-  { name: 'index', title: 'Home', icon: 'home-outline', iconActive: 'home' },
-  { name: 'ai', title: 'Copilot', icon: 'chatbubble-ellipses-outline', iconActive: 'chatbubble-ellipses' },
-  { name: 'create', title: 'Create', icon: 'create-outline', iconActive: 'create-outline', isSpecial: true },
-  { name: 'media', title: 'Media', icon: 'images-outline', iconActive: 'images' },
-  { name: 'settings', title: 'Settings', icon: 'settings-outline', iconActive: 'settings' },
+  { name: 'index', title: 'Home', icon: 'home-outline' },
+  { name: 'create', title: 'Create', icon: 'receipt-outline' },
+  { name: 'ai', title: 'Copilot', icon: 'scan-outline' },
+  { name: 'media', title: 'Media', icon: 'card-outline' },
+  { name: 'settings', title: 'Settings', icon: 'person-outline' },
 ];
+
+function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
+
+  // Exactly <= 70% of the screen width, clamped on wider displays
+  const navBarWidth = Math.min(screenWidth * 0.70, 360);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return;
+
+    TABS.forEach((tab) => {
+      if (!state.routes.some((route) => route.name === tab.name)) {
+        console.warn(`[DashboardLayout] Missing tab route: ${tab.name}`);
+      }
+    });
+  }, [state.routes]);
+
+  return (
+    <View
+      style={[
+        styles.tabBarWrapper,
+        { bottom: Math.max(insets.bottom, 12) + 6 },
+      ]}
+      pointerEvents="box-none"
+    >
+      <View style={[styles.tabBar, { width: navBarWidth }]}>
+        {TABS.map((tab) => {
+          const route = state.routes.find((candidate) => candidate.name === tab.name);
+          const focused = route?.key === state.routes[state.index]?.key;
+          const options = route ? descriptors[route.key]?.options : undefined;
+
+          const handlePress = () => {
+            if (!route) return;
+
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+
+            const prevented =
+              typeof event === 'object' &&
+              event !== null &&
+              'defaultPrevented' in event &&
+              (event as { defaultPrevented?: boolean }).defaultPrevented;
+
+            if (!focused && !prevented) {
+              navigation.navigate(route.name, route.params);
+            }
+          };
+
+          return (
+            <Pressable
+              key={tab.name}
+              accessibilityRole="button"
+              accessibilityState={{ selected: focused, disabled: !route }}
+              accessibilityLabel={options?.tabBarAccessibilityLabel ?? tab.title}
+              testID={options?.tabBarButtonTestID}
+              disabled={!route}
+              onPress={handlePress}
+              onLongPress={() => {
+                if (route) {
+                  navigation.emit({ type: 'tabLongPress', target: route.key });
+                }
+              }}
+              style={({ pressed }) => [
+                styles.tabButton,
+                focused ? styles.tabButtonActive : styles.tabButtonInactive,
+                !route && styles.tabButtonDisabled,
+                pressed && styles.tabButtonPressed,
+              ]}
+            >
+              <Ionicons
+                name={tab.icon}
+                size={19}
+                color={focused ? '#FFFFFF' : 'rgba(255, 255, 255, 0.65)'}
+              />
+              {focused && (
+                <Text numberOfLines={1} style={styles.activeTabLabel}>
+                  {tab.title}
+                </Text>
+              )}
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
 
 export default function DashboardLayout() {
   return (
     <Tabs
+      tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: colors.ink,
-        tabBarInactiveTintColor: colors.surface,
-        tabBarShowLabel: false,
-        tabBarItemStyle: styles.tabItem,
+        tabBarStyle: {
+          position: 'absolute',
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+        },
       }}
     >
       {TABS.map((tab) => (
-        <Tabs.Screen
-          key={tab.name}
-          name={tab.name}
-          options={{
-            title: tab.title,
-            tabBarButton: tab.isSpecial
-              ? (props) => (
-                  <Pressable
-                    {...props}
-                    style={({ pressed }) => [
-                      styles.specialTabButton,
-                      pressed && styles.specialTabButtonPressed,
-                    ]}
-                  />
-                )
-              : undefined,
-            tabBarIcon: ({ focused }) => {
-              if (tab.isSpecial) {
-                return (
-                  <View style={styles.specialButtonContainer}>
-                    <View style={styles.specialButton}>
-                      <Ionicons name={tab.icon} size={23} color={colors.ink} />
-                    </View>
-                  </View>
-                );
-              }
-              return (
-                <View style={[styles.tabContent, focused && styles.tabContentActive]}>
-                  <Ionicons
-                    name={focused ? tab.iconActive : tab.icon}
-                    size={20}
-                    color={focused ? colors.ink : colors.surface}
-                  />
-                  {focused && <Text style={styles.activeTabLabel}>{tab.title}</Text>}
-                </View>
-              );
-            },
-          }}
-        />
+        <Tabs.Screen key={tab.name} name={tab.name} options={{ title: tab.title }} />
       ))}
-      {/* Push screens hidden from tab list */}
-      <Tabs.Screen
-        name="edit-post"
-        options={{
-          href: null,
-        }}
-      />
+      <Tabs.Screen name="edit-post" options={{ href: null }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
+  tabBarWrapper: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 28 : 20,
-    left: NAVBAR_INSET,
-    right: NAVBAR_INSET,
-    height: 68,
-    borderRadius: radii.pill,
-    backgroundColor: colors.ink,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    overflow: 'visible',
-    borderWidth: 0,
-    ...shadows.lg,
-    elevation: 8,
-  },
-  tabItem: {
-    height: 54,
-    justifyContent: 'center',
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    paddingVertical: 0,
+    justifyContent: 'center',
+    zIndex: 100,
   },
-  tabContent: {
-    minWidth: 44,
+  tabBar: {
+    maxWidth: '70%',
+    height: 58,
+    borderRadius: radii.pill,
+    backgroundColor: '#121214',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  tabButton: {
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.pill,
-    backgroundColor: 'transparent',
   },
-  tabContentActive: {
+  tabButtonActive: {
     flexDirection: 'row',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+  },
+  tabButtonInactive: {
+    flex: 1,
+    maxWidth: 42,
+  },
+  tabButtonDisabled: {
+    opacity: 0.3,
+  },
+  tabButtonPressed: {
+    transform: [{ scale: 0.94 }],
   },
   activeTabLabel: {
-    color: colors.ink,
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
-  },
-  specialButtonContainer: {
-    width: 56,
-    height: 68,
-    alignItems: 'center',
-    justifyContent: 'center',
-    transform: [{ translateY: -14 }],
-  },
-  specialTabButton: {
-    height: 54,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  specialTabButtonPressed: {
-    transform: [{ scale: 0.97 }],
-  },
-  specialButton: {
-    width: 56,
-    height: 56,
-    borderRadius: radii.pill,
-    backgroundColor: colors.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 0,
-    ...shadows.md,
-    elevation: 6,
+    fontSize: 13,
+    lineHeight: 16,
+    color: '#FFFFFF',
+    fontFamily: fonts.medium,
+    fontWeight: '500',
+    flexShrink: 0,
   },
 });

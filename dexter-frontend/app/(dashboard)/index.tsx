@@ -507,7 +507,12 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxxl + 64 },
+  scroll: {
+    padding: spacing.lg,
+    gap: spacing.lg,
+    // Keeps the last feed item clear of the floating tab bar and its bottom gap.
+    paddingBottom: spacing.huge + spacing.xxxxl + spacing.sm,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',

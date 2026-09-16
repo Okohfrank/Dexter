@@ -92,8 +92,21 @@ export default function LoginScreen() {
     <AuthScreen>
       <View style={styles.header}>
         <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Login to access your account</Text>
+        <Text style={styles.subtitle}>Login to access your Dexter account</Text>
       </View>
+
+      <SegmentedControl
+        segments={[
+          { key: "signup", label: "Sign Up" },
+          { key: "login", label: "Log In" },
+        ]}
+        selected="login"
+        onChange={(key) => {
+          if (key === "signup") router.replace("/(auth)/signup");
+        }}
+      />
+
+      <View style={styles.fieldsGap} />
 
       <SegmentedControl
         segments={[
@@ -148,19 +161,24 @@ export default function LoginScreen() {
             style={[styles.checkboxBox, remember && styles.checkboxChecked]}
           >
             {remember && (
-              <Ionicons name="checkmark" size={12} color="#000000" />
+              <Ionicons name="checkmark" size={12} color="#FFFFFF" />
             )}
           </View>
           <Text style={styles.checkboxLabel}>Remember me</Text>
         </Pressable>
-        <Link href="/forgot-password" asChild>
+        <Link href="/(auth)/forgot-password" asChild>
           <Pressable hitSlop={8}>
             <Text style={styles.forgotText}>Forget password?</Text>
           </Pressable>
         </Link>
       </View>
 
-      <PrimaryButton title="Log In" onPress={handleLogin} disabled={loading} />
+      <PrimaryButton
+        title="Log In"
+        onPress={handleLogin}
+        disabled={loading}
+        testID="login-button"
+      />
       {loading && (
         <ActivityIndicator color="#000000" style={{ marginTop: spacing.sm }} />
       )}
@@ -180,7 +198,7 @@ export default function LoginScreen() {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>Don't have an account? </Text>
-        <Link href="/signup" asChild>
+        <Link href="/(auth)/signup" asChild>
           <Pressable hitSlop={8}>
             <Text style={styles.footerLink}>Sign Up</Text>
           </Pressable>
@@ -209,7 +227,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   fieldsGap: {
-    height: spacing.xl,
+    height: spacing.md,
   },
   optionsRow: {
     flexDirection: "row",
@@ -233,8 +251,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   checkboxChecked: {
-    backgroundColor: "#CDDC39",
-    borderColor: "#CDDC39",
+    backgroundColor: "#000000",
+    borderColor: "#000000",
   },
   checkboxLabel: {
     fontFamily: fonts.regular,

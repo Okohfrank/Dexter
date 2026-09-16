@@ -14,23 +14,23 @@ export const colorInk = "#000000"; // Primary text — pure black
 export const colorInkSoft = "#666666"; // Secondary text — gray
 export const colorInkFaint = "#999999"; // Placeholder, disabled, labels
 export const colorBorder = "#DDDDDD"; // Hairline borders — neutral gray
-export const colorAccent = "#CDDC39"; // Lime/chartreuse — primary actions, active tabs
-export const colorAccentStrong = "#B8CC2A"; // Pressed/hover on accent elements
-export const colorBrand = "#CDDC39"; // Alias — lime (replaces indigo)
-export const colorBrandTint = "#F5F8D0"; // Lime tint background
-export const colorBrandStrong = "#B8CC2A"; // Alias — pressed lime
-export const colorPremium = "#000000"; // Black (replaces burgundy)
-export const colorEnergy = "#CDDC39"; // Lime (replaces orange)
-export const colorPositiveText = "#000000"; // Black (replaces green)
-export const colorPositiveFill = "#F5F5F5"; // Light gray (replaces mint)
-export const colorNegativeText = "#000000"; // Black (replaces red)
-export const colorNegativeFill = "#F5F5F5"; // Light gray (replaces red tint)
-export const colorHighlightBg = "#F5F5F5"; // Light gray (replaces yellow)
+export const colorAccent = "#000000"; // Monochrome primary — pure black
+export const colorAccentStrong = "#262626"; // Pressed/hover on dark elements
+export const colorBrand = "#000000"; // Pure monochrome black
+export const colorBrandTint = "#F5F5F5"; // Muted light gray wash
+export const colorBrandStrong = "#262626"; // Muted dark charcoal
+export const colorPremium = "#000000"; // Black
+export const colorEnergy = "#000000"; // Black
+export const colorPositiveText = "#000000"; // Black
+export const colorPositiveFill = "#F5F5F5"; // Muted light gray
+export const colorNegativeText = "#000000"; // Black
+export const colorNegativeFill = "#F5F5F5"; // Muted light gray
+export const colorHighlightBg = "#F5F5F5"; // Muted light gray
 
 /* Paired darker text tokens for colored fills (§5) */
 export const colorOnHighlight = "#000000"; // Text on light gray
 export const colorOnPositive = "#000000"; // Text on light gray
-export const colorOnEnergy = "#000000"; // Text on lime
+export const colorOnEnergy = "#FFFFFF"; // Text on black
 
 /* Dark surface set — pure black mode */
 export const colorBgDark = "#1A1A1A";
@@ -40,7 +40,7 @@ export const colorBorderDark = "#444444";
 
 /* Backward-compatible palette aliases (legacy screens reference these until restyled) */
 export const colors = {
-  background: colorSurface, // white (was warm paper)
+  background: colorSurface, // white
   backgroundAlt: "#F5F5F5",
   surface: colorSurface,
   surfaceSunken: "#F5F5F5",
@@ -51,26 +51,26 @@ export const colors = {
   labelPrimary: colorInk,
   labelSecondary: colorInkSoft,
   labelTertiary: colorInkFaint,
-  primary: colorAccent, // lime
-  primaryDark: colorAccentStrong,
-  primaryLight: "#F5F8D0",
-  primarySurface: "#F5F8D0",
-  primaryBorder: "#CDDC39",
-  accent: colorAccent,
-  accentSurface: "#F5F8D0",
-  accentBorder: "#CDDC39",
-  secondary: colorAccent,
-  secondarySurface: "#F5F8D0",
-  secondaryBorder: "#CDDC39",
+  primary: colorInk, // black
+  primaryDark: "#262626",
+  primaryLight: "#F5F5F5",
+  primarySurface: "#F5F5F5",
+  primaryBorder: "#DDDDDD",
+  accent: colorInk,
+  accentSurface: "#F5F5F5",
+  accentBorder: "#DDDDDD",
+  secondary: "#F5F5F5",
+  secondarySurface: "#F5F5F5",
+  secondaryBorder: "#DDDDDD",
   positive: colorInk,
   positiveSurface: "#F5F5F5",
   positiveBorder: "#E0E0E0",
   negative: colorInk,
   negativeSurface: "#F5F5F5",
   negativeBorder: "#E0E0E0",
-  warning: colorAccent,
-  warningSurface: "#F5F8D0",
-  warningBorder: "#CDDC39",
+  warning: colorInkSoft,
+  warningSurface: "#F5F5F5",
+  warningBorder: "#DDDDDD",
   highlight: "#F5F5F5",
   border: colorBorder,
   borderLight: "#F5F5F5",
@@ -83,19 +83,19 @@ export const colors = {
   glassHeavy: "#FFFFFF",
   glassBorder: colorBorder,
   glassBorderLight: "#F0F0F0",
-  glassBorderFocused: colorAccent,
+  glassBorderFocused: "#000000",
   surfaceAlt: "#F5F5F5",
   surfacePressed: "#E8E8E8",
   surfaceHover: "#F0F0F0",
-  systemBlue: colorAccent,
+  systemBlue: colorInk,
   systemGreen: colorInk,
   systemRed: colorInk,
-  systemOrange: colorAccent,
+  systemOrange: colorInkSoft,
   systemYellow: "#F5F5F5",
   systemPurple: colorInk,
   systemPink: colorInk,
-  systemTeal: colorAccent,
-  systemIndigo: colorAccent,
+  systemTeal: colorInk,
+  systemIndigo: colorInk,
   backgroundPrimary: colorSurface,
   backgroundSecondary: "#F5F5F5",
   backgroundTertiary: colorBorder,
@@ -105,17 +105,17 @@ export const colors = {
   inkSoft: colorInkSoft,
   inkFaint: colorInkFaint,
   accentStrong: colorAccentStrong,
-  brand: colorAccent,
-  brandTint: "#F5F8D0",
-  brandStrong: colorAccentStrong,
-  energy: colorAccent,
+  brand: colorInk,
+  brandTint: "#F5F5F5",
+  brandStrong: "#262626",
+  energy: colorInk,
   premium: colorInk,
   positiveFill: "#F5F5F5",
   negativeFill: "#F5F5F5",
   highlightFill: "#F5F5F5",
   onHighlight: colorInk,
   onPositive: colorInk,
-  onEnergy: colorInk,
+  onEnergy: "#FFFFFF",
   bgDark: colorBgDark,
   surfaceDark: colorSurfaceDark,
   inkDark: colorInkDark,
@@ -236,11 +236,11 @@ export const shadows = {
     elevation: 1,
   },
   glow: {
-    shadowColor: colorAccent,
-    shadowOpacity: 0.25,
+    shadowColor: "#000000",
+    shadowOpacity: 0.1,
     shadowRadius: 16,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 0,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
 };
 

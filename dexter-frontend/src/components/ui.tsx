@@ -13,6 +13,7 @@ import {
   StyleProp,
   Dimensions,
   AccessibilityInfo,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -46,15 +47,17 @@ const { width: SCREEN_W } = Dimensions.get("window");
 export function AuthScreen({ children }: { children: React.ReactNode }) {
   return (
     <View style={styles.authBg}>
-      <SafeAreaView style={styles.flex}>
+      <SafeAreaView style={styles.flex} edges={["top", "left", "right"]}>
         <KeyboardAvoidingView
           style={styles.flex}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           <ScrollView
+            style={styles.flex}
             contentContainerStyle={styles.authScroll}
             keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={true}
+            bounces={true}
           >
             {children}
           </ScrollView>
@@ -167,7 +170,7 @@ export function GlassPill({
   const variantStyles = {
     default: { bg: "#F5F5F5", border: colors.border, text: colors.inkSoft },
     positive: { bg: "#F5F5F5", border: "#E0E0E0", text: "#000000" },
-    primary: { bg: "#F5F8D0", border: "#D4DF6B", text: "#000000" },
+    primary: { bg: "#F5F5F5", border: "#DDDDDD", text: "#000000" },
     warning: { bg: "#F5F5F5", border: "#E0E0E0", text: "#000000" },
     negative: { bg: "#F5F5F5", border: "#E0E0E0", text: "#000000" },
   }[variant];
@@ -340,22 +343,451 @@ export function AuthTextInput({
   );
 }
 
+/* ── Date Picker Input (Non-text birth date selector) ── */
+const MONTH_NAMES = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+
+export function DatePickerField({
+  label = "Date of Birth",
+  value,
+  onChange,
+  placeholder = "Select birth date",
+}: {
+  label?: string;
+  value: string;
+  onChange: (formattedDate: string) => void;
+  placeholder?: string;
+}) {
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const parseDate = useCallback(() => {
+    if (!value) return { day: 15, month: 6, year: 2000 };
+    if (value.includes("/")) {
+      const parts = value.split("/");
+      return {
+        day: parseInt(parts[0], 10) || 15,
+        month: parseInt(parts[1], 10) || 6,
+        year: parseInt(parts[2], 10) || 2000,
+      };
+    }
+    if (value.includes("-")) {
+      const parts = value.split("-");
+      return {
+        day: parseInt(parts[2], 10) || 15,
+        month: parseInt(parts[1], 10) || 6,
+        year: parseInt(parts[0], 10) || 2000,
+      };
+    }
+    return { day: 15, month: 6, year: 2000 };
+  }, [value]);
+
+  const [selectedDay, setSelectedDay] = useState(15);
+  const [selectedMonth, setSelectedMonth] = useState(6);
+  const [selectedYear, setSelectedYear] = useState(2000);
+
+  const handleOpen = () => {
+    const init = parseDate();
+    setSelectedDay(init.day);
+    setSelectedMonth(init.month);
+    setSelectedYear(init.year);
+    setModalVisible(true);
+  };
+
+  const handleConfirm = () => {
+    const dStr = selectedDay < 10 ? `0${selectedDay}` : `${selectedDay}`;
+    const mStr = selectedMonth < 10 ? `0${selectedMonth}` : `${selectedMonth}`;
+    onChange(`${dStr}/${mStr}/${selectedYear}`);
+    setModalVisible(false);
+  };
+
+  const displayDate = value ? (() => {
+    if (value.includes("/")) {
+      const parts = value.split("/");
+      if (parts.length === 3) {
+        const mIdx = parseInt(parts[1], 10) - 1;
+        const mName = MONTH_NAMES[mIdx] || parts[1];
+        return `${parts[0]} ${mName} ${parts[2]}`;
+      }
+    }
+    return value;
+  })() : "";
+
+  const years: number[] = [];
+  const currentYear = new Date().getFullYear();
+  for (let y = currentYear; y >= 1930; y--) {
+    years.push(y);
+  }
+
+  const days: number[] = [];
+  const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate() || 31;
+  for (let d = 1; d <= daysInMonth; d++) {
+    days.push(d);
+  }
+
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}</Text>
+      <Pressable
+        onPress={handleOpen}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        style={[styles.inputWrap, dateStyles.pickerField]}
+      >
+        <Ionicons
+          name="calendar-outline"
+          size={18}
+          color={value ? "#000000" : colors.inkFaint}
+          style={{ marginRight: 10 }}
+        />
+        <Text
+          style={[
+            dateStyles.fieldText,
+            !value && dateStyles.placeholderText,
+          ]}
+        >
+          {displayDate || placeholder}
+        </Text>
+        <Ionicons name="chevron-down" size={16} color={colors.inkFaint} />
+      </Pressable>
+
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={dateStyles.modalBackdrop}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setModalVisible(false)}
+          />
+          <View style={dateStyles.modalCard}>
+            <View style={dateStyles.modalHeader}>
+              <View>
+                <Text style={dateStyles.modalTitle}>Date of Birth</Text>
+                <Text style={dateStyles.modalSubtitle}>Scroll or tap to select</Text>
+              </View>
+              <Pressable
+                onPress={() => setModalVisible(false)}
+                hitSlop={12}
+                style={dateStyles.closeButton}
+              >
+                <Ionicons name="close" size={20} color={colors.ink} />
+              </Pressable>
+            </View>
+
+            <View style={dateStyles.previewBadge}>
+              <Ionicons
+                name="calendar"
+                size={14}
+                color="#000000"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={dateStyles.previewText}>
+                {selectedDay} {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
+              </Text>
+            </View>
+
+            <View style={dateStyles.columnsContainer}>
+              {/* Day column */}
+              <View style={dateStyles.columnWrap}>
+                <Text style={dateStyles.columnHeader}>DAY</Text>
+                <ScrollView
+                  style={dateStyles.columnScroll}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {days.map((d) => {
+                    const active = d === selectedDay;
+                    return (
+                      <Pressable
+                        key={`day-${d}`}
+                        onPress={() => setSelectedDay(d)}
+                        style={[
+                          dateStyles.itemButton,
+                          active && dateStyles.itemButtonActive,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            dateStyles.itemText,
+                            active && dateStyles.itemTextActive,
+                          ]}
+                        >
+                          {d < 10 ? `0${d}` : d}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              {/* Month column */}
+              <View style={dateStyles.columnWrap}>
+                <Text style={dateStyles.columnHeader}>MONTH</Text>
+                <ScrollView
+                  style={dateStyles.columnScroll}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {MONTH_NAMES.map((m, idx) => {
+                    const monthNum = idx + 1;
+                    const active = monthNum === selectedMonth;
+                    return (
+                      <Pressable
+                        key={`month-${monthNum}`}
+                        onPress={() => setSelectedMonth(monthNum)}
+                        style={[
+                          dateStyles.itemButton,
+                          active && dateStyles.itemButtonActive,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            dateStyles.itemText,
+                            active && dateStyles.itemTextActive,
+                          ]}
+                        >
+                          {m}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
+              {/* Year column */}
+              <View style={[dateStyles.columnWrap, { flex: 1.2 }]}>
+                <Text style={dateStyles.columnHeader}>YEAR</Text>
+                <ScrollView
+                  style={dateStyles.columnScroll}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {years.map((y) => {
+                    const active = y === selectedYear;
+                    return (
+                      <Pressable
+                        key={`year-${y}`}
+                        onPress={() => setSelectedYear(y)}
+                        style={[
+                          dateStyles.itemButton,
+                          active && dateStyles.itemButtonActive,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            dateStyles.itemText,
+                            active && dateStyles.itemTextActive,
+                          ]}
+                        >
+                          {y}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </View>
+
+            <View style={dateStyles.modalFooter}>
+              <Pressable
+                style={dateStyles.cancelBtn}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={dateStyles.cancelBtnText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={dateStyles.confirmBtn}
+                onPress={handleConfirm}
+              >
+                <Text style={dateStyles.confirmBtnText}>Confirm Date</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+const dateStyles = StyleSheet.create({
+  pickerField: {
+    paddingVertical: spacing.md,
+    cursor: "pointer" as any,
+  },
+  fieldText: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: fonts.regular,
+    color: "#000000",
+  },
+  placeholderText: {
+    color: colors.inkFaint,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.lg,
+  },
+  modalCard: {
+    width: "100%",
+    maxWidth: 380,
+    backgroundColor: "#FFFFFF",
+    borderRadius: radii.lg,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+  },
+  modalTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 18,
+    color: "#000000",
+  },
+  modalSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.inkSoft,
+    marginTop: 2,
+  },
+  closeButton: {
+    padding: 4,
+    borderRadius: radii.pill,
+  },
+  previewBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "#F5F5F5",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
+  },
+  previewText: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: "#000000",
+  },
+  columnsContainer: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    height: 180,
+    backgroundColor: "#FAFAFA",
+    borderRadius: radii.md,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: "#EEEEEE",
+  },
+  columnWrap: {
+    flex: 1,
+  },
+  columnHeader: {
+    fontFamily: fonts.semibold,
+    fontSize: 10,
+    letterSpacing: 0.5,
+    color: colors.inkSoft,
+    textAlign: "center",
+    paddingBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EAEAEA",
+    marginBottom: 4,
+  },
+  columnScroll: {
+    flex: 1,
+  },
+  itemButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: radii.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 2,
+  },
+  itemButtonActive: {
+    backgroundColor: "#000000",
+  },
+  itemText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: "#333333",
+  },
+  itemTextActive: {
+    color: "#FFFFFF",
+    fontFamily: fonts.bold,
+  },
+  modalFooter: {
+    flexDirection: "row",
+    gap: spacing.md,
+    marginTop: spacing.lg,
+  },
+  cancelBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cancelBtnText: {
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    color: colors.inkSoft,
+  },
+  confirmBtn: {
+    flex: 1.4,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: radii.pill,
+    backgroundColor: "#000000",
+  },
+  confirmBtnText: {
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    color: "#FFFFFF",
+  },
+});
+
 /* ── Buttons (§3.1) ──────────────────────────────────── */
 const btnStyles = StyleSheet.create({
   primary: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primary,
+    backgroundColor: "#000000",
     borderRadius: 999,
-    paddingVertical: 14,
+    paddingVertical: 15,
     paddingHorizontal: 22,
-    minHeight: 48,
+    minHeight: 52,
     width: "100%",
-    marginTop: spacing.md,
+    alignSelf: "stretch",
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs,
+    shadowColor: "#000000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+    cursor: "pointer" as any,
   },
   primaryText: {
-    color: "#000000",
+    color: "#FFFFFF",
     fontFamily: fonts.bold,
     fontWeight: "700",
     fontSize: 16,
@@ -375,7 +807,7 @@ const btnStyles = StyleSheet.create({
     marginTop: spacing.md,
   },
   energyText: {
-    color: colorInk,
+    color: "#FFFFFF",
     fontFamily: fonts.semibold,
     fontSize: 15,
     lineHeight: 20,
@@ -423,17 +855,24 @@ export function PrimaryButton({
   disabled,
   icon,
   style,
+  testID,
 }: {
   title: string;
   onPress?: () => void;
   disabled?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 }) {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: !!disabled }}
+      hitSlop={4}
       style={({ pressed }) => [
         btnStyles.primary,
         pressed && { opacity: 0.8 },
@@ -445,21 +884,11 @@ export function PrimaryButton({
         <Ionicons
           name={icon}
           size={17}
-          color={colors.ink}
+          color="#FFFFFF"
           style={{ marginRight: 6 }}
         />
       )}
-      <Text
-        style={{
-          color: colors.ink,
-          fontFamily: fonts.bold,
-          fontWeight: "700",
-          fontSize: 16,
-          textAlign: "center",
-        }}
-      >
-        {title}
-      </Text>
+      <Text style={btnStyles.primaryText}>{title}</Text>
     </Pressable>
   );
 }
@@ -493,7 +922,7 @@ export function EnergyButton({
         <Ionicons
           name={icon}
           size={17}
-          color={colorInk}
+          color="#FFFFFF"
           style={{ marginRight: 6 }}
         />
       )}
@@ -739,8 +1168,9 @@ const styles = StyleSheet.create({
   authScroll: {
     flexGrow: 1,
     justifyContent: "flex-start",
-    paddingHorizontal: spacing.xxl,
-    paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: 80,
   },
 
   // ── Brand Mark ──
@@ -846,7 +1276,7 @@ const styles = StyleSheet.create({
   // ── Segmented Control ── (styles moved to segStyles above component)
 
   // ── Input ──
-  field: { marginBottom: spacing.xl },
+  field: { marginBottom: spacing.md },
   label: {
     fontFamily: fonts.regular,
     fontSize: 13,
@@ -884,7 +1314,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   primaryBtnText: {
-    color: "#000000",
+    color: "#FFFFFF",
     fontFamily: fonts.semibold,
     fontSize: 16,
     textAlign: "center",
@@ -900,7 +1330,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   energyBtnText: {
-    color: "#000000",
+    color: "#FFFFFF",
     fontFamily: fonts.semibold,
     fontSize: 15,
   },

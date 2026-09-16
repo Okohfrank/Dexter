@@ -1,0 +1,20 @@
+{
+  "$schema": "https://reactnativereusables.com/schema.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.js",
+    "css": "global.css",
+    "baseColor": "zinc",
+    "cssVariables": true
+  },
+  "aliases": {
+    "components": "@/src/components/rnr",
+    "utils": "@/src/lib/utils",
+    "ui": "@/src/components/rnr",
+    "lib": "@/src/lib",
+    "hooks": "@/src/hooks"
+  },
+  "iconLibrary": "lucide"
+}
