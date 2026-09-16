@@ -1,6 +1,8 @@
 # Dexter — Design.md
 
-**Version 1.0 — Strict implementation spec. Do not deviate without checking with the product owner.**
+**Version 2.0 — Strict implementation spec. Dark-first premium AI. Do not deviate without checking with the product owner.**
+
+**v1 (light monochrome) is deprecated.** Unmigrated screens still render v1 via legacy tokens in `src/theme/index.ts`; all new or touched screens must use v2 below. Do not mix v1 and v2 tokens on the same screen.
 
 This document is the single source of truth for how Dexter looks and behaves visually. It supersedes any default styling choices, component libraries, or "best guess" design decisions. If something is not specified here, stop and ask — do not invent a new pattern.
 
@@ -11,8 +13,8 @@ Companion file: `dexter-design-system.css` contains the same tokens as CSS custo
 ## 0. Non-negotiable rules
 
 1. **Never hardcode a color, font size, spacing value, or radius.** Every value used in a screen must trace back to a token defined in Section 2. If a design need isn't covered by an existing token, that is a signal to add a token here first — not to invent a one-off value inline.
-2. **Never introduce a new font.** Only `Fraunces` (display) and `Inter` (UI/body) exist in this product. No system-default fallback fonts in final screens.
-3. **Shadows use neutral black** (`rgba(0,0,0,X)`) **for clean monochrome aesthetic.** No tinted shadows per Section 2.5.
+2. **Never introduce a new font.** Only `Inter Tight` (display) and `Inter` (UI/body) exist in this product. No system-default fallback fonts in final screens.
+3. **Depth comes from tonal surfaces + hairlines, never shadows.** Cards lift via the surface ladder (`canvas → surface-1 → surface-2`), separated by 1px hairlines. Drop shadows are banned on dark.
 4. **Never use sharp corners on interactive surfaces.** Minimum radius on any tappable element is `--radius-sm` (12px). Cards are `--radius-md` (20px) or `--radius-lg` (28px). Buttons, chips, inputs, nav are `--radius-full`.
 5. **The pulse-dot signature (Section 6) appears only where Dexter is actively "present"** — the avatar, the copilot bar, and the Business Brain header. Do not decorate other elements with it; overuse kills the signature.
 6. **Every screen must be reviewed against the reference patterns in Section 8 before being marked done.** If a screen doesn't resemble one of the named patterns, it's off-spec.
@@ -21,12 +23,13 @@ Companion file: `dexter-design-system.css` contains the same tokens as CSS custo
 
 ## 1. Design Philosophy
 
-Dexter is an **AI employee**, not a scheduling tool. The visual language needs to feel like a competent, modern colleague working alongside the user — clean, confident, accessible — not like a generic SaaS analytics dashboard.
+Dexter is an **AI employee**, not a scheduling tool. The visual language is dark-first premium: a near-black canvas, tonal surfaces, one indigo accent — calm, confident, precise. Not a generic SaaS dashboard, not a neon AI cliché.
 
-- **Clean, not warm.** Background is pure white or light gray, not warm paper. Strict monochrome with muted gray tones creates a modern, editorial, and accessible interface.
-- **Editorial confidence.** The `Fraunces` display serif appears on greetings and hero numbers to give the product a "thought-leadership" voice, matching what Dexter writes for the user.
-- **Data should feel calm, not busy.** Bento cards with generous padding, subtle shadows, and crisp monochrome contrast with muted secondary fills.
-- **The agent is visible but not intrusive.** The pulse-dot is the only recurring "AI is here" cue. No sparkle icons scattered everywhere, no gradient-text "AI magic" clichés.
+- **Dark is the real product.** The canvas is `#0B0B0C`; light mode does not exist in v2. Accent colors pop against dark; hairlines and luminance carry hierarchy.
+- **Strict and professional.** A single type family (`Inter Tight` display, `Inter` body) with tight tracking on headlines. No serif, no second voice.
+- **One accent, used sparingly.** Indigo `#5E6AD2` marks primary actions, focus, and the pulse-dot only. Everything else is achromatic.
+- **Data should feel calm, not busy.** Tonal cards with generous padding and hairline borders; color appears only as meaning (up/down deltas, status pills).
+- **The agent is visible but not intrusive.** The pulse-dot is the only recurring "AI is here" cue. No sparkles, no gradients-as-magic.
 
 ---
 
@@ -34,48 +37,45 @@ Dexter is an **AI employee**, not a scheduling tool. The visual language needs t
 
 _(Full machine-readable version lives in `dexter-design-system.css`. Values here must stay in sync.)_
 
-### 2.1 Color
+### 2.1 Color (v2 — dark-first)
 
 | Token                             | Hex                                 | Usage                                                                  |
 | --------------------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
-| `color-bg`                        | `#FFFFFF`                           | Screen background                                                      |
-| `color-bg-alt`                    | `#F5F5F5`                           | Section background, alt rows                                           |
-| `color-surface`                   | `#FFFFFF`                           | Card surface                                                           |
-| `color-surface-sunken`            | `#F5F5F5`                           | Inputs, inset areas                                                    |
-| `color-ink`                       | `#000000`                           | Primary text                                                           |
-| `color-ink-soft`                  | `#666666`                           | Secondary text                                                         |
-| `color-ink-faint`                 | `#999999`                           | Placeholder, disabled, labels                                          |
-| `color-border`                    | `#DDDDDD`                           | Hairline borders                                                       |
-| `color-brand` (black)             | `#000000`                           | Primary actions, links, active states                                  |
-| `color-brand-tint` (muted gray)   | `#F5F5F5`                           | Subtle background wash, icon chips                                     |
-| `color-brand-strong`              | `#262626`                           | Pressed/hover on brand elements                                        |
-| `color-premium` (black)           | `#000000`                           | Agency/premium tier dark cards                                         |
-| `color-energy` (black)            | `#000000`                           | CTA highlight, autonomous-mode-on                                      |
-| `color-positive`                  | `#000000` (text) / `#F5F5F5` (fill) | Growth metrics, published status                                       |
-| `color-negative`                  | `#000000` (text) / `#F5F5F5` (fill) | Failed publish, down metrics                                           |
-| `color-highlight-bg` (light gray) | `#F5F5F5`                           | Badge fills, soft attention — **fills only, never body text on white** |
+| `color-canvas`                    | `#0B0B0C`                           | Screen background (near-black, never pure `#000`)                      |
+| `color-surface-1`                 | `#141416`                           | Card surface — one tonal step up                                       |
+| `color-surface-2`                 | `#1C1C1F`                           | Elevated: sheets, modals, nav                                          |
+| `color-surface-sunken`            | `#101013`                           | Inputs, inset wells                                                    |
+| `color-ink`                       | `#F7F8F8`                           | Primary text (near-white)                                              |
+| `color-ink-soft`                  | `#A7ABB3`                           | Secondary text                                                         |
+| `color-ink-faint`                 | `#6E7278`                           | Placeholder, disabled, labels                                          |
+| `color-hairline`                  | `#23252A`                           | 1px borders — the primary depth cue                                    |
+| `color-hairline-strong`           | `#34343A`                           | Emphasis borders                                                       |
+| `color-accent` (indigo)           | `#5E6AD2`                           | THE accent: primary actions, pulse-dot, focus rings                    |
+| `color-accent-hover`              | `#828FFF`                           | Accent pressed/hover                                                   |
+| `color-positive`                  | `#4EBE96`                           | Meaning only: up deltas, published status                              |
+| `color-negative`                  | `#E5484D`                           | Meaning only: errors, failed status                                    |
+| `color-warning`                   | `#FFA16C`                           | Meaning only: scheduled, caution                                       |
+| `color-overlay`                   | `rgba(0,0,0,0.7)`                   | Sheet/modal backdrop                                                   |
 
-Dark surface set (night mode, optional): `bg-dark #1A1A1A`, `surface-dark #2A2A2A`, `ink-dark #FFFFFF`, `border-dark #444444`.
+**Rules:** one accent per screen (indigo). Chromatic colors never decorate — no tinted fills, no gradient backgrounds. Depth = tonal step + hairline, never shadow. (Full machine-readable set: `--v2-*` in `dexter-design-system.css`, `dark` in `src/theme/index.ts`.)
 
-**Rule:** Pure monochrome design system with muted tones. Black (`#000000`) carries the primary action job per screen with crisp white text. Muted grays (`#F5F5F5`, `#DDDDDD`) provide secondary structure.
+### 2.2 Typography (v2 — Inter only)
 
-### 2.2 Typography
+| Role                       | Font        | Weight/Size/Line-height               |
+| -------------------------- | ----------- | ------------------------------------- |
+| Display Large              | Inter Tight | 700 / 40px / 1.0, tracking -0.03em    |
+| Display Medium             | Inter Tight | 600 / 32px / 1.05, tracking -0.025em  |
+| Display Small              | Inter Tight | 600 / 26px / 1.1, tracking -0.02em    |
+| H1                         | Inter       | 700 / 22px / 1.25, tracking -0.01em   |
+| H2                         | Inter       | 600 / 18px / 1.3                      |
+| H3                         | Inter       | 600 / 15px / 1.35                     |
+| Body                       | Inter       | 400 / 15px / 1.55                     |
+| Body Small                 | Inter       | 400 / 13px / 1.5                      |
+| Label (eyebrow, uppercase) | Inter       | 600 / 12px / 1.3, tracking +0.06em    |
+| Stat number                | Inter       | 700 / 28px / 1.1, tabular numerals on |
+| Caption                    | Inter       | 500 / 11px / 1.4                      |
 
-| Role                       | Font     | Weight/Size/Line-height               |
-| -------------------------- | -------- | ------------------------------------- |
-| Display Large              | Fraunces | 700 / 40px / 1.08                     |
-| Display Medium             | Fraunces | 600 / 32px / 1.12                     |
-| Display Small              | Fraunces | 600 / 26px / 1.18                     |
-| H1                         | Inter    | 700 / 22px / 1.25                     |
-| H2                         | Inter    | 600 / 18px / 1.3                      |
-| H3                         | Inter    | 600 / 15px / 1.35                     |
-| Body                       | Inter    | 400 / 15px / 1.55                     |
-| Body Small                 | Inter    | 400 / 13px / 1.5                      |
-| Label (eyebrow, uppercase) | Inter    | 600 / 12px / 1.3, tracking +0.06em    |
-| Stat number                | Inter    | 700 / 28px / 1.1, tabular numerals on |
-| Caption                    | Inter    | 500 / 11px / 1.4                      |
-
-**Rule:** Fraunces appears on **at most one or two elements per screen** — a greeting ("Good morning, Carles") or a hero stat. It never appears in body copy, buttons, or dense lists. If a screen has more than two Fraunces elements, that's overuse.
+**Rule:** display face appears on at most one or two elements per screen — a greeting or hero stat. Hierarchy comes from size/weight/tracking, never a second family.
 
 ### 2.3 Spacing (4px base scale)
 
@@ -92,11 +92,14 @@ Default gap between bento cards: `space-3` (12px).
 - `radius-lg` 28px — hero/feature card, bottom sheets
 - `radius-full` 999px — buttons, pills, nav, avatars
 
-### 2.5 Shadow (neutral black for clean monochrome aesthetic)
+### 2.5 Depth (v2 — tonal surfaces, no shadows)
 
-- `shadow-sm`: `0 1px 2px rgba(0,0,0,0.05)` — resting card
-- `shadow-md`: `0 8px 24px -8px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.04)` — raised card, copilot bar
-- `shadow-lg`: `0 20px 48px -12px rgba(0,0,0,0.15)` — bottom nav, modals, sheets
+Shadows are banned on dark — they don't read on near-black. Hierarchy comes from the surface ladder + hairlines:
+
+- Resting card: `surface-1` fill + 1px `hairline` border, no shadow.
+- Raised card / copilot bar / sheets: `surface-2` fill + 1px `hairline` border.
+- Backdrop: `overlay` wash (`rgba(0,0,0,0.7)`); the sheet itself carries no shadow.
+- Legacy `shadows.*` tokens in `src/theme` are v1-only. Do not use in v2 code.
 
 ### 2.6 Motion
 
@@ -109,12 +112,12 @@ Default gap between bento cards: `space-3` (12px).
 
 ## 3. Component Specifications
 
-### 3.1 Buttons
+### 3.1 Buttons (v2)
 
-- Primary: indigo fill, white text, full pill radius, 14px vertical / 22px horizontal padding, `H3` weight text.
-- Energy: orange fill, dark ink text — reserved for "Go live" / "Enable autonomous mode" / urgent CTAs only.
-- Secondary: white fill, 1px border `color-border`, ink text.
-- Ghost: transparent, soft ink text, used for tertiary actions ("Skip", "Cancel").
+- Primary: indigo fill, white text, full pill radius, 14px vertical / 22px horizontal padding, `H3` weight text. One per screen.
+- Secondary: `surface-2` fill, 1px `hairline` border, ink text.
+- Ghost: transparent, soft ink text, tertiary actions ("Skip", "Cancel").
+- Destructive actions use `color-negative` text or fill — the only non-indigo chromatic button.
 - Icon button: 44×44px minimum tap target, full radius.
 - Press state: scale to 0.97, 150ms.
 
@@ -162,8 +165,8 @@ Fixed floating pill, dark ink background, `shadow-lg`, 8px internal padding, 44p
 ## 5. Color & Contrast Rules
 
 - Body text on white/paper backgrounds must be `color-ink` or `color-ink-soft` only — never place text directly on `color-highlight-bg` or raw `color-positive-bg` (mint); those are fill colors, use the paired darker text tokens (`#6B5E00` on yellow, `#3E8F45` on mint, `#8A4A15` on orange tint).
-- Minimum contrast ratio 4.5:1 for body text, 3:1 for large text (18px+/bold 14px+), per WCAG AA.
-- Dark mode is opt-in per screen (analytics, agency/premium views) via the `[data-theme="dark"]` token override — not a global toggle applied inconsistently.
+- Minimum contrast ratio 4.5:1 for body text, 3:1 for large text (18px+/bold 14px+), per WCAG AA. `ink-soft` on `surface-1` passes; `ink-faint` is for non-essential text only — never for actions or errors.
+- There is no light mode in v2. Do not add one.
 
 ---
 
@@ -195,7 +198,7 @@ Every screen in the app must map to one of these named patterns. If a new screen
 ### 8.1 Bento Dashboard Pattern
 
 Used for: Home dashboard, Analytics summary.
-Structure: hero card (greeting in Fraunces + primary stat) → 2-column grid of stat cards → full-width list/timeline card below. Reference: the fintech/sales bento screenshots provided earlier in this project.
+Structure: hero card (greeting in Inter Tight + primary stat) → 2-column grid of stat cards → full-width list/timeline card below. Reference: the fintech/sales bento screenshots provided earlier in this project.
 
 ### 8.2 Review/Detail Pattern
 
@@ -246,7 +249,7 @@ Exact spec, adapted from the reference screenshot:
 
 - Icon badge: 48px circle, `color-brand` fill, white icon mark, centered horizontally, `space-7` top margin from safe area.
 - Close (X): top-right, 24px icon, ink color, tappable 44×44 area.
-- Greeting: `Display Small` (Fraunces, 26px), `color-ink`, left-aligned, `space-6` top margin below icon, max 2 lines.
+- Greeting: `Display Small` (Inter Tight, 26px, tight tracking), `color-ink`, left-aligned, `space-6` top margin below icon, max 2 lines.
 - "Choose a topic": `H3`, `space-6` top margin.
 - Topic buttons: full-width, NOT chips — these are tall pill **rows**, `radius-full`, 1px `color-border`, white fill, left-aligned label at `H2` weight, ~56px height, `space-3` vertical gap between them.
 - Input bar: fixed at bottom above safe area, full pill radius, 1px border, `space-4` horizontal screen margin, placeholder in `color-ink-faint`.
@@ -267,24 +270,24 @@ Structure: section header → list of rows in a single card, each row = avatar/t
 
 - Reuse the five named patterns above for every screen.
 - Keep one accent (indigo) as the "primary action" color per screen.
-- Use Fraunces sparingly, on greetings/hero numbers only.
-- Tint every shadow with ink, never neutral gray/black.
+- Use Inter Tight sparingly, on greetings/hero numbers only.
+- Carry hierarchy with tonal surfaces + hairlines, never shadows.
 - Match the AI Chat Sheet pattern exactly for any Dexter-entry-point screen.
 
 **Don't:**
 
 - Don't invent new corner radii, spacing values, or colors outside Section 2.
 - Don't add sparkle/robot iconography as a stand-in for the pulse-dot signature.
-- Don't place text directly on raw highlight/positive fill colors — use the paired text tokens.
+- Don't use positive/negative/warning colors decoratively — meaning only.
 - Don't build a screen that doesn't map to a named pattern in Section 8.
-- Don't mix chip-style topic selectors with the AI Chat Sheet pattern — that pattern uses full-width stacked pill rows, not horizontal chips (see 8.3).
+- Don't mix v1 (light monochrome) and v2 tokens on the same screen.
 
 ---
 
 ## 10. Implementation Notes (Expo / React Native)
 
 - Mirror every token in Section 2 into `theme.ts` with identical names — `colorBrand`, `spaceSpace5`, `radiusMd`, etc. — so the agent can't drift from the CSS source of truth.
-- Load `Fraunces` and `Inter` via `@expo-google-fonts/fraunces` and `@expo-google-fonts/inter`; block render until fonts are loaded (`useFonts` + `SplashScreen.preventAutoHideAsync`).
+- Load `Inter Tight` and `Inter` via `@expo-google-fonts/inter-tight` and `@expo-google-fonts/inter`; block render until fonts are loaded (`useFonts` + `SplashScreen.preventAutoHideAsync`).
 - Use `react-native-reanimated` for the pulse-dot loop animation (opacity + scale), respecting `AccessibilityInfo.isReduceMotionEnabled()`.
 - Shadows: use `shadowColor` (ink-tinted, not black) + `shadowOpacity`/`shadowRadius`/`shadowOffset` on iOS, `elevation` + a tinted overlay on Android since Android elevation shadows are always neutral gray by default.
 - Primitives come from React Native Reusables (`src/components/rnr/`: `button`, `text`, `input`, `card`, `avatar`, `icon`), themed to the tokens in Section 2 via CSS vars in `global.css` + `tailwind.config.js`. Never use stock Reusables/zinc styling — radius stays full-pill for buttons/inputs, cards stay `radius-md` with `space-5` padding. Legacy `src/components/ui.tsx` remains for Dexter signatures only (`PulseDot`, copilot bar, bottom nav).

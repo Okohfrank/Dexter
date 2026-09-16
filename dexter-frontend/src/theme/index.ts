@@ -1,9 +1,51 @@
 /**
- * Dexter — DESIGN.md v1.0 Design System
- * Single source of truth mirroring `dexter-frontend/DESIGN.md` §2.
- * Companion machine-readable file: `dexter-design-system.css` (same values).
- * Never hardcode a color, font size, spacing value, or radius — resolve to a token here.
+ * Dexter — DESIGN v2.0 (dark-first premium AI) + v1 legacy.
+ * Canonical tokens for all new/migrated UI are the `dark` palette
+ * below (DESIGN.md v2 §2). The v1 light exports underneath are
+ * DEPRECATED — still referenced by unmigrated screens, do not use
+ * in new code. Companion file: `dexter-design-system.css`.
+ * Never hardcode a color, font size, spacing value, or radius.
  */
+
+/* ── v2 Color Tokens (dark-first, single indigo accent) ─── */
+export const colorCanvas = "#0B0B0C"; // App background — near-black
+export const colorSurface1 = "#141416"; // Cards — one tonal step up
+export const colorSurface2 = "#1C1C1F"; // Elevated (sheets, modals, nav)
+export const colorSurfaceSunkenV2 = "#101013"; // Inputs, inset wells
+export const colorInkV2 = "#F7F8F8"; // Primary text — near-white
+export const colorInkSoftV2 = "#A7ABB3"; // Secondary text
+export const colorInkFaintV2 = "#6E7278"; // Placeholder, labels, disabled
+export const colorHairline = "#23252A"; // Hairline borders (depth cue)
+export const colorHairlineStrong = "#34343A"; // Emphasis borders
+export const colorAccentV2 = "#5E6AD2"; // THE accent — primary actions, pulse, focus
+export const colorAccentHover = "#828FFF"; // Accent hover/pressed
+export const colorOnAccent = "#FFFFFF"; // Text on accent
+export const colorPositiveV2 = "#4EBE96"; // Meaning-carrier: up deltas, published
+export const colorNegativeV2 = "#E5484D"; // Meaning-carrier: errors, failed
+export const colorWarningV2 = "#FFA16C"; // Meaning-carrier: scheduled, caution
+export const colorOverlayV2 = "rgba(0, 0, 0, 0.7)"; // Sheet/modal backdrop
+
+/** Canonical v2 palette — use this in all new/migrated code. */
+export const dark = {
+  canvas: colorCanvas,
+  surface: colorSurface1,
+  surfaceElevated: colorSurface2,
+  surfaceSunken: colorSurfaceSunkenV2,
+  ink: colorInkV2,
+  inkSoft: colorInkSoftV2,
+  inkFaint: colorInkFaintV2,
+  hairline: colorHairline,
+  hairlineStrong: colorHairlineStrong,
+  accent: colorAccentV2,
+  accentHover: colorAccentHover,
+  onAccent: colorOnAccent,
+  positive: colorPositiveV2,
+  negative: colorNegativeV2,
+  warning: colorWarningV2,
+  overlay: colorOverlayV2,
+};
+
+/* ── v1 legacy (DEPRECATED — unmigrated screens only) ───── */
 
 /* ── Color Tokens (§2.1) ──────────────────────────────── */
 export const colorBg = "#FFFFFF"; // Screen background (white)
@@ -251,9 +293,9 @@ export const motion = {
   easingOut: [0.16, 1, 0.3, 1] as const,
 };
 
-/* ── Fonts (§2.2) — Fraunces (display) + Inter (UI/body) only ── */
-export const fontFamilyDisplay = "Fraunces_700Bold";
-export const fontFamilyDisplayMedium = "Fraunces_600SemiBold";
+/* ── Fonts (v2) — Inter Tight (display) + Inter (UI/body) only ── */
+export const fontFamilyDisplay = "InterTight_700Bold";
+export const fontFamilyDisplayMedium = "InterTight_600SemiBold";
 export const fontFamilyRegular = "Inter_400Regular";
 export const fontFamilyMedium = "Inter_500Medium";
 export const fontFamilySemiBold = "Inter_600SemiBold";

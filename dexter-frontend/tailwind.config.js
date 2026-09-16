@@ -60,7 +60,7 @@ module.exports = {
         hairline: hairlineWidth(),
       },
       fontFamily: {
-        display: ['Fraunces_700Bold', 'serif'],
+        display: ['InterTight_700Bold', 'Inter_700Bold', 'sans-serif'],
         sans: ['Inter_400Regular', 'system-ui', 'sans-serif'],
       },
       spacing: {

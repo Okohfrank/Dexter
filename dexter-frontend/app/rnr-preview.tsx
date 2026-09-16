@@ -17,9 +17,9 @@ export default function RnrPreviewScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       <Stack.Screen options={{ title: 'RNR Pilot', headerShown: true }} />
       <ScrollView className="flex-1 px-4 pt-6" contentContainerStyle={{ paddingBottom: 48, gap: 12 }}>
-        <Text className="font-display text-2xl text-foreground">Reusables pilot</Text>
+        <Text className="font-display text-2xl text-foreground">Dexter v2 pilot</Text>
         <Text className="text-sm text-muted-foreground">
-          Dexter monochrome theme on RNR primitives. Legacy screens are untouched.
+          Dark-first theme on RNR primitives. Legacy screens are untouched.
         </Text>
 
         <Card>

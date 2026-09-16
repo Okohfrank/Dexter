@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-na
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { fonts, radii } from '../../src/theme';
+import { dark, fonts } from '../../src/theme';
 
 type TabDef = {
   name: string;
@@ -47,8 +47,8 @@ function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps)
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
 
-  // Exactly <= 70% of the screen width, clamped on wider displays
-  const navBarWidth = Math.min(screenWidth * 0.70, 360);
+  // Near full-width floating pill like the reference: 16px margins, capped.
+  const navBarWidth = Math.min(screenWidth - 32, 480);
 
   useEffect(() => {
     if (process.env.NODE_ENV === 'production') return;
@@ -117,14 +117,15 @@ function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps)
             >
               <Ionicons
                 name={tab.icon}
-                size={19}
-                color={focused ? '#FFFFFF' : 'rgba(255, 255, 255, 0.65)'}
+                size={22}
+                color={focused ? dark.accent : dark.inkSoft}
               />
-              {focused && (
-                <Text numberOfLines={1} style={styles.activeTabLabel}>
-                  {tab.title}
-                </Text>
-              )}
+              <Text
+                numberOfLines={1}
+                style={focused ? styles.activeTabLabel : styles.inactiveTabLabel}
+              >
+                {tab.title}
+              </Text>
             </Pressable>
           );
         })}
@@ -165,40 +166,33 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   tabBar: {
-    maxWidth: '70%',
-    height: 58,
-    borderRadius: radii.pill,
-    backgroundColor: '#121214',
+    height: 74,
+    borderRadius: 28,
+    backgroundColor: dark.surfaceElevated,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 12,
+    borderColor: dark.hairline,
   },
   tabButton: {
-    height: 44,
+    flex: 1,
+    height: 58,
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radii.pill,
+    gap: 3,
+    borderRadius: 20,
   },
   tabButtonActive: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+    backgroundColor: dark.surfaceSunken,
+    borderWidth: 1,
+    borderColor: dark.hairline,
   },
   tabButtonInactive: {
-    flex: 1,
-    maxWidth: 42,
+    backgroundColor: 'transparent',
   },
   tabButtonDisabled: {
     opacity: 0.3,
@@ -207,9 +201,17 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.94 }],
   },
   activeTabLabel: {
-    fontSize: 13,
-    lineHeight: 16,
-    color: '#FFFFFF',
+    fontSize: 11,
+    lineHeight: 14,
+    color: dark.accent,
+    fontFamily: fonts.semibold,
+    fontWeight: '600',
+    flexShrink: 0,
+  },
+  inactiveTabLabel: {
+    fontSize: 11,
+    lineHeight: 14,
+    color: dark.inkFaint,
     fontFamily: fonts.medium,
     fontWeight: '500',
     flexShrink: 0,

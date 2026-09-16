@@ -29,6 +29,7 @@ import Animated, {
 } from "react-native-reanimated";
 import {
   colors,
+  dark,
   spacing,
   radii,
   typography,
@@ -428,17 +429,17 @@ export function DatePickerField({
 
   return (
     <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       <Pressable
         onPress={handleOpen}
         accessibilityRole="button"
-        accessibilityLabel={label}
-        style={[styles.inputWrap, dateStyles.pickerField]}
+        accessibilityLabel={label || placeholder}
+        style={dateStyles.pickerInput}
       >
         <Ionicons
           name="calendar-outline"
           size={18}
-          color={value ? "#000000" : colors.inkFaint}
+          color={value ? dark.ink : dark.inkFaint}
           style={{ marginRight: 10 }}
         />
         <Text
@@ -474,7 +475,7 @@ export function DatePickerField({
                 hitSlop={12}
                 style={dateStyles.closeButton}
               >
-                <Ionicons name="close" size={20} color={colors.ink} />
+                <Ionicons name="close" size={20} color={dark.ink} />
               </Pressable>
             </View>
 
@@ -482,7 +483,7 @@ export function DatePickerField({
               <Ionicons
                 name="calendar"
                 size={14}
-                color="#000000"
+                color={dark.accent}
                 style={{ marginRight: 6 }}
               />
               <Text style={dateStyles.previewText}>
@@ -611,6 +612,18 @@ export function DatePickerField({
 }
 
 const dateStyles = StyleSheet.create({
+  /* Matches the RNR Input pill (v2 §3.5): sunken surface, full radius. */
+  pickerInput: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 48,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    backgroundColor: dark.surfaceSunken,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
   pickerField: {
     paddingVertical: spacing.md,
     cursor: "pointer" as any,
@@ -619,10 +632,10 @@ const dateStyles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontFamily: fonts.regular,
-    color: "#000000",
+    color: dark.ink,
   },
   placeholderText: {
-    color: colors.inkFaint,
+    color: dark.inkFaint,
   },
   modalBackdrop: {
     flex: 1,
@@ -634,14 +647,14 @@ const dateStyles = StyleSheet.create({
   modalCard: {
     width: "100%",
     maxWidth: 380,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: dark.surfaceElevated,
     borderRadius: radii.lg,
     padding: spacing.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.4,
     shadowRadius: 24,
     elevation: 8,
   },
@@ -654,12 +667,12 @@ const dateStyles = StyleSheet.create({
   modalTitle: {
     fontFamily: fonts.bold,
     fontSize: 18,
-    color: "#000000",
+    color: dark.ink,
   },
   modalSubtitle: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: colors.inkSoft,
+    color: dark.inkSoft,
     marginTop: 2,
   },
   closeButton: {
@@ -670,28 +683,28 @@ const dateStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    backgroundColor: "#F5F5F5",
+    backgroundColor: dark.surfaceSunken,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: radii.pill,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: "#E5E5E5",
+    borderColor: dark.hairline,
   },
   previewText: {
     fontFamily: fonts.semibold,
     fontSize: 13,
-    color: "#000000",
+    color: dark.ink,
   },
   columnsContainer: {
     flexDirection: "row",
     gap: spacing.sm,
     height: 180,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: dark.surfaceSunken,
     borderRadius: radii.md,
     padding: spacing.sm,
     borderWidth: 1,
-    borderColor: "#EEEEEE",
+    borderColor: dark.hairline,
   },
   columnWrap: {
     flex: 1,
@@ -700,11 +713,11 @@ const dateStyles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: 10,
     letterSpacing: 0.5,
-    color: colors.inkSoft,
+    color: dark.inkSoft,
     textAlign: "center",
     paddingBottom: 4,
     borderBottomWidth: 1,
-    borderBottomColor: "#EAEAEA",
+    borderBottomColor: dark.hairline,
     marginBottom: 4,
   },
   columnScroll: {
@@ -719,12 +732,12 @@ const dateStyles = StyleSheet.create({
     marginVertical: 2,
   },
   itemButtonActive: {
-    backgroundColor: "#000000",
+    backgroundColor: dark.accent,
   },
   itemText: {
     fontFamily: fonts.medium,
     fontSize: 14,
-    color: "#333333",
+    color: dark.inkSoft,
   },
   itemTextActive: {
     color: "#FFFFFF",
@@ -742,12 +755,12 @@ const dateStyles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
   },
   cancelBtnText: {
     fontFamily: fonts.semibold,
     fontSize: 14,
-    color: colors.inkSoft,
+    color: dark.inkSoft,
   },
   confirmBtn: {
     flex: 1.4,
@@ -755,7 +768,7 @@ const dateStyles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 12,
     borderRadius: radii.pill,
-    backgroundColor: "#000000",
+    backgroundColor: dark.accent,
   },
   confirmBtnText: {
     fontFamily: fonts.semibold,
@@ -1026,9 +1039,12 @@ const EASE_OUT = Easing.bezier(0.16, 1, 0.3, 1);
 export function PulseDot({
   size = 13,
   active = true,
+  color = "#000000",
 }: {
   size?: number;
   active?: boolean;
+  /** Dot + halo color. Legacy default is black; v2 screens pass the indigo accent. */
+  color?: string;
 }) {
   const [reduced, setReduced] = useState(false);
   const pulse = useSharedValue(0);
@@ -1081,7 +1097,7 @@ export function PulseDot({
               width: size,
               height: size,
               borderRadius: size,
-              backgroundColor: "#000000",
+              backgroundColor: color,
             },
             haloStyle,
           ]}
@@ -1095,7 +1111,7 @@ export function PulseDot({
             height: size,
             borderRadius: size,
             borderWidth: size / 5,
-            backgroundColor: active ? "#000000" : colors.inkFaint,
+            backgroundColor: active ? color : colors.inkFaint,
             borderColor: colors.surface,
           },
         ]}

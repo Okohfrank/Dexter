@@ -1,43 +1,38 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  AuthScreen,
-  AuthTextInput,
-  DatePickerField,
-  PrimaryButton,
-  Divider,
-  SegmentedControl,
-} from '../../src/components/ui';
-import { colors, spacing, fonts } from '../../src/theme';
-import { register, login, getMe } from '../../src/api/auth';
-import { listBusinesses } from '../../src/api/business';
-import { listConnectedAccounts } from '../../src/api/oauth';
-import { useAuthStore } from '../../src/api/client';
-import { useAppStore } from '../../src/store/app';
+import { Eye, EyeOff } from 'lucide-react-native';
+import { Button } from '@/src/components/rnr/button';
+import { Text as RNRText } from '@/src/components/rnr/text';
+import { Input } from '@/src/components/rnr/input';
+import { Icon } from '@/src/components/rnr/icon';
+import { DatePickerField } from '@/src/components/ui';
+import { dark, fonts } from '@/src/theme';
+import { register } from '@/src/api/auth';
+import { useAuthStore } from '@/src/api/client';
 
-type AuthTab = 'signup' | 'login';
-type LoginMode = 'phone' | 'email';
-
+/* v2 signup — matches the Brilliant-style login: centered title,
+ * Apple/Google row, OR divider, stacked inputs, indigo primary. */
 export default function SignupScreen() {
-  const [tab, setTab] = useState<AuthTab>('signup');
-  const [loginMode, setLoginMode] = useState<LoginMode>('phone');
-
-  // Sign up fields
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-
-  // Login fields
-  const [loginPhone, setLoginPhone] = useState('');
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [remember, setRemember] = useState(false);
-
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -63,359 +58,233 @@ export default function SignupScreen() {
     }
   };
 
-  const handleLogin = async () => {
-    const identifier = loginMode === 'email' ? loginEmail : loginPhone;
-    if (!identifier || !loginPassword) {
-      Alert.alert('Missing info', 'Please fill in all fields.');
-      return;
-    }
-    setLoading(true);
-    try {
-      const loginEmailVal =
-        loginMode === 'email' ? loginEmail.trim() : `${loginPhone.trim()}@dexter.local`;
-      const res = await login(loginEmailVal, loginPassword);
-      useAuthStore.getState().setTokens({
-        access_token: res.access_token,
-        refresh_token: res.refresh_token,
-      });
-      try {
-        const me = await getMe();
-        useAuthStore.getState().setAuth({
-          user: me,
-          access_token: res.access_token,
-          refresh_token: res.refresh_token,
-        });
-      } catch {}
-      try {
-        const businesses = await listBusinesses();
-        if (businesses.length > 0) {
-          useAppStore.getState().setBusiness(businesses[0]);
-          const accounts = await listConnectedAccounts(businesses[0].id).catch(
-            () => [],
-          );
-          useAppStore.getState().setConnectedAccounts(accounts);
-          router.replace('/(dashboard)');
-        } else {
-          router.replace('/(onboarding)');
-        }
-      } catch {
-        router.replace('/(dashboard)');
-      }
-    } catch (e: any) {
-      Alert.alert('Login failed', e.message || 'Failed to log in.');
-    } finally {
-      setLoading(false);
-    }
+  const handleAppleSignup = () => {
+    Alert.alert('Apple Sign-Up', 'Apple sign-up coming soon.');
   };
 
-  const handleGoogleLogin = () => {
-    Alert.alert('Google Sign-In', 'Google sign-in coming soon.');
-  };
-
-  const handleFacebookLogin = () => {
-    Alert.alert('Facebook Sign-In', 'Facebook sign-in coming soon.');
+  const handleGoogleSignup = () => {
+    Alert.alert('Google Sign-Up', 'Google sign-up coming soon.');
   };
 
   return (
-    <AuthScreen>
-      <View style={styles.header}>
-        <Text style={styles.title}>
-          {tab === 'signup' ? 'Get Started Now' : 'Welcome Back'}
-        </Text>
-        <Text style={styles.subtitle}>
-          {tab === 'signup'
-            ? 'Create an account or log in to explore Dexter'
-            : 'Login to access your Dexter account'}
-        </Text>
-      </View>
+    <View style={styles.bg}>
+      <SafeAreaView style={styles.flex} edges={['top', 'left', 'right', 'bottom']}>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.title}>Create account</Text>
+            <Text style={styles.subtitle}>
+              Hire your AI employee for LinkedIn growth.
+            </Text>
 
-      <SegmentedControl
-        segments={[
-          { key: 'signup', label: 'Sign Up' },
-          { key: 'login', label: 'Log In' },
-        ]}
-        selected={tab}
-        onChange={(key) => setTab(key as AuthTab)}
-      />
-
-      <View style={styles.fieldsGap} />
-
-      {tab === 'signup' ? (
-        <>
-          <View style={styles.nameRow}>
-            <View style={styles.nameField}>
-              <AuthTextInput
-                label="First Name"
-                placeholder="Raj"
-                value={firstName}
-                onChangeText={setFirstName}
-                autoCapitalize="words"
-              />
-            </View>
-            <View style={styles.nameField}>
-              <AuthTextInput
-                label="Last Name"
-                placeholder="Sarkar"
-                value={lastName}
-                onChangeText={setLastName}
-                autoCapitalize="words"
-              />
-            </View>
-          </View>
-
-          <AuthTextInput
-            label="Email"
-            placeholder="sarkarraj0766@gmail.com"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoComplete="email"
-            textContentType="emailAddress"
-          />
-
-          <DatePickerField
-            label="Date of Birth"
-            value={birthDate}
-            onChange={setBirthDate}
-            placeholder="Select date of birth"
-          />
-
-          <AuthTextInput
-            label="Phone Number"
-            placeholder="(454) 726-0592"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-          />
-
-          <AuthTextInput
-            label="Set Password"
-            placeholder="••••••••"
-            secure
-            value={password}
-            onChangeText={setPassword}
-            autoCapitalize="none"
-            textContentType="newPassword"
-          />
-
-          <PrimaryButton title="Sign Up" onPress={handleSignup} disabled={loading} />
-          {loading && (
-            <ActivityIndicator color="#000000" style={{ marginTop: spacing.sm }} />
-          )}
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <Pressable hitSlop={8} onPress={() => setTab('login')}>
-              <Text style={styles.footerLink}>Log In</Text>
-            </Pressable>
-          </View>
-        </>
-      ) : (
-        <>
-          <SegmentedControl
-            segments={[
-              { key: 'phone', label: 'Phone Number' },
-              { key: 'email', label: 'Email' },
-            ]}
-            selected={loginMode}
-            onChange={(key) => setLoginMode(key as LoginMode)}
-          />
-
-          <View style={styles.subFieldsGap} />
-
-          {loginMode === 'phone' ? (
-            <AuthTextInput
-              label="Phone Number"
-              placeholder="+8801775472701"
-              value={loginPhone}
-              onChangeText={setLoginPhone}
-              keyboardType="phone-pad"
-            />
-          ) : (
-            <AuthTextInput
-              label="Email"
-              placeholder="you@company.com"
-              value={loginEmail}
-              onChangeText={setLoginEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoComplete="email"
-              textContentType="emailAddress"
-            />
-          )}
-
-          <AuthTextInput
-            label="Password"
-            placeholder="••••••••"
-            secure
-            value={loginPassword}
-            onChangeText={setLoginPassword}
-            autoCapitalize="none"
-            autoComplete="current-password"
-            textContentType="password"
-          />
-
-          <View style={styles.optionsRow}>
-            <Pressable
-              style={styles.checkbox}
-              onPress={() => setRemember(!remember)}
-              hitSlop={8}
-            >
-              <View
-                style={[styles.checkboxBox, remember && styles.checkboxChecked]}
+            <View style={styles.socialRow}>
+              <Pressable
+                style={styles.socialBtn}
+                onPress={handleAppleSignup}
+                accessibilityRole="button"
+                accessibilityLabel="Sign up with Apple"
               >
-                {remember && (
-                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-                )}
-              </View>
-              <Text style={styles.checkboxLabel}>Remember me</Text>
-            </Pressable>
-            <Link href="/(auth)/forgot-password" asChild>
-              <Pressable hitSlop={8}>
-                <Text style={styles.forgotText}>Forget password?</Text>
+                <Ionicons name="logo-apple" size={24} color={dark.ink} />
               </Pressable>
-            </Link>
-          </View>
+              <Pressable
+                style={styles.socialBtn}
+                onPress={handleGoogleSignup}
+                accessibilityRole="button"
+                accessibilityLabel="Sign up with Google"
+              >
+                <Ionicons name="logo-google" size={22} color={dark.ink} />
+              </Pressable>
+            </View>
 
-          <PrimaryButton
-            title="Log In"
-            onPress={handleLogin}
-            disabled={loading}
-            testID="login-button"
-          />
-          {loading && (
-            <ActivityIndicator color="#000000" style={{ marginTop: spacing.sm }} />
-          )}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerLabel}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
 
-          <Divider label="Or Sign In With" />
+            <View style={styles.form}>
+              <View style={styles.nameRow}>
+                <View style={styles.nameField}>
+                  <Input
+                    placeholder="First name"
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    autoCapitalize="words"
+                    placeholderTextColor={dark.inkFaint}
+                  />
+                </View>
+                <View style={styles.nameField}>
+                  <Input
+                    placeholder="Last name"
+                    value={lastName}
+                    onChangeText={setLastName}
+                    autoCapitalize="words"
+                    placeholderTextColor={dark.inkFaint}
+                  />
+                </View>
+              </View>
 
-          <View style={styles.socialRow}>
-            <Pressable style={styles.socialBtn} onPress={handleGoogleLogin}>
-              <Ionicons name="logo-google" size={18} color="#000000" />
-              <Text style={styles.socialBtnText}>Google</Text>
-            </Pressable>
-            <Pressable style={styles.socialBtn} onPress={handleFacebookLogin}>
-              <Ionicons name="logo-facebook" size={18} color="#000000" />
-              <Text style={styles.socialBtnText}>Facebook</Text>
-            </Pressable>
-          </View>
+              <Input
+                placeholder="Email"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoComplete="email"
+                placeholderTextColor={dark.inkFaint}
+              />
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <Pressable hitSlop={8} onPress={() => setTab('signup')}>
-              <Text style={styles.footerLink}>Sign Up</Text>
-            </Pressable>
-          </View>
-        </>
-      )}
-    </AuthScreen>
+              <DatePickerField
+                label=""
+                value={birthDate}
+                onChange={setBirthDate}
+                placeholder="Date of birth"
+              />
+
+              <Input
+                placeholder="Phone number"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                placeholderTextColor={dark.inkFaint}
+              />
+
+              <View>
+                <Input
+                  placeholder="Set password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPw}
+                  autoCapitalize="none"
+                  autoComplete="new-password"
+                  placeholderTextColor={dark.inkFaint}
+                />
+                <Pressable
+                  onPress={() => setShowPw((s) => !s)}
+                  hitSlop={12}
+                  style={styles.eye}
+                  accessibilityRole="button"
+                  accessibilityLabel={showPw ? 'Hide password' : 'Show password'}
+                >
+                  <Icon
+                    as={showPw ? EyeOff : Eye}
+                    size={18}
+                    color={dark.inkSoft}
+                  />
+                </Pressable>
+              </View>
+
+              <Button
+                onPress={handleSignup}
+                disabled={loading}
+                className="min-h-[60px] w-full"
+              >
+                <RNRText className="text-base font-semibold">
+                  {loading ? 'Creating account…' : 'Sign up'}
+                </RNRText>
+              </Button>
+            </View>
+            {loading && (
+              <ActivityIndicator
+                color={dark.accent}
+                style={{ marginTop: 12 }}
+              />
+            )}
+
+            <View style={styles.bottomSpacer} />
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Already have an account? </Text>
+              <Link href="/(auth)/login" asChild>
+                <Pressable hitSlop={8}>
+                  <Text style={styles.footerLink}>Sign in</Text>
+                </Pressable>
+              </Link>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    marginTop: spacing.xl,
-    marginBottom: spacing.xxl,
+  flex: { flex: 1 },
+  bg: { flex: 1, backgroundColor: dark.canvas },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    paddingBottom: 32,
   },
+  bottomSpacer: { flexGrow: 1, minHeight: 32 },
   title: {
-    fontFamily: fonts.bold,
-    fontSize: 28,
+    fontFamily: 'InterTight_700Bold',
+    fontSize: 30,
     lineHeight: 34,
-    color: '#000000',
+    letterSpacing: -0.8,
+    color: dark.ink,
+    textAlign: 'center',
+    marginBottom: 8,
   },
   subtitle: {
     fontFamily: fonts.regular,
     fontSize: 15,
     lineHeight: 22,
-    color: colors.inkSoft,
-    marginTop: spacing.sm,
+    color: dark.inkSoft,
+    textAlign: 'center',
+    marginBottom: 28,
   },
-  fieldsGap: {
-    height: spacing.md,
-  },
-  subFieldsGap: {
-    height: spacing.sm,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  nameField: {
-    flex: 1,
-  },
-  optionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  checkbox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  checkboxBox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: '#000000',
-    borderColor: '#000000',
-  },
-  checkboxLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: '#000000',
-  },
-  forgotText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: '#000000',
-    fontWeight: '600',
-  },
-  socialRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
+  socialRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
   socialBtn: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 14,
+    backgroundColor: dark.surface,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
+    minHeight: 62,
   },
-  socialBtnText: {
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: dark.hairline },
+  dividerLabel: {
     fontFamily: fonts.semibold,
-    fontSize: 15,
-    color: '#000000',
+    fontSize: 12,
+    letterSpacing: 1,
+    color: dark.inkFaint,
   },
+  form: { gap: 16 },
+  nameRow: { flexDirection: 'row', gap: 12 },
+  nameField: { flex: 1 },
+  eye: { position: 'absolute', right: 18, top: 15 },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: spacing.xxl,
-    marginBottom: spacing.lg,
+    marginTop: 24,
   },
   footerText: {
     fontFamily: fonts.regular,
     fontSize: 15,
-    color: colors.inkSoft,
+    color: dark.inkSoft,
   },
   footerLink: {
     fontFamily: fonts.semibold,
     fontSize: 15,
-    color: '#000000',
+    color: dark.ink,
+    textDecorationLine: 'underline',
   },
 });

@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows } from '../../src/theme';
+import { dark, fonts, spacing, radii, typography } from '../../src/theme';
 import { useAuthStore } from '../../src/api/client';
 import { useAppStore } from '../../src/store/app';
 import * as WebBrowser from 'expo-web-browser';
@@ -23,7 +23,7 @@ import { listConnectedAccounts } from '../../src/api/oauth';
 import { generateNextPost } from '../../src/api/strategy';
 import { listBusinesses, createBusiness } from '../../src/api/business';
 import { SocialPostPreview } from '../../src/components/SocialPostPreview';
-import { GlassCard, SegmentedControl, StatusDot, PulseDot } from '../../src/components/ui';
+import { PulseDot } from '../../src/components/ui';
 import type { ScheduledPost, PublishedPost, LearningInsight, PerformanceSummary } from '../../src/types';
 
 type Tab = 'planned' | 'published' | 'learned';
@@ -239,41 +239,37 @@ export default function DashboardScreen() {
       label: 'Total Reach',
       value: reach != null ? formatNum(reach) : '—',
       meta: 'lifetime impressions',
-      tone: colors.primary,
-      delta: null as string | null,
+      tone: dark.ink,
     },
     {
       icon: 'heart' as const,
       label: 'Engagements',
       value: engagements != null ? formatNum(engagements) : '—',
       meta: 'likes + comments + reposts',
-      tone: '#D97A9A',
-      delta: null as string | null,
+      tone: '#E88BB0',
     },
     {
       icon: 'pulse' as const,
       label: 'Engagement Rate',
       value: rate != null ? `${rate}%` : '—',
       meta: 'across published posts',
-      tone: colors.positive,
-      delta: null as string | null,
+      tone: dark.positive,
     },
     {
       icon: 'time' as const,
       label: 'Queued Posts',
       value: String(scheduled.length),
       meta: autonomousMode ? 'autonomous window' : 'awaiting approval',
-      tone: colors.energy,
-      delta: null as string | null,
+      tone: dark.accent,
     },
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={dark.inkSoft} />}
       >
         {/* ── Header ──────────────────────────────────── */}
         <View style={styles.header}>
@@ -286,15 +282,24 @@ export default function DashboardScreen() {
             </Text>
           </View>
           <Pressable style={styles.iconBtn} onPress={loadData} hitSlop={8}>
-            <Ionicons name="refresh" size={18} color={colors.inkSoft} />
+            <Ionicons name="refresh" size={18} color={dark.inkSoft} />
           </Pressable>
         </View>
 
-        {/* ── Hero Card (§8.1) ────────────────────────── */}
-        <View style={[styles.heroCard, shadows.md]}>
+        {/* ── Hero Card ───────────────────────────────── */}
+        <View style={styles.heroCard}>
           <View style={styles.heroLeft}>
             <View style={styles.heroEyebrowRow}>
-              {generatingQuick || loading ? <PulseDot active size={10} /> : <StatusDot active={autonomousMode} color={autonomousMode ? colors.positive : colors.inkFaint} />}
+              {generatingQuick || loading ? (
+                <PulseDot active size={10} color={dark.accent} />
+              ) : (
+                <View
+                  style={[
+                    styles.statusDot,
+                    { backgroundColor: autonomousMode ? dark.positive : dark.inkFaint },
+                  ]}
+                />
+              )}
               <Text style={styles.heroEyebrow}>
                 {autonomousMode ? 'Autonomous Active' : 'Supervised Mode'}
               </Text>
@@ -304,13 +309,13 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.heroRight}>
             <View style={styles.heroMiniRow}>
-              <Ionicons name={autonomousMode ? 'radio' : 'pause'} size={14} color={autonomousMode ? colors.positive : colors.inkSoft} />
+              <Ionicons name={autonomousMode ? 'radio' : 'pause'} size={14} color={autonomousMode ? dark.positive : dark.inkSoft} />
               <Text style={styles.heroMiniText}>
                 {autonomousMode ? 'Planning & publishing live' : 'You approve every post'}
               </Text>
             </View>
             <View style={styles.heroMiniRow}>
-              <Ionicons name="link" size={14} color={colors.inkFaint} />
+              <Ionicons name="link" size={14} color={dark.inkFaint} />
               <Text style={styles.heroMiniTextMuted}>
                 {linkedinConnected ? 'LinkedIn linked' : 'LinkedIn not linked'}
               </Text>
@@ -318,91 +323,101 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* ── Stat Grid (§3.3) ────────────────────────── */}
+        {/* ── Stat Grid ───────────────────────────────── */}
         <View style={styles.statGrid}>
           {stats.map((s) => (
-            <View key={s.label} style={[styles.statCard, shadows.subtle]}>
-              <View style={[styles.statIcon, { backgroundColor: colors.primarySurface }]}>
+            <View key={s.label} style={styles.statCard}>
+              <View style={styles.statIcon}>
                 <Ionicons name={s.icon} size={17} color={s.tone} />
               </View>
               <Text style={styles.statLabel}>{s.label}</Text>
               <Text style={styles.statValue}>{s.value}</Text>
-              <View style={styles.statMetaRow}>
-                {s.delta ? (
-                  <View style={[styles.deltaPill, { backgroundColor: colors.positiveFill }]}>
-                    <Text style={[styles.deltaText, { color: colors.positive }]}>{s.delta}</Text>
-                  </View>
-                ) : null}
-                <Text style={styles.statMeta}>{s.meta}</Text>
-              </View>
+              <Text style={styles.statMeta}>{s.meta}</Text>
             </View>
           ))}
         </View>
 
         {/* ── Missing Channel Banner ──────────────────── */}
         {!linkedinConnected && (
-          <GlassCard style={styles.channelBanner}>
+          <View style={styles.card}>
             <View style={styles.channelBannerHeader}>
-              <Ionicons name="logo-linkedin" size={20} color={colors.primary} />
+              <Ionicons name="logo-linkedin" size={20} color={dark.accent} />
               <Text style={styles.channelBannerTitle}>Link LinkedIn Account</Text>
             </View>
             <Text style={styles.channelBannerText}>
               Connect your account so Dexter can draft and publish thought-leadership posts for you.
             </Text>
             <Pressable
-              style={[styles.channelBannerBtn, connecting && { opacity: 0.6 }]}
+              style={[styles.accentBtn, connecting && { opacity: 0.6 }]}
               onPress={handleQuickConnect}
               disabled={connecting}
             >
               {connecting ? (
-                <ActivityIndicator size="small" color={colors.surface} />
+                <ActivityIndicator size="small" color="#FFF" />
               ) : (
-                <Text style={styles.channelBannerBtnText}>Connect LinkedIn</Text>
+                <Text style={styles.accentBtnText}>Connect LinkedIn</Text>
               )}
             </Pressable>
-          </GlassCard>
+          </View>
         )}
 
         {/* ── Segmented Tabs ──────────────────────────── */}
-        <SegmentedControl
-          segments={[
-            { key: 'planned' as Tab, label: 'Upcoming', icon: 'calendar' },
-            { key: 'published' as Tab, label: 'Published', icon: 'checkmark-done' },
-            { key: 'learned' as Tab, label: 'Insights', icon: 'bulb' },
-          ]}
-          selected={tab}
-          onChange={setTab}
-        />
+        <View style={styles.segTrack}>
+          {(
+            [
+              { key: 'planned' as Tab, label: 'Upcoming', icon: 'calendar' },
+              { key: 'published' as Tab, label: 'Published', icon: 'checkmark-done' },
+              { key: 'learned' as Tab, label: 'Insights', icon: 'bulb' },
+            ]
+          ).map((seg) => {
+            const active = seg.key === tab;
+            return (
+              <Pressable
+                key={seg.key}
+                style={[styles.seg, active && styles.segActive]}
+                onPress={() => setTab(seg.key)}
+              >
+                <Ionicons
+                  name={seg.icon as any}
+                  size={14}
+                  color={active ? dark.ink : dark.inkSoft}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.segLabel, active && styles.segLabelActive]}>
+                  {seg.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
         {loading && !refreshing && (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+          <ActivityIndicator color={dark.accent} style={{ marginTop: spacing.xl }} />
         )}
 
         {/* ── Planned Posts Tab ───────────────────────── */}
         {tab === 'planned' && (
           <View style={styles.feedContainer}>
             {scheduled.length === 0 && !loading ? (
-              <GlassCard style={styles.emptyCard}>
-                <Ionicons name="calendar-outline" size={34} color={colors.inkFaint} />
+              <View style={[styles.card, styles.emptyCard]}>
+                <Ionicons name="calendar-outline" size={34} color={dark.inkFaint} />
                 <Text style={styles.emptyTitle}>Queue is clear</Text>
                 <Text style={styles.emptySubtitle}>
                   No posts scheduled yet — ask Dexter to draft one now.
                 </Text>
-                <Pressable style={styles.emptyActionBtn} onPress={handleQuickGenerate} disabled={generatingQuick}>
+                <Pressable style={styles.accentBtn} onPress={handleQuickGenerate} disabled={generatingQuick}>
                   {generatingQuick ? (
-                    <ActivityIndicator size="small" color={colors.surface} />
+                    <ActivityIndicator size="small" color="#FFF" />
                   ) : (
-                    <>
-                      <Ionicons name="flash" size={16} color={colors.surface} />
-                      <Text style={styles.emptyActionText}>Draft Next Post with Dexter</Text>
-                    </>
+                    <Text style={styles.accentBtnText}>Draft Next Post with Dexter</Text>
                   )}
                 </Pressable>
-              </GlassCard>
+              </View>
             ) : (
               scheduled.map((post) => (
                 <View key={post.id} style={styles.postWrapper}>
                   <SocialPostPreview
+                    tone="dark"
                     post={post}
                     authorName={authorName}
                     authorHeadline={authorHeadline}
@@ -411,10 +426,10 @@ export default function DashboardScreen() {
                   />
 
                   {/* Dexter's Decision Card */}
-                  <GlassCard style={styles.decisionCard}>
+                  <View style={styles.card}>
                     <View style={styles.decisionHeader}>
-                      <Ionicons name="pulse" size={15} color={colors.primary} />
-                      <Text style={styles.decisionLabel}>Dexter's Decision</Text>
+                      <Ionicons name="pulse" size={15} color={dark.accent} />
+                      <Text style={styles.decisionLabel}>Dexter&apos;s Decision</Text>
                     </View>
                     <Text style={styles.reasonText}>
                       Scheduled for {formatWhen(post.scheduled_for)} because engagement peaks for your B2B audience during this window.
@@ -434,11 +449,11 @@ export default function DashboardScreen() {
                       >
                         <Text style={styles.ghostBtnText}>Edit / Swap</Text>
                       </Pressable>
-                      <Pressable style={styles.solidBtn} onPress={() => handlePublishNow(post.id)}>
-                        <Text style={styles.solidBtnText}>Publish now</Text>
+                      <Pressable style={styles.accentBtnSmall} onPress={() => handlePublishNow(post.id)}>
+                        <Text style={styles.accentBtnTextSmall}>Publish now</Text>
                       </Pressable>
                     </View>
-                  </GlassCard>
+                  </View>
                 </View>
               ))
             )}
@@ -449,17 +464,18 @@ export default function DashboardScreen() {
         {tab === 'published' && (
           <View style={styles.feedContainer}>
             {published.length === 0 && !loading ? (
-              <GlassCard style={styles.emptyCard}>
-                <Ionicons name="checkmark-done-circle-outline" size={34} color={colors.inkFaint} />
+              <View style={[styles.card, styles.emptyCard]}>
+                <Ionicons name="checkmark-done-circle-outline" size={34} color={dark.inkFaint} />
                 <Text style={styles.emptyTitle}>Nothing published yet</Text>
                 <Text style={styles.emptySubtitle}>
-                  Posts published by Dexter or via "Publish now" appear here with engagement analytics.
+                  Posts published by Dexter or via &quot;Publish now&quot; appear here with engagement analytics.
                 </Text>
-              </GlassCard>
+              </View>
             ) : (
               published.map((post) => (
                 <View key={post.id} style={styles.postWrapper}>
                   <SocialPostPreview
+                    tone="dark"
                     post={post}
                     authorName={authorName}
                     authorHeadline={authorHeadline}
@@ -476,26 +492,26 @@ export default function DashboardScreen() {
         {tab === 'learned' && (
           <View style={styles.feedContainer}>
             {learnings.length === 0 && !loading ? (
-              <GlassCard style={styles.emptyCard}>
-                <Ionicons name="bulb-outline" size={34} color={colors.inkFaint} />
+              <View style={[styles.card, styles.emptyCard]}>
+                <Ionicons name="bulb-outline" size={34} color={dark.inkFaint} />
                 <Text style={styles.emptyTitle}>Insights accumulating</Text>
                 <Text style={styles.emptySubtitle}>
                   Dexter is observing audience interactions. Growth learnings appear as posts gain impressions.
                 </Text>
-              </GlassCard>
+              </View>
             ) : (
               learnings.map((l) => (
-                <GlassCard key={l.id} style={styles.learnCard} elevated>
+                <View key={l.id} style={styles.card}>
                   <View style={styles.learnHeader}>
-                    <Ionicons name="bulb" size={18} color={colors.energy} />
+                    <Ionicons name="bulb" size={18} color={dark.warning} />
                     <Text style={styles.learnDate}>{formatWhen(l.generated_at)}</Text>
                   </View>
                   <Text style={styles.learnSummary}>{l.summary}</Text>
                   <View style={styles.goalPill}>
-                    <Ionicons name="flag-outline" size={12} color={colors.positive} />
+                    <Ionicons name="flag-outline" size={12} color={dark.positive} />
                     <Text style={styles.goalText}>{l.relatedGoal}</Text>
                   </View>
-                </GlassCard>
+                </View>
               ))
             )}
           </View>
@@ -506,7 +522,7 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
+  safeArea: { flex: 1, backgroundColor: dark.canvas },
   scroll: {
     padding: spacing.lg,
     gap: spacing.lg,
@@ -519,17 +535,40 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headerTextWrap: { flex: 1, gap: spacing.xs },
-  title: { ...typography.displaySmall, marginTop: spacing.xs },
-  subtitle: { ...typography.bodySmall, color: colors.inkSoft, marginTop: 2 },
+  title: {
+    fontFamily: 'InterTight_600SemiBold',
+    fontSize: 26,
+    lineHeight: 30,
+    letterSpacing: -0.5,
+    color: dark.ink,
+    marginTop: spacing.xs,
+  },
+  subtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: dark.inkSoft,
+    marginTop: 2,
+  },
   iconBtn: {
     width: 44,
     height: 44,
     borderRadius: radii.pill,
-    backgroundColor: colors.surfaceSunken,
+    backgroundColor: dark.surfaceSunken,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // ── Shared card: tonal surface + hairline, no shadow ──
+  card: {
+    backgroundColor: dark.surface,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    padding: spacing.xl,
+    gap: spacing.sm,
   },
 
   // ── Hero Card ──
@@ -537,35 +576,50 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
+    backgroundColor: dark.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
     padding: spacing.xl,
     gap: spacing.lg,
   },
   heroLeft: { flex: 1, gap: spacing.xs },
   heroEyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   heroEyebrow: {
-    ...typography.label,
-    color: colors.primary,
+    fontFamily: fonts.semibold,
     fontSize: 11,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    color: dark.accent,
   },
+  statusDot: { width: 8, height: 8, borderRadius: 4 },
   heroStat: {
-    ...typography.displayMedium,
-    marginTop: spacing.xs,
+    fontFamily: 'InterTight_700Bold',
     fontSize: 40,
-    lineHeight: 44,
+    lineHeight: 42,
+    letterSpacing: -1.2,
+    color: dark.ink,
+    marginTop: spacing.xs,
   },
   heroStatLabel: {
-    ...typography.bodySmall,
-    color: colors.inkSoft,
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: dark.inkSoft,
     marginTop: 2,
   },
   heroRight: { gap: spacing.sm, paddingTop: spacing.xs },
   heroMiniRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  heroMiniText: { ...typography.caption, color: colors.inkSoft },
-  heroMiniTextMuted: { ...typography.caption, color: colors.inkFaint },
+  heroMiniText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: dark.inkSoft,
+  },
+  heroMiniTextMuted: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: dark.inkFaint,
+  },
 
   // ── Stat Grid ──
   statGrid: {
@@ -576,10 +630,10 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: '48.2%',
-    backgroundColor: colors.surface,
+    backgroundColor: dark.surface,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
     padding: spacing.lg,
     gap: spacing.xs,
   },
@@ -587,33 +641,96 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: radii.pill,
+    backgroundColor: dark.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  statLabel: { ...typography.label, fontSize: 11 },
-  statValue: { ...typography.stat, marginTop: spacing.xs },
-  statMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
-  statMeta: { ...typography.caption2, color: colors.inkFaint, flex: 1 },
-  deltaPill: {
-    borderRadius: radii.pill,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+  statLabel: {
+    fontFamily: fonts.semibold,
+    fontSize: 11,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    color: dark.inkFaint,
   },
-  deltaText: { ...typography.caption2, fontWeight: '700' },
-
-  // ── Channel Banner ──
-  channelBanner: { gap: spacing.sm },
-  channelBannerHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  channelBannerTitle: { ...typography.h3, color: colors.ink },
-  channelBannerText: { ...typography.bodySmall, color: colors.inkSoft, lineHeight: 19 },
-  channelBannerBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingVertical: 12,
-    alignItems: 'center',
+  statValue: {
+    fontFamily: 'InterTight_700Bold',
+    fontSize: 26,
+    lineHeight: 28,
+    letterSpacing: -0.5,
+    color: dark.ink,
     marginTop: spacing.xs,
   },
-  channelBannerBtnText: { color: colors.surface, fontFamily: 'Inter_600SemiBold', fontSize: 14 },
+  statMeta: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    lineHeight: 15,
+    color: dark.inkFaint,
+    marginTop: 2,
+  },
+
+  // ── Channel Banner / accent buttons ──
+  channelBannerHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  channelBannerTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: dark.ink,
+  },
+  channelBannerText: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: dark.inkSoft,
+  },
+  accentBtn: {
+    backgroundColor: dark.accent,
+    borderRadius: radii.pill,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xs,
+    minHeight: 48,
+  },
+  accentBtnText: {
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+  },
+  accentBtnSmall: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: radii.pill,
+    backgroundColor: dark.accent,
+  },
+  accentBtnTextSmall: {
+    color: '#FFF',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 12,
+  },
+
+  // ── Segmented ──
+  segTrack: {
+    flexDirection: 'row',
+    backgroundColor: dark.surfaceSunken,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: radii.pill,
+    padding: 4,
+  },
+  seg: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: radii.pill,
+  },
+  segActive: { backgroundColor: dark.surfaceElevated },
+  segLabel: { fontFamily: fonts.medium, fontSize: 14, color: dark.inkSoft },
+  segLabelActive: { fontFamily: fonts.semibold, color: dark.ink },
 
   // ── Feed ──
   feedContainer: { gap: spacing.lg },
@@ -622,45 +739,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xxxl,
-    gap: spacing.sm,
     marginVertical: spacing.md,
   },
-  emptyTitle: { ...typography.h2, color: colors.ink, marginTop: spacing.xs },
+  emptyTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 18,
+    color: dark.ink,
+    marginTop: spacing.xs,
+  },
   emptySubtitle: {
-    ...typography.bodySmall,
-    color: colors.inkSoft,
-    textAlign: 'center',
+    fontFamily: fonts.regular,
+    fontSize: 13,
     lineHeight: 20,
+    color: dark.inkSoft,
+    textAlign: 'center',
     maxWidth: 300,
-  },
-  emptyActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingVertical: 12,
-    paddingHorizontal: spacing.xl,
-    marginTop: spacing.sm,
-    ...shadows.primaryBtn,
-  },
-  emptyActionText: {
-    color: colors.surface,
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 14,
   },
 
   postWrapper: { gap: spacing.sm },
-  decisionCard: { gap: spacing.sm },
   decisionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   decisionLabel: {
-    ...typography.label,
-    color: colors.primary,
+    fontFamily: fonts.semibold,
     fontSize: 11,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    color: dark.accent,
   },
   reasonText: {
-    ...typography.bodySmall,
-    color: colors.ink,
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: dark.ink,
     lineHeight: 20,
   },
   postActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
@@ -671,36 +779,41 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderColor: dark.hairline,
+    backgroundColor: dark.surfaceElevated,
   },
-  ghostBtnText: { ...typography.caption, color: colors.ink, fontFamily: 'Inter_600SemiBold' },
-  solidBtn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primary,
-    ...shadows.primaryBtn,
+  ghostBtnText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 12,
+    color: dark.ink,
   },
-  solidBtnText: { ...typography.caption, color: colors.surface, fontFamily: 'Inter_700Bold' },
 
-  learnCard: { gap: spacing.sm },
   learnHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  learnDate: { ...typography.caption2, color: colors.inkFaint },
-  learnSummary: { ...typography.bodySmall, color: colors.ink, lineHeight: 21 },
+  learnDate: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: dark.inkFaint,
+  },
+  learnSummary: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: dark.ink,
+    lineHeight: 21,
+  },
   goalPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.positiveFill,
     borderWidth: 1,
-    borderColor: colors.positiveBorder,
+    borderColor: dark.hairline,
     borderRadius: radii.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: 4,
     alignSelf: 'flex-start',
   },
-  goalText: { ...typography.caption2, color: colors.positive, fontFamily: 'Inter_600SemiBold' },
+  goalText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    color: dark.positive,
+  },
 });

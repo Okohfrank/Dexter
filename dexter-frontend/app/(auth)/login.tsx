@@ -6,32 +6,35 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  AuthScreen,
-  AuthTextInput,
-  PrimaryButton,
-  OutlinedButton,
-  Divider,
-  SegmentedControl,
-} from "../../src/components/ui";
-import { colors, spacing, typography, fonts } from "../../src/theme";
-import { login, register, getMe } from "../../src/api/auth";
-import { listBusinesses, createBusiness } from "../../src/api/business";
-import { listConnectedAccounts } from "../../src/api/oauth";
-import { useAuthStore } from "../../src/api/client";
-import { useAppStore } from "../../src/store/app";
+import { Eye, EyeOff } from "lucide-react-native";
+import { Button } from "@/src/components/rnr/button";
+import { Text as RNRText } from "@/src/components/rnr/text";
+import { Input } from "@/src/components/rnr/input";
+import { Icon } from "@/src/components/rnr/icon";
+import { dark, fonts } from "@/src/theme";
+import { login, getMe } from "@/src/api/auth";
+import { listBusinesses } from "@/src/api/business";
+import { listConnectedAccounts } from "@/src/api/oauth";
+import { useAuthStore } from "@/src/api/client";
+import { useAppStore } from "@/src/store/app";
 
 type LoginMode = "phone" | "email";
 
+/* v2 login — Brilliant-style centered sign-in (Mobbin ref) on the
+ * Dexter dark system: tonal surfaces, hairlines, indigo primary. */
 export default function LoginScreen() {
   const [mode, setMode] = useState<LoginMode>("phone");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -80,226 +83,262 @@ export default function LoginScreen() {
     }
   };
 
+  const handleAppleLogin = () => {
+    Alert.alert("Apple Sign-In", "Apple sign-in coming soon.");
+  };
+
   const handleGoogleLogin = () => {
     Alert.alert("Google Sign-In", "Google sign-in coming soon.");
   };
 
-  const handleFacebookLogin = () => {
-    Alert.alert("Facebook Sign-In", "Facebook sign-in coming soon.");
-  };
-
   return (
-    <AuthScreen>
-      <View style={styles.header}>
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Login to access your Dexter account</Text>
-      </View>
-
-      <SegmentedControl
-        segments={[
-          { key: "signup", label: "Sign Up" },
-          { key: "login", label: "Log In" },
-        ]}
-        selected="login"
-        onChange={(key) => {
-          if (key === "signup") router.replace("/(auth)/signup");
-        }}
-      />
-
-      <View style={styles.fieldsGap} />
-
-      <SegmentedControl
-        segments={[
-          { key: "phone", label: "Phone Number" },
-          { key: "email", label: "Email" },
-        ]}
-        selected={mode}
-        onChange={(key) => setMode(key as LoginMode)}
-      />
-
-      <View style={styles.fieldsGap} />
-
-      {mode === "phone" ? (
-        <AuthTextInput
-          label="Phone Number"
-          placeholder="+8801775472701"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-        />
-      ) : (
-        <AuthTextInput
-          label="Email"
-          placeholder="you@company.com"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          autoComplete="email"
-          textContentType="emailAddress"
-        />
-      )}
-
-      <AuthTextInput
-        label="Password"
-        placeholder="••••••••"
-        secure
-        value={password}
-        onChangeText={setPassword}
-        autoCapitalize="none"
-        autoComplete="current-password"
-        textContentType="password"
-      />
-
-      <View style={styles.optionsRow}>
-        <Pressable
-          style={styles.checkbox}
-          onPress={() => setRemember(!remember)}
-          hitSlop={8}
+    <View style={styles.bg}>
+      <SafeAreaView style={styles.flex} edges={["top", "left", "right", "bottom"]}>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <View
-            style={[styles.checkboxBox, remember && styles.checkboxChecked]}
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            {remember && (
-              <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+            <View style={styles.topSpacer} />
+
+            <Text style={styles.title}>Sign in</Text>
+            <Text style={styles.subtitle}>
+              Your AI employee is ready to work.
+            </Text>
+
+            <View style={styles.socialRow}>
+              <Pressable
+                style={styles.socialBtn}
+                onPress={handleAppleLogin}
+                accessibilityRole="button"
+                accessibilityLabel="Sign in with Apple"
+              >
+                <Ionicons name="logo-apple" size={24} color={dark.ink} />
+              </Pressable>
+              <Pressable
+                style={styles.socialBtn}
+                onPress={handleGoogleLogin}
+                accessibilityRole="button"
+                accessibilityLabel="Sign in with Google"
+              >
+                <Ionicons name="logo-google" size={22} color={dark.ink} />
+              </Pressable>
+            </View>
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerLabel}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <View style={styles.form}>
+              <View style={styles.segTrack}>
+                {(
+                  [
+                    { key: "phone" as LoginMode, label: "Phone number" },
+                    { key: "email" as LoginMode, label: "Email" },
+                  ]
+                ).map((opt) => {
+                  const active = opt.key === mode;
+                  return (
+                    <Pressable
+                      key={opt.key}
+                      style={[styles.seg, active && styles.segActive]}
+                      onPress={() => setMode(opt.key)}
+                    >
+                      <Text
+                        style={[styles.segLabel, active && styles.segLabelActive]}
+                      >
+                        {opt.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {mode === "phone" ? (
+                <Input
+                  placeholder="+8801775472701"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  autoCapitalize="none"
+                  placeholderTextColor={dark.inkFaint}
+                />
+              ) : (
+                <Input
+                  placeholder="you@company.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoComplete="email"
+                  placeholderTextColor={dark.inkFaint}
+                />
+              )}
+
+              <View>
+                <Input
+                  placeholder="Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPw}
+                  autoCapitalize="none"
+                  autoComplete="current-password"
+                  placeholderTextColor={dark.inkFaint}
+                />
+                <Pressable
+                  onPress={() => setShowPw((s) => !s)}
+                  hitSlop={12}
+                  style={styles.eye}
+                  accessibilityRole="button"
+                  accessibilityLabel={showPw ? "Hide password" : "Show password"}
+                >
+                  <Icon
+                    as={showPw ? EyeOff : Eye}
+                    size={18}
+                    color={dark.inkSoft}
+                  />
+                </Pressable>
+              </View>
+
+              <Button
+                onPress={handleLogin}
+                disabled={loading}
+                className="min-h-[60px] w-full"
+              >
+                <RNRText className="text-base font-semibold">
+                  {loading ? "Signing in…" : "Sign in"}
+                </RNRText>
+              </Button>
+            </View>
+            {loading && (
+              <ActivityIndicator
+                color={dark.accent}
+                style={{ marginTop: 12 }}
+              />
             )}
-          </View>
-          <Text style={styles.checkboxLabel}>Remember me</Text>
-        </Pressable>
-        <Link href="/(auth)/forgot-password" asChild>
-          <Pressable hitSlop={8}>
-            <Text style={styles.forgotText}>Forget password?</Text>
-          </Pressable>
-        </Link>
-      </View>
 
-      <PrimaryButton
-        title="Log In"
-        onPress={handleLogin}
-        disabled={loading}
-        testID="login-button"
-      />
-      {loading && (
-        <ActivityIndicator color="#000000" style={{ marginTop: spacing.sm }} />
-      )}
+            <Link href="/(auth)/forgot-password" asChild>
+              <Pressable hitSlop={8} style={styles.forgotBtn}>
+                <Text style={styles.forgotText}>Forgot password?</Text>
+              </Pressable>
+            </Link>
 
-      <Divider label="Or Sign In With" />
+            <View style={styles.bottomSpacer} />
 
-      <View style={styles.socialRow}>
-        <Pressable style={styles.socialBtn} onPress={handleGoogleLogin}>
-          <Ionicons name="logo-google" size={18} color="#000000" />
-          <Text style={styles.socialBtnText}>Google</Text>
-        </Pressable>
-        <Pressable style={styles.socialBtn} onPress={handleFacebookLogin}>
-          <Ionicons name="logo-facebook" size={18} color="#000000" />
-          <Text style={styles.socialBtnText}>Facebook</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Don't have an account? </Text>
-        <Link href="/(auth)/signup" asChild>
-          <Pressable hitSlop={8}>
-            <Text style={styles.footerLink}>Sign Up</Text>
-          </Pressable>
-        </Link>
-      </View>
-    </AuthScreen>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>No account yet? </Text>
+              <Link href="/(auth)/signup" asChild>
+                <Pressable hitSlop={8}>
+                  <Text style={styles.footerLink}>Sign up</Text>
+                </Pressable>
+              </Link>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    marginTop: spacing.xl,
-    marginBottom: spacing.xxl,
+  flex: { flex: 1 },
+  bg: { flex: 1, backgroundColor: dark.canvas },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
   },
+  topSpacer: { flexGrow: 0.6, minHeight: 48 },
+  bottomSpacer: { flexGrow: 1, minHeight: 32 },
   title: {
-    fontFamily: fonts.bold,
-    fontSize: 28,
+    fontFamily: "InterTight_700Bold",
+    fontSize: 30,
     lineHeight: 34,
-    color: "#000000",
+    letterSpacing: -0.8,
+    color: dark.ink,
+    textAlign: "center",
+    marginBottom: 8,
   },
   subtitle: {
     fontFamily: fonts.regular,
     fontSize: 15,
     lineHeight: 22,
-    color: colors.inkSoft,
-    marginTop: spacing.sm,
+    color: dark.inkSoft,
+    textAlign: "center",
+    marginBottom: 28,
   },
-  fieldsGap: {
-    height: spacing.md,
-  },
-  optionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  checkbox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  checkboxBox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkboxChecked: {
-    backgroundColor: "#000000",
-    borderColor: "#000000",
-  },
-  checkboxLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: "#000000",
-  },
-  forgotText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: "#000000",
-    fontWeight: "600",
-  },
-  socialRow: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
+  socialRow: { flexDirection: "row", gap: 12, marginBottom: 20 },
   socialBtn: {
     flex: 1,
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: spacing.sm,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 14,
+    backgroundColor: dark.surface,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
+    minHeight: 62,
   },
-  socialBtnText: {
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 20,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: dark.hairline },
+  dividerLabel: {
     fontFamily: fonts.semibold,
-    fontSize: 15,
-    color: "#000000",
+    fontSize: 12,
+    letterSpacing: 1,
+    color: dark.inkFaint,
+  },
+  segTrack: {
+    flexDirection: "row",
+    backgroundColor: dark.surfaceSunken,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 999,
+    padding: 4,
+  },
+  form: { gap: 16 },
+  seg: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    paddingVertical: 12,
+    borderRadius: 999,
+  },
+  segActive: { backgroundColor: dark.surfaceElevated },
+  segLabel: { fontFamily: fonts.medium, fontSize: 14, color: dark.inkSoft },
+  segLabelActive: { fontFamily: fonts.semibold, color: dark.ink },
+  eye: { position: "absolute", right: 18, top: 15 },
+  forgotBtn: { alignSelf: "center", marginTop: 28, padding: 8 },
+  forgotText: {
+    fontFamily: fonts.semibold,
+    fontSize: 16,
+    color: dark.ink,
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: spacing.xxl,
   },
   footerText: {
     fontFamily: fonts.regular,
     fontSize: 15,
-    color: colors.inkSoft,
+    color: dark.inkSoft,
   },
   footerLink: {
     fontFamily: fonts.semibold,
     fontSize: 15,
-    color: "#000000",
+    color: dark.ink,
+    textDecorationLine: "underline",
   },
 });

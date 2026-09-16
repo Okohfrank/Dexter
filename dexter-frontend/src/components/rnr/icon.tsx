@@ -8,7 +8,7 @@ type IconProps = LucideProps & {
   as: LucideIcon;
 } & React.RefAttributes<LucideIcon>;
 
-function Icon({ as: IconComponent, size = 18, color = '#000000', ...props }: IconProps) {
+function Icon({ as: IconComponent, size = 18, color = '#F7F8F8', ...props }: IconProps) {
   return <IconComponent size={size} color={color} {...props} />;
 }
 

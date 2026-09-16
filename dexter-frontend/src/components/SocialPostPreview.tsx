@@ -1,8 +1,38 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows } from '../theme';
+import { colors, dark as darkTokens, spacing, radii, typography, shadows } from '../theme';
 import type { Platform, ScheduledPost, PublishedPost } from '../types';
+
+type PreviewTone = 'light' | 'dark';
+
+/* Light = v1 legacy (create/edit screens until migrated).
+ * Dark = v2 (dashboard). Palette swap only — layout identical. */
+const lightPalette = {
+  surface: colors.surface,
+  border: colors.border,
+  brandTint: colors.brandTint,
+  primaryBorder: colors.primaryBorder,
+  primary: colors.primary,
+  ink: colors.ink,
+  inkSoft: colors.inkSoft,
+  inkFaint: colors.inkFaint,
+  surfaceSunken: colors.surfaceSunken,
+  brand: colors.brand,
+};
+
+const darkPalette = {
+  surface: darkTokens.surface,
+  border: darkTokens.hairline,
+  brandTint: darkTokens.surfaceElevated,
+  primaryBorder: darkTokens.hairline,
+  primary: darkTokens.accent,
+  ink: darkTokens.ink,
+  inkSoft: darkTokens.inkSoft,
+  inkFaint: darkTokens.inkFaint,
+  surfaceSunken: darkTokens.surfaceSunken,
+  brand: darkTokens.accent,
+};
 
 type SocialPostPreviewProps = {
   post: ScheduledPost | PublishedPost;
@@ -12,6 +42,7 @@ type SocialPostPreviewProps = {
   platform?: Platform;
   formattedTime?: string;
   onMediaPress?: () => void;
+  tone?: PreviewTone;
 };
 
 export function SocialPostPreview({
@@ -22,7 +53,10 @@ export function SocialPostPreview({
   platform = 'linkedin',
   formattedTime,
   onMediaPress,
+  tone = 'light',
 }: SocialPostPreviewProps) {
+  const P = tone === 'dark' ? darkPalette : lightPalette;
+  const styles = getStyles(P, tone);
   const isPublished = 'performance' in post;
   const publishedPost = isPublished ? (post as PublishedPost) : null;
   const postPlatform = publishedPost?.platform ?? platform;
@@ -48,7 +82,7 @@ export function SocialPostPreview({
   };
 
   return (
-    <View style={[styles.cardOuter, shadows.subtle]}>
+    <View style={tone === 'dark' ? styles.cardOuter : [styles.cardOuter, shadows.subtle]}>
       {/* Platform & Author Header */}
       <View style={styles.header}>
         <View style={styles.authorRow}>
@@ -81,7 +115,7 @@ export function SocialPostPreview({
                     : 'Now')}
               </Text>
               <Text style={styles.timestampDot}>•</Text>
-              <Ionicons name="globe-outline" size={12} color={colors.inkFaint} />
+              <Ionicons name="globe-outline" size={12} color={P.inkFaint} />
             </View>
           </View>
         </View>
@@ -96,7 +130,7 @@ export function SocialPostPreview({
                 : 'musical-notes-outline'
             }
             size={16}
-            color={postPlatform === 'linkedin' ? '#0A66C2' : colors.primary}
+            color={postPlatform === 'linkedin' ? '#0A66C2' : P.primary}
           />
         </View>
       </View>
@@ -123,7 +157,7 @@ export function SocialPostPreview({
         <>
           <View style={styles.engagementBar}>
             <View style={styles.reactionsCluster}>
-              <View style={[styles.reactionCircle, { backgroundColor: colors.brand }]}>
+              <View style={[styles.reactionCircle, { backgroundColor: P.brand }]}>
                 <Ionicons name="thumbs-up" size={10} color="#FFFFFF" />
               </View>
               <View style={[styles.reactionCircle, { backgroundColor: '#FF3B30', marginLeft: -4 }]}>
@@ -148,19 +182,19 @@ export function SocialPostPreview({
           {/* Social Action Bar */}
           <View style={styles.actionRow}>
             <View style={styles.socialAction}>
-              <Ionicons name="thumbs-up-outline" size={15} color={colors.inkSoft} />
+              <Ionicons name="thumbs-up-outline" size={15} color={P.inkSoft} />
               <Text style={styles.actionText}>Like</Text>
             </View>
             <View style={styles.socialAction}>
-              <Ionicons name="chatbubble-ellipses-outline" size={15} color={colors.inkSoft} />
+              <Ionicons name="chatbubble-ellipses-outline" size={15} color={P.inkSoft} />
               <Text style={styles.actionText}>Comment</Text>
             </View>
             <View style={styles.socialAction}>
-              <Ionicons name="repeat-outline" size={16} color={colors.inkSoft} />
+              <Ionicons name="repeat-outline" size={16} color={P.inkSoft} />
               <Text style={styles.actionText}>Repost</Text>
             </View>
             <View style={styles.socialAction}>
-              <Ionicons name="paper-plane-outline" size={15} color={colors.inkSoft} />
+              <Ionicons name="paper-plane-outline" size={15} color={P.inkSoft} />
               <Text style={styles.actionText}>Send</Text>
             </View>
           </View>
@@ -170,7 +204,10 @@ export function SocialPostPreview({
   );
 }
 
-const styles = StyleSheet.create({
+/* Palette-parameterized styles: the `colors` param shadows the legacy
+ * import so the v1 style body below works unchanged for both tones. */
+function getStyles(colors: typeof lightPalette, _tone: PreviewTone) {
+  return StyleSheet.create({
   cardOuter: {
     backgroundColor: colors.surface,
     borderRadius: radii.md,
@@ -359,4 +396,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 12,
   },
-});
+  });
+}

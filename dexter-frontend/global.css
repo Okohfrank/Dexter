@@ -2,53 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Dexter theme for React Native Reusables (NativeWind).
- * HSL vars mapped to DESIGN.md §2.1 monochrome tokens:
- * bg #FFFFFF, alt #F5F5F5, ink #000000, soft #666666,
- * faint #999999, border #DDDDDD, brand #000000.
- * Dark block is opt-in per screen (DESIGN.md §5), not a global toggle.
+/* Dexter DESIGN v2 — dark-first premium AI (Option A).
+ * Canvas #0B0B0C, tonal surface ladder, hairline borders,
+ * single indigo accent #5E6AD2. Chromatic colors are
+ * meaning-carriers only (status, deltas) — never decoration.
+ * Legacy light screens use StyleSheet tokens in src/theme and
+ * are unaffected by these vars; all new/migrated UI uses them.
  */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
-    --primary: 0 0% 0%;
+    --background: 240 6% 4%;
+    --foreground: 220 9% 97%;
+    --card: 240 4% 8%;
+    --card-foreground: 220 9% 97%;
+    --popover: 240 4% 10%;
+    --popover-foreground: 220 9% 97%;
+    --primary: 234 59% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 0%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 40%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 0%;
-    --destructive: 0 84% 60%;
-    --border: 0 0% 87%;
-    --input: 0 0% 87%;
-    --ring: 0 0% 0%;
+    --secondary: 240 4% 12%;
+    --secondary-foreground: 220 9% 97%;
+    --muted: 240 4% 12%;
+    --muted-foreground: 220 6% 64%;
+    --accent: 240 4% 14%;
+    --accent-foreground: 220 9% 97%;
+    --destructive: 0 72% 55%;
+    --border: 232 8% 15%;
+    --input: 232 8% 15%;
+    --ring: 234 59% 60%;
     --radius: 1.25rem;
   }
 
   .dark:root {
-    --background: 0 0% 10%;
+    --background: 240 6% 3%;
     --foreground: 0 0% 100%;
-    --card: 0 0% 16%;
+    --card: 240 4% 7%;
     --card-foreground: 0 0% 100%;
-    --popover: 0 0% 16%;
+    --popover: 240 4% 9%;
     --popover-foreground: 0 0% 100%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 16%;
+    --primary: 234 59% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4% 11%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 16%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 16%;
+    --muted: 240 4% 11%;
+    --muted-foreground: 220 6% 60%;
+    --accent: 240 4% 13%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 71% 59%;
-    --border: 0 0% 27%;
-    --input: 0 0% 27%;
-    --ring: 0 0% 100%;
+    --destructive: 0 72% 58%;
+    --border: 232 8% 13%;
+    --input: 232 8% 13%;
+    --ring: 234 59% 65%;
   }
 }
