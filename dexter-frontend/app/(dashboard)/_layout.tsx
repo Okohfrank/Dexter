@@ -1,14 +1,16 @@
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { House, SquarePen, Sparkles, Images, Settings } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Icon } from '../../src/components/rnr/icon';
 import { dark, fonts } from '../../src/theme';
 
 type TabDef = {
   name: string;
   title: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: LucideIcon;
 };
 
 type FloatingTabBarProps = {
@@ -36,11 +38,11 @@ type FloatingTabBarProps = {
 };
 
 const TABS: TabDef[] = [
-  { name: 'index', title: 'Home', icon: 'home-outline' },
-  { name: 'create', title: 'Create', icon: 'receipt-outline' },
-  { name: 'ai', title: 'Copilot', icon: 'scan-outline' },
-  { name: 'media', title: 'Media', icon: 'card-outline' },
-  { name: 'settings', title: 'Settings', icon: 'person-outline' },
+  { name: 'index', title: 'Home', icon: House },
+  { name: 'create', title: 'Create', icon: SquarePen },
+  { name: 'ai', title: 'Copilot', icon: Sparkles },
+  { name: 'media', title: 'Media', icon: Images },
+  { name: 'settings', title: 'Settings', icon: Settings },
 ];
 
 function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
@@ -115,11 +117,13 @@ function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps)
                 pressed && styles.tabButtonPressed,
               ]}
             >
-              <Ionicons
-                name={tab.icon}
-                size={22}
-                color={focused ? dark.accent : dark.inkSoft}
-              />
+              <View style={styles.tabIconWrap}>
+                <Icon
+                  as={tab.icon}
+                  size={22}
+                  color={focused ? dark.accent : dark.inkSoft}
+                />
+              </View>
               <Text
                 numberOfLines={1}
                 style={focused ? styles.activeTabLabel : styles.inactiveTabLabel}
@@ -166,30 +170,36 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   tabBar: {
-    height: 74,
-    borderRadius: 28,
-    backgroundColor: dark.surfaceElevated,
+    height: 72,
+    borderRadius: 999,
+    backgroundColor: dark.surface,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderWidth: 1,
     borderColor: dark.hairline,
   },
   tabButton: {
     flex: 1,
-    height: 58,
+    height: 56,
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 3,
-    borderRadius: 20,
+    borderRadius: 999,
+  },
+  tabIconWrap: {
+    width: 28,
+    height: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabButtonActive: {
-    backgroundColor: dark.surfaceSunken,
+    backgroundColor: '#2E2E33',
     borderWidth: 1,
-    borderColor: dark.hairline,
+    borderColor: dark.hairlineStrong,
   },
   tabButtonInactive: {
     backgroundColor: 'transparent',
@@ -207,6 +217,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontWeight: '600',
     flexShrink: 0,
+    textAlign: 'center',
   },
   inactiveTabLabel: {
     fontSize: 11,
@@ -215,5 +226,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontWeight: '500',
     flexShrink: 0,
+    textAlign: 'center',
   },
 });
