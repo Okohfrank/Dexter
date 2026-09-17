@@ -11,16 +11,26 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows } from '../../src/theme';
+import {
+  CalendarDays,
+  Clock3,
+  Zap,
+  ArrowLeft,
+  ArrowRight,
+  Minus,
+  Plus,
+} from 'lucide-react-native';
+import { Icon } from '../../src/components/rnr/icon';
+import { dark, fonts, spacing } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { generateContentStrategy } from '../../src/api/strategy';
-import { GlassCard, GlassPill } from '../../src/components/ui';
-import { OnboardingHeader } from '../../src/components/onboarding-header';
 import type { ContentPlan } from '../../src/types';
 
 const MAX_FREQUENCY = 21;
 
+/* v2 step 5 — strategy review with bottom Back / Dashboard bar.
+ * Plan fetch, frequency, autonomy hand-off, and dashboard exit
+ * logic unchanged. */
 export default function StrategyReviewScreen() {
   const router = useRouter();
   const business = useAppStore((s) => s.business);
@@ -71,54 +81,68 @@ export default function StrategyReviewScreen() {
     }
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(onboarding)/brain');
+    }
+  };
+
+  const handleGoDashboard = () => {
+    if (plan) {
+      setContentPlan({ ...plan, frequencyPerWeek: frequency });
+    }
+    router.replace('/(dashboard)');
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <OnboardingHeader step={5} />
-        <View style={styles.header}>
-          <Text style={styles.title}>Proposed Strategy</Text>
-          <Text style={styles.subtitle}>
-            Dexter derived this concrete plan from your business goals and audience profile.
-          </Text>
-        </View>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.eyebrow}>Step 5 of 5</Text>
+        <Text style={styles.title}>Proposed Strategy</Text>
+        <Text style={styles.subtitle}>
+          Dexter derived this concrete plan from your business goals and audience profile.
+        </Text>
 
         {loading ? (
-          <GlassCard style={styles.loadingCard}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Dexter is optimizing your posting strategy…</Text>
-          </GlassCard>
+          <View style={styles.stateCard}>
+            <ActivityIndicator size="large" color={dark.accent} />
+            <Text style={styles.stateText}>Dexter is optimizing your posting strategy…</Text>
+          </View>
         ) : !plan ? (
-          <GlassCard style={styles.emptyCard}>
+          <View style={styles.stateCard}>
             <View style={styles.emptyIcon}>
-              <Ionicons name="calendar-clear-outline" size={30} color={colors.inkFaint} />
+              <Icon as={CalendarDays} size={30} color={dark.inkFaint} />
             </View>
             <Text style={styles.emptyTitle}>No strategy available</Text>
             <Text style={styles.emptyText}>
               Connect a business and a LinkedIn account from the dashboard, then come back here to generate your plan.
             </Text>
-            <Pressable
-              style={styles.primaryBtn}
-              onPress={() => {
-                router.replace('/(dashboard)');
-              }}
-            >
-              <Text style={styles.primaryBtnText}>Go to Dashboard</Text>
+            <Pressable style={styles.inlineBtn} onPress={handleGoDashboard}>
+              <Text style={styles.inlineBtnText}>Go to Dashboard</Text>
             </Pressable>
-          </GlassCard>
+          </View>
         ) : (
           <>
-            {/* Frequency Card */}
-            <GlassCard style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Ionicons name="calendar-outline" size={18} color={colors.primary} />
+            {/* Frequency hero */}
+            <View style={styles.card}>
+              <View style={styles.cardLabelRow}>
+                <Icon as={CalendarDays} size={18} color={dark.accent} />
                 <Text style={styles.cardLabel}>Posting Frequency</Text>
               </View>
               <View style={styles.stepper}>
                 <Pressable
                   style={styles.stepBtn}
                   onPress={() => setFrequency((f) => Math.max(1, f - 1))}
+                  accessibilityRole="button"
+                  accessibilityLabel="Decrease frequency"
                 >
-                  <Ionicons name="remove" size={18} color={colors.ink} />
+                  <Icon as={Minus} size={18} color={dark.ink} />
                 </Pressable>
                 <View style={styles.stepValueWrap}>
                   <Text style={styles.stepValueNumber}>{frequency}</Text>
@@ -127,39 +151,40 @@ export default function StrategyReviewScreen() {
                 <Pressable
                   style={styles.stepBtn}
                   onPress={() => setFrequency((f) => Math.min(MAX_FREQUENCY, f + 1))}
+                  accessibilityRole="button"
+                  accessibilityLabel="Increase frequency"
                 >
-                  <Ionicons name="add" size={18} color={colors.ink} />
+                  <Icon as={Plus} size={18} color={dark.ink} />
                 </Pressable>
               </View>
-            </GlassCard>
+            </View>
 
-            {/* Content Pillars Card */}
-            <GlassCard style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Ionicons name="layers-outline" size={18} color={colors.primary} />
-                <Text style={styles.cardLabel}>Content Pillars</Text>
-              </View>
+            {/* Pillars */}
+            <View style={styles.card}>
+              <Text style={styles.sectionMiniLabel}>Content Pillars</Text>
               <View style={styles.pillarList}>
                 {plan.pillars.map((pillar, i) => (
                   <View key={i} style={styles.pillarRow}>
-                    <View style={styles.pillarDot}>
-                      <Ionicons name="checkmark" size={12} color={colors.positive} />
-                    </View>
+                    <Text style={styles.pillarNum}>
+                      {String(i + 1).padStart(2, '0')}
+                    </Text>
                     <Text style={styles.pillarText}>{pillar}</Text>
                   </View>
                 ))}
               </View>
-            </GlassCard>
+            </View>
 
-            {/* Best Times & Reasoning Card */}
-            <GlassCard style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Ionicons name="time-outline" size={18} color={colors.primary} />
-                <Text style={styles.cardLabel}>Target Windows & Rationale</Text>
+            {/* Windows + rationale */}
+            <View style={styles.card}>
+              <View style={styles.cardLabelRow}>
+                <Icon as={Clock3} size={18} color={dark.accent} />
+                <Text style={styles.cardLabel}>Target Windows</Text>
               </View>
               <View style={styles.timesRow}>
                 {plan.bestTimes.map((time, idx) => (
-                  <GlassPill key={idx} label={time} variant="primary" icon="time-outline" />
+                  <View key={idx} style={styles.timePill}>
+                    <Text style={styles.timePillText}>{time}</Text>
+                  </View>
                 ))}
               </View>
               <View style={styles.reasonBox}>
@@ -168,13 +193,13 @@ export default function StrategyReviewScreen() {
                     'Why: Mid-morning slots yield the highest initial impression velocity and comment rate for executive audiences.'}
                 </Text>
               </View>
-            </GlassCard>
+            </View>
 
-            {/* Autonomous Mode Hand-Off Card */}
-            <GlassCard style={styles.autonomyCard} elevated>
+            {/* Autonomy hand-off */}
+            <View style={styles.card}>
               <View style={styles.autonomyHeader}>
                 <View style={styles.autonomyIconWrap}>
-                  <Ionicons name="rocket" size={24} color="#FFFFFF" />
+                  <Icon as={Zap} size={22} color="#FFF" />
                 </View>
                 <View style={styles.autonomyBody}>
                   <Text style={styles.autonomyTitle}>Autonomous Mode</Text>
@@ -185,194 +210,289 @@ export default function StrategyReviewScreen() {
                 <Switch
                   value={enabled}
                   onValueChange={handleToggle}
-                  trackColor={{ false: colors.border, true: colors.primary }}
+                  trackColor={{ false: dark.hairlineStrong, true: dark.accent }}
                   thumbColor="#FFFFFF"
-                  ios_backgroundColor={colors.border}
+                  ios_backgroundColor={dark.hairlineStrong}
                 />
               </View>
-            </GlassCard>
+            </View>
 
             <Text style={styles.hint}>
               You maintain full supervisory control. Override or pause at any time from your dashboard.
             </Text>
-
-            <Pressable
-              style={styles.dashboardBtn}
-              onPress={() => {
-                if (plan) {
-                  setContentPlan({ ...plan, frequencyPerWeek: frequency });
-                }
-                router.replace('/(dashboard)');
-              }}
-            >
-              <Text style={styles.dashboardBtnText}>Go to Dashboard</Text>
-              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-            </Pressable>
           </>
         )}
       </ScrollView>
+
+      <View style={styles.bottomBar}>
+        <Pressable style={styles.backBtn} onPress={handleBack} hitSlop={8}>
+          <Icon as={ArrowLeft} size={18} color={dark.ink} />
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
+        <Text style={styles.stepText}>5 / 5</Text>
+        <Pressable style={styles.dashboardBtn} onPress={handleGoDashboard}>
+          <Text style={styles.dashboardBtnText}>Go to Dashboard</Text>
+          <Icon as={ArrowRight} size={18} color="#FFF" />
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: spacing.xl, gap: spacing.lg, paddingBottom: spacing.xxxl },
-  header: { gap: spacing.xs },
-  eyebrow: {
-    ...typography.caption2,
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    fontWeight: '700',
-  },
-  title: { ...typography.displaySmall, color: colors.ink },
-  subtitle: { ...typography.body, color: colors.inkSoft },
-  loadingCard: {
-    padding: spacing.xxxl,
-    alignItems: 'center',
-    justifyContent: 'center',
+  flex: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: dark.canvas },
+  scroll: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
     gap: spacing.md,
-    marginVertical: spacing.xl,
   },
-  loadingText: {
-    ...typography.caption,
-    color: colors.inkSoft,
-    textAlign: 'center',
+  eyebrow: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: dark.accent,
   },
-  emptyCard: {
-    padding: spacing.xxl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginVertical: spacing.xl,
+  title: {
+    fontFamily: 'InterTight_700Bold',
+    fontSize: 26,
+    lineHeight: 30,
+    letterSpacing: -0.6,
+    color: dark.ink,
   },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceSunken,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
-  },
-  emptyTitle: { ...typography.h3, color: colors.ink },
-  emptyText: {
-    ...typography.callout,
-    color: colors.inkSoft,
-    textAlign: 'center',
+  subtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
     lineHeight: 20,
-    maxWidth: 300,
+    color: dark.inkSoft,
   },
-  primaryBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingVertical: 12,
-    paddingHorizontal: spacing.xl,
-    marginTop: spacing.sm,
-    ...shadows.primaryBtn,
+  card: {
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 20,
+    padding: spacing.lg,
+    gap: spacing.md,
   },
-  primaryBtnText: { color: '#FFFFFF', fontFamily: 'Inter_600SemiBold', fontSize: 14 },
-  card: { gap: spacing.md },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  cardLabel: { ...typography.subheading, color: colors.ink, fontWeight: '700' },
+  cardLabelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  cardLabel: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    color: dark.inkSoft,
+  },
+  sectionMiniLabel: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    color: dark.inkSoft,
+  },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surfaceSunken,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.xs,
   },
   stepBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surface,
+    width: 52,
+    height: 52,
+    borderRadius: 999,
+    backgroundColor: dark.surfaceElevated,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepValueWrap: { alignItems: 'center' },
   stepValueNumber: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.ink,
+    fontFamily: 'InterTight_700Bold',
+    fontSize: 48,
+    lineHeight: 50,
+    letterSpacing: -1.2,
+    color: dark.ink,
   },
   stepValueUnit: {
-    ...typography.caption2,
-    color: colors.inkSoft,
-    fontSize: 11,
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: dark.inkSoft,
   },
-  pillarList: { gap: spacing.sm },
-  pillarRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  pillarDot: {
-    width: 22,
-    height: 22,
-    borderRadius: radii.pill,
-    backgroundColor: colors.positiveFill,
+  pillarList: { gap: spacing.md },
+  pillarRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+  pillarNum: {
+    fontFamily: 'InterTight_700Bold',
+    fontSize: 14,
+    color: dark.accent,
+    minWidth: 24,
+    paddingTop: 2,
+  },
+  pillarText: {
+    flex: 1,
+    flexShrink: 1,
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    lineHeight: 22,
+    color: dark.ink,
+  },
+  timesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  timePill: {
+    backgroundColor: dark.surfaceElevated,
     borderWidth: 1,
-    borderColor: colors.positiveBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: dark.hairline,
+    borderRadius: 999,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
   },
-  pillarText: { ...typography.body, color: colors.ink, flex: 1, fontSize: 14 },
-  timesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  timePillText: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: dark.ink,
+  },
   reasonBox: {
-    backgroundColor: colors.surfaceSunken,
-    borderRadius: radii.md,
+    backgroundColor: dark.surfaceSunken,
     borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
+    borderColor: dark.hairline,
+    borderRadius: 14,
+    padding: spacing.lg,
   },
   reasonText: {
-    ...typography.caption,
-    color: colors.inkSoft,
-    lineHeight: 18,
-    fontStyle: 'italic',
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 21,
+    color: dark.inkSoft,
   },
-  autonomyCard: {
-    padding: spacing.xl,
-    marginVertical: spacing.xs,
-  },
-  autonomyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
+  autonomyHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   autonomyIconWrap: {
     width: 48,
     height: 48,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primary,
+    borderRadius: 999,
+    backgroundColor: dark.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.primaryBtn,
+    flexShrink: 0,
   },
-  autonomyBody: { flex: 1 },
-  autonomyTitle: { ...typography.subheading, color: colors.ink, fontWeight: '700' },
-  autonomySubtitle: { ...typography.caption2, color: colors.inkSoft, marginTop: 2 },
+  autonomyBody: { flex: 1, flexShrink: 1, gap: 2 },
+  autonomyTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 16,
+    color: dark.ink,
+  },
+  autonomySubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: dark.inkSoft,
+  },
   hint: {
-    ...typography.caption2,
-    color: colors.inkFaint,
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: dark.inkFaint,
     textAlign: 'center',
-    paddingHorizontal: spacing.lg,
+  },
+  stateCard: {
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 20,
+    padding: spacing.xxl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+    marginVertical: spacing.xl,
+  },
+  stateText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: dark.inkSoft,
+    textAlign: 'center',
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 999,
+    backgroundColor: dark.surfaceElevated,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  emptyTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 17,
+    color: dark.ink,
+  },
+  emptyText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: dark.inkSoft,
+    textAlign: 'center',
+    maxWidth: 300,
+  },
+  inlineBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: dark.accent,
+    borderRadius: 999,
+    paddingVertical: 13,
+    paddingHorizontal: 24,
+    minHeight: 48,
+    marginTop: spacing.sm,
+  },
+  inlineBtnText: {
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+  },
+  bottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderTopWidth: 1,
+    borderTopColor: dark.hairline,
+    backgroundColor: dark.canvas,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    minHeight: 48,
+  },
+  backText: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: dark.ink,
+  },
+  stepText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: dark.inkFaint,
   },
   dashboardBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingVertical: 15,
-    marginTop: spacing.md,
-    ...shadows.primaryBtn,
+    gap: 8,
+    backgroundColor: dark.accent,
+    borderRadius: 999,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    minHeight: 52,
+    minWidth: 150,
   },
-  dashboardBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  dashboardBtnText: {
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+  },
 });
