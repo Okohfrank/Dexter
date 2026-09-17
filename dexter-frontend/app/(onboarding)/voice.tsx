@@ -9,6 +9,7 @@ import {
   TextInput,
   Dimensions,
   Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -21,15 +22,55 @@ import {
   Loader2,
   Check,
   ArrowUp,
+  ArrowRight,
   Lightbulb,
 } from 'lucide-react-native';
 import { Icon } from '../../src/components/rnr/icon';
+import {
+  useAudioRecorder,
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+} from 'expo-audio';
 import { dark, fonts, spacing } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
-import { connectVoiceStream } from '../../src/api/voice';
+import { connectVoiceStream, transcribeAudio } from '../../src/api/voice';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const ORB_SIZE = Math.min(SCREEN_W * 0.48, 200);
+
+const WAVE_DURS = [720, 980, 830, 1100, 900];
+
+/* Voice waveform bar: own loop, height follows `energy`.
+ * speaking ≈ 1.3, listening = 1, processing = 0.5, muted ≈ 0.08. */
+function WaveBar({ energy, duration }: { energy: number; duration: number }) {
+  const v = useRef(new Animated.Value(0.35)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(v, {
+          toValue: 1,
+          duration,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(v, {
+          toValue: 0.25,
+          duration: Math.round(duration * 1.2),
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [duration, v]);
+  const peak = 0.22 + Math.min(energy, 1.4) * 0.55;
+  const scaleY = v.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.22, Math.max(peak, 0.25)],
+  });
+  return <Animated.View style={[styles.waveBar, { transform: [{ scaleY }] }]} />;
+}
 
 /* v2 voice interview — dark live-call chrome. Stream, orb physics,
  * dock behavior, and brain hand-off logic unchanged. */
@@ -46,8 +87,10 @@ export default function VoiceInterviewScreen() {
   const [transcriptPreview, setTranscriptPreview] = useState<string | null>(null);
   const [textModalVisible, setTextModalVisible] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
 
   const streamRef = useRef<ReturnType<typeof connectVoiceStream> | null>(null);
+  const voiceRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   // Animated values for fluid glowing Orb
   const orbScale = useRef(new Animated.Value(1)).current;
@@ -57,114 +100,59 @@ export default function VoiceInterviewScreen() {
   const haloOpacity2 = useRef(new Animated.Value(0.2)).current;
   const orbRotate = useRef(new Animated.Value(0)).current;
 
-  // Orb animation: energy follows conversation state so motion reads
-  // as voice-reactive. Durations stay incommensurate (never visibly
-  // looping); amplitude and rotation speed scale with state.
+  // Gentle halo breathing; the waveform bars carry state expression.
   useEffect(() => {
-    const energy =
-      agentStatus === 'speaking'
-        ? { amp: 0.15, durA: 420, durB: 560, rotDur: 6000 }
-        : agentStatus === 'listening'
-          ? { amp: 0.07, durA: 1400, durB: 1800, rotDur: 14000 }
-          : { amp: 0.035, durA: 650, durB: 800, rotDur: 9000 };
-
-    const rotateLoop = Animated.loop(
-      Animated.timing(orbRotate, {
-        toValue: 1,
-        duration: energy.rotDur,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
+    const halo = Animated.loop(
+      Animated.sequence([
+        Animated.timing(haloOpacity1, {
+          toValue: 0.5,
+          duration: 1600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(haloOpacity1, {
+          toValue: 0.15,
+          duration: 1600,
+          useNativeDriver: true,
+        }),
+      ]),
     );
-    rotateLoop.start();
+    halo.start();
+    return () => halo.stop();
+  }, [haloOpacity1]);
 
-    let pulseLoop: Animated.CompositeAnimation;
+  // Slow halo drift for depth.
+  useEffect(() => {
+    const drift = Animated.loop(
+      Animated.sequence([
+        Animated.timing(haloScale1, {
+          toValue: 1.3,
+          duration: 5200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(haloScale1, {
+          toValue: 1.0,
+          duration: 5200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    drift.start();
+    return () => drift.stop();
+  }, [haloScale1]);
 
-    if (isMuted) {
-      // Muted: near-static, barely breathing.
-      pulseLoop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(orbScale, {
-            toValue: 1.01,
-            duration: 2400,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(orbScale, {
-            toValue: 0.99,
-            duration: 2400,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      );
-    } else {
-      // Speaking/listening/processing: layered wobble + traveling halo.
-      pulseLoop = Animated.loop(
-        Animated.parallel([
-          Animated.sequence([
-            Animated.timing(orbScale, {
-              toValue: 1 + energy.amp,
-              duration: energy.durA,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-            Animated.timing(orbScale, {
-              toValue: 1 - energy.amp * 0.7,
-              duration: energy.durB,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-            Animated.timing(orbScale, {
-              toValue: 1 + energy.amp * 0.5,
-              duration: Math.round(energy.durA * 0.8),
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-            Animated.timing(orbScale, {
-              toValue: 1,
-              duration: Math.round(energy.durB * 0.7),
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.sequence([
-            Animated.timing(haloScale1, {
-              toValue: 1.45,
-              duration: energy.durB,
-              easing: Easing.out(Easing.ease),
-              useNativeDriver: true,
-            }),
-            Animated.timing(haloScale1, {
-              toValue: 1.0,
-              duration: energy.durA,
-              easing: Easing.in(Easing.ease),
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.sequence([
-            Animated.timing(haloOpacity1, {
-              toValue: 0.6,
-              duration: energy.durB,
-              useNativeDriver: true,
-            }),
-            Animated.timing(haloOpacity1, {
-              toValue: 0.2,
-              duration: energy.durA,
-              useNativeDriver: true,
-            }),
-          ]),
-        ])
-      );
-    }
-
-    pulseLoop.start();
-
-    return () => {
-      rotateLoop.stop();
-      pulseLoop.stop();
-    };
-  }, [agentStatus, isMuted]);
+  // Orb body follows conversation energy directly.
+  useEffect(() => {
+    const target =
+      agentStatus === 'speaking' ? 1.12 : agentStatus === 'listening' ? 1.04 : 1.0;
+    Animated.timing(orbScale, {
+      toValue: target,
+      duration: 450,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  }, [agentStatus, orbScale]);
 
   // Connect WebSocket on mount
   useEffect(() => {
@@ -213,9 +201,64 @@ export default function VoiceInterviewScreen() {
     router.push('/(onboarding)/brain');
   };
 
-  const toggleMute = () => {
-    setIsMuted((prev) => !prev);
+  const toggleMute = async () => {
+    // Unmute = user takes the floor: start recording immediately so most
+    // of the talking is theirs. Mute = stop, transcribe, and send.
+    // (expo-audio — expo-av's native module is no longer bundled.)
     if (!isMuted) {
+      setIsMuted(true);
+      setAgentStatus('listening');
+      await stopRecordingAndSend();
+      return;
+    }
+    try {
+      const perm = await requestRecordingPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          'Microphone Access',
+          'Please allow microphone access in settings to speak with Dexter.',
+        );
+        return;
+      }
+      await voiceRecorder.prepareToRecordAsync();
+      voiceRecorder.record();
+      setIsRecording(true);
+      setIsMuted(false);
+      setAgentStatus('listening');
+    } catch (e: any) {
+      Alert.alert(
+        'Microphone Error',
+        `Could not access microphone: ${e.message || 'Audio hardware error'}`,
+      );
+    }
+  };
+
+  const stopRecordingAndSend = async () => {
+    if (!isRecording) {
+      return;
+    }
+    setIsRecording(false);
+    setAgentStatus('processing');
+    try {
+      await voiceRecorder.stop();
+      const uri = voiceRecorder.uri;
+      if (uri) {
+        const res = await transcribeAudio(uri, undefined);
+        if (res && res.transcript) {
+          handleSendSpeech(res.transcript);
+          return;
+        }
+        Alert.alert(
+          'Speech Recognition',
+          'Could not detect speech. Please try speaking again.',
+        );
+      }
+    } catch (err: any) {
+      Alert.alert(
+        'Voice Error',
+        `Transcription error: ${err.message || 'Microphone error'}`,
+      );
+    } finally {
       setAgentStatus('listening');
     }
   };
@@ -285,36 +328,27 @@ export default function VoiceInterviewScreen() {
               styles.orbCore,
               {
                 transform: [{ scale: orbScale }],
-                opacity: isMuted ? 0.35 : 1,
+                opacity: isMuted ? 0.5 : 1,
               },
             ]}
           >
-            {/* ChatGPT-style silk: black core, counter-rotating white blobs */}
-            <Animated.View
-              style={[styles.silkSpinA, { transform: [{ rotate: spin }] }]}
-            >
-              <View style={styles.blobA} />
-              <View style={styles.blobB} />
-            </Animated.View>
-            <Animated.View
-              style={[styles.silkSpinB, { transform: [{ rotate: spin }] }]}
-            >
-              <View style={styles.blobC} />
-            </Animated.View>
-            <View style={styles.orbIconWrap}>
-              <Icon
-                as={
-                  isMuted
-                    ? MicOff
-                    : agentStatus === 'speaking'
-                      ? Volume2
-                      : agentStatus === 'processing'
-                        ? Loader2
-                        : Mic
-                }
-                size={30}
-                color="rgba(255,255,255,0.92)"
-              />
+            {/* Voice waveform: bars breathe with conversation energy */}
+            <View style={styles.waveRow}>
+              {WAVE_DURS.map((d, i) => (
+                <WaveBar
+                  key={i}
+                  duration={d}
+                  energy={
+                    isMuted
+                      ? 0.08
+                      : agentStatus === 'speaking'
+                        ? 1.3
+                        : agentStatus === 'listening'
+                          ? 1
+                          : 0.5
+                  }
+                />
+              ))}
             </View>
           </Animated.View>
         </View>
@@ -374,6 +408,10 @@ export default function VoiceInterviewScreen() {
 
       {/* ── Bottom Control Dock ── */}
       <View style={styles.bottomDockWrapper}>
+        <Pressable style={styles.continuePill} onPress={handleProceedToBrain}>
+          <Text style={styles.continuePillText}>Continue to Business Brain</Text>
+          <Icon as={ArrowRight} size={16} color={dark.accent} />
+        </Pressable>
         <View style={styles.bottomDock}>
           <Pressable style={styles.dockCircleBtn} onPress={() => setTextModalVisible(true)}>
             <Icon as={MessageCircle} size={22} color={dark.ink} />
@@ -519,46 +557,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  silkSpinA: {
-    ...StyleSheet.absoluteFill,
+  waveRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 10,
   },
-  silkSpinB: {
-    ...StyleSheet.absoluteFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  blobA: {
-    position: 'absolute',
-    width: ORB_SIZE * 0.85,
-    height: ORB_SIZE * 0.55,
-    borderRadius: ORB_SIZE * 0.28,
-    backgroundColor: 'rgba(255, 255, 255, 0.75)',
-    transform: [{ rotate: '24deg' }],
-  },
-  blobB: {
-    position: 'absolute',
-    width: ORB_SIZE * 0.6,
-    height: ORB_SIZE * 0.9,
-    borderRadius: ORB_SIZE * 0.3,
-    backgroundColor: 'rgba(255, 255, 255, 0.35)',
-    transform: [{ rotate: '-30deg' }],
-  },
-  blobC: {
-    position: 'absolute',
-    width: ORB_SIZE * 0.45,
-    height: ORB_SIZE * 0.45,
-    borderRadius: ORB_SIZE * 0.225,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  orbIconWrap: {
-    width: ORB_SIZE * 0.34,
-    height: ORB_SIZE * 0.34,
-    borderRadius: ORB_SIZE * 0.17,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  waveBar: {
+    width: 9,
+    height: 72,
+    borderRadius: 5,
+    backgroundColor: '#FFFFFF',
   },
 
   statusLabelWrap: { marginTop: spacing.md },
@@ -653,6 +661,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: spacing.md,
     marginTop: 'auto',
+    gap: spacing.sm,
+  },
+  continuePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 999,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    minHeight: 48,
+  },
+  continuePillText: {
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    color: dark.accent,
   },
   bottomDock: {
     flexDirection: 'row',
