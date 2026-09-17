@@ -14,8 +14,13 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Mic, MicOff, ArrowUp, ArrowLeft, Volume2, CheckCircle2 } from "lucide-react-native";
+import { Mic, MicOff, ArrowUp, ArrowLeft, ArrowRight, Volume2, CheckCircle2 } from "lucide-react-native";
 import { Icon } from "../../src/components/rnr/icon";
+import {
+  useAudioRecorder,
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+} from "expo-audio";
 import * as Speech from "expo-speech";
 import { dark, fonts, spacing } from "../../src/theme";
 import { sendChatMessage } from "../../src/api/chat";
@@ -55,11 +60,8 @@ export default function InterviewScreen() {
   const voiceStreamRef = useRef<ReturnType<typeof connectVoiceStream> | null>(
     null,
   );
-  const recordingRef = useRef<any>(null);
-
-  const getAudio = async () => {
-    try { return require("expo-av").Audio; } catch { return null; }
-  };
+  const recordingRef = useRef<boolean>(false);
+  const interviewRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const speak = (text: string) => {
     try {
@@ -96,12 +98,7 @@ export default function InterviewScreen() {
   const startMicRecording = async () => {
     try {
       Speech.stop();
-      const Audio = await getAudio();
-      if (!Audio) {
-        Alert.alert("Audio Not Available", "Audio recording is not available in this build.");
-        return;
-      }
-      const perm = await Audio.requestPermissionsAsync();
+      const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) {
         Alert.alert(
           "Microphone Access",
@@ -110,18 +107,9 @@ export default function InterviewScreen() {
         return;
       }
 
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
-        staysActiveInBackground: false,
-      });
-
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY,
-      );
-      recordingRef.current = recording;
+      await interviewRecorder.prepareToRecordAsync();
+      interviewRecorder.record();
+      recordingRef.current = true;
       setIsRecording(true);
       setVoiceState("listening");
     } catch (e: any) {
@@ -140,11 +128,9 @@ export default function InterviewScreen() {
     setVoiceState("processing");
 
     try {
-      const rec = recordingRef.current;
-      recordingRef.current = null;
-      await rec.stopAndUnloadAsync();
-      try { const Audio = await getAudio(); if (Audio) await Audio.setAudioModeAsync({ allowsRecordingIOS: false }); } catch {}
-      const uri = rec.getURI();
+      recordingRef.current = false;
+      await interviewRecorder.stop();
+      const uri = interviewRecorder.uri;
 
       if (uri) {
         const res = await transcribeAudio(uri, business?.id);
@@ -477,7 +463,15 @@ export default function InterviewScreen() {
             <Text style={styles.backText}>Back</Text>
           </Pressable>
           <Text style={styles.stepText}>3 / 5</Text>
-          <View style={styles.bottomSpacer} />
+          <Pressable
+            style={styles.continueBtn}
+            onPress={() => router.push('/(onboarding)/brain')}
+            accessibilityRole="button"
+            accessibilityLabel="Continue to Business Brain"
+          >
+            <Text style={styles.continueText}>Continue</Text>
+            <Icon as={ArrowRight} size={18} color="#FFF" />
+          </Pressable>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -677,5 +671,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: dark.inkFaint,
   },
-  bottomSpacer: { width: 90 },
+  continueBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: dark.accent,
+    borderRadius: 999,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    minHeight: 52,
+    minWidth: 150,
+  },
+  continueText: {
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+  },
 });
