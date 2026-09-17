@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { GlassCard } from '../../src/components/ui';
+import { OnboardingHeader } from '../../src/components/onboarding-header';
 import type { BusinessBrain } from '../../src/types';
 
 const EMPTY_BRAIN: BusinessBrain = {
@@ -99,8 +100,8 @@ export default function BrainReviewScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <OnboardingHeader step={4} />
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>Step 4 of 5</Text>
           <Text style={styles.title}>Your Business Brain</Text>
           <Text style={styles.subtitle}>
             Dexter distilled your conversation into this persistent intelligence profile. Every post Dexter creates references this.

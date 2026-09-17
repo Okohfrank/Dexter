@@ -16,6 +16,7 @@ import { colors, spacing, radii, typography, shadows } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { generateContentStrategy } from '../../src/api/strategy';
 import { GlassCard, GlassPill } from '../../src/components/ui';
+import { OnboardingHeader } from '../../src/components/onboarding-header';
 import type { ContentPlan } from '../../src/types';
 
 const MAX_FREQUENCY = 21;
@@ -73,8 +74,8 @@ export default function StrategyReviewScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <OnboardingHeader step={5} />
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>Step 5 of 5</Text>
           <Text style={styles.title}>Proposed Strategy</Text>
           <Text style={styles.subtitle}>
             Dexter derived this concrete plan from your business goals and audience profile.

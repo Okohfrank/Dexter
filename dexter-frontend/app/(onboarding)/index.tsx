@@ -13,12 +13,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows } from '../../src/theme';
+import { CheckCircle2, AlertTriangle, ArrowRight, ArrowLeft } from 'lucide-react-native';
+import { Icon } from '../../src/components/rnr/icon';
+import { Input } from '../../src/components/rnr/input';
+import { dark, fonts, spacing } from '../../src/theme';
 import { createBusiness, listBusinesses } from '../../src/api/business';
 import { getLinkedInAuthorizationUrl } from '../../src/api/auth';
 import { listConnectedAccounts } from '../../src/api/oauth';
 import { useAppStore } from '../../src/store/app';
-import { GlassCard, GlassPill } from '../../src/components/ui';
 import type { Platform } from '../../src/types';
 
 type PlatformCard = {
@@ -27,6 +29,12 @@ type PlatformCard = {
   icon: keyof typeof Ionicons.glyphMap;
   available: boolean;
   blurb: string;
+};
+
+const PLATFORM_BRAND: Record<Platform, string> = {
+  linkedin: '#0A66C2',
+  instagram: '#E1306C',
+  tiktok: '#000000',
 };
 
 const PLATFORMS: PlatformCard[] = [
@@ -53,6 +61,9 @@ const PLATFORMS: PlatformCard[] = [
   },
 ];
 
+/* v2 step 1 — dark connect screen with bottom Back / Continue bar.
+ * NOTE: fixed inverted `linkedinConnected` flag (was `!linkedinAccount`,
+ * showing "authenticated & ready" when nothing was linked). */
 export default function ConnectScreen() {
   const router = useRouter();
   const business = useAppStore((s) => s.business);
@@ -137,119 +148,130 @@ export default function ConnectScreen() {
     }
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(auth)/login');
+    }
+  };
+
   const linkedinAccount = connectedAccounts.find((a) => a.platform === 'linkedin');
-  const linkedinConnected = !linkedinAccount;
+  const linkedinConnected = !!linkedinAccount;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.eyebrow}>Step 1 of 5</Text>
-          <Text style={styles.title}>Connect your channels</Text>
-          <Text style={styles.subtitle}>
-            Dexter operates as your autonomous brand agent and publishes on your behalf.
-          </Text>
-        </View>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.eyebrow}>Step 1 of 5</Text>
+        <Text style={styles.title}>Connect your channels</Text>
+        <Text style={styles.subtitle}>
+          Dexter operates as your autonomous brand agent and publishes on your behalf.
+        </Text>
 
         <View style={styles.field}>
           <Text style={styles.label}>Company / Brand Name</Text>
-          <TextInput
-            style={styles.input}
+          <Input
             placeholder="e.g. Acme SaaS Studio"
-            placeholderTextColor={colors.inkFaint}
+            placeholderTextColor={dark.inkFaint}
             value={businessName}
             onChangeText={setBusinessName}
+            autoCapitalize="words"
           />
         </View>
 
         <View style={styles.platformList}>
-          {PLATFORMS.map((card) => {
-            const account = connectedAccounts.find((a) => a.platform === card.platform);
-            const isConnected = card.available && !!account;
-            const tokenExpired = card.available && account?.token_status === 'expired';
-            return (
-              <GlassCard
-                key={card.platform}
-                style={[styles.card, !card.available && styles.cardDisabled]}
-                elevated={isConnected}
-                highlighted={isConnected}
-              >
+          {loading ? (
+            <ActivityIndicator color={dark.accent} style={{ marginVertical: 24 }} />
+          ) : (
+            PLATFORMS.map((card) => {
+              const account = connectedAccounts.find((a) => a.platform === card.platform);
+              const isConnected = card.available && !!account;
+              const tokenExpired = card.available && account?.token_status === 'expired';
+              return (
                 <View
-                  style={[
-                    styles.cardIcon,
-                    isConnected && !tokenExpired && styles.cardIconConnected,
-                    tokenExpired && styles.cardIconWarning,
-                  ]}
+                  key={card.platform}
+                  style={[styles.card, !card.available && styles.cardDisabled]}
                 >
-                  <Ionicons
-                    name={tokenExpired ? 'warning' : isConnected ? 'checkmark-circle' : card.icon}
-                    size={22}
-                    color={
-                      tokenExpired
-                        ? colors.negative
-                        : isConnected
-                        ? colors.positive
-                        : card.platform === 'linkedin'
-                        ? '#0A66C2'
-                        : colors.primary
-                    }
-                  />
-                </View>
-                <View style={styles.cardBody}>
-                  <View style={styles.cardTitleRow}>
-                    <Text style={styles.cardTitle}>{card.title}</Text>
-                    {isConnected && (
-                      <GlassPill
-                        label={
-                          account?.display_name
-                            ? `CONNECTED: ${account.display_name.split(' ')[0]}`
-                            : 'CONNECTED'
-                        }
-                        variant="positive"
+                <View style={styles.cardTopRow}>
+                  <View style={styles.brandBox}>
+                    {tokenExpired ? (
+                      <Icon as={AlertTriangle} size={24} color={dark.warning} />
+                    ) : isConnected ? (
+                      <Icon as={CheckCircle2} size={24} color={dark.positive} />
+                    ) : (
+                      <Ionicons
+                        name={card.icon}
+                        size={26}
+                        color={PLATFORM_BRAND[card.platform]}
                       />
                     )}
                   </View>
-                  <Text style={styles.cardSubtitle}>{card.blurb}</Text>
-                  {tokenExpired && (
-                    <Text style={styles.expiredText}>
-                      Token expired — reconnect to resume autonomous posting.
+                  <View style={styles.cardTitleBlock}>
+                    <Text style={styles.cardTitle}>{card.title}</Text>
+                    <Text
+                      style={[
+                        styles.cardStatus,
+                        isConnected && styles.cardStatusConnected,
+                      ]}
+                    >
+                      {!card.available
+                        ? 'Coming soon'
+                        : isConnected && account?.display_name
+                          ? `Connected as ${account.display_name.split(' ')[0]}`
+                          : isConnected
+                            ? 'Connected'
+                            : 'Available now'}
                     </Text>
+                  </View>
+                  {card.available ? (
+                    <Pressable
+                      style={[
+                        styles.connectBtn,
+                        isConnected && !tokenExpired && styles.connectedBtn,
+                        tokenExpired && styles.reconnectBtn,
+                      ]}
+                      onPress={handleConnectLive}
+                      disabled={connecting}
+                    >
+                      {connecting ? (
+                        <ActivityIndicator size="small" color="#FFF" />
+                      ) : (
+                        <Text
+                          style={[
+                            styles.connectBtnText,
+                            isConnected && !tokenExpired && styles.connectedBtnText,
+                          ]}
+                        >
+                          {tokenExpired ? 'Reconnect' : isConnected ? 'Manage' : 'Connect'}
+                        </Text>
+                      )}
+                    </Pressable>
+                  ) : (
+                    <View style={styles.soonPill}>
+                      <Text style={styles.soonPillText}>SOON</Text>
+                    </View>
                   )}
                 </View>
-                {card.available ? (
-                  <Pressable
-                    style={[
-                      styles.connectBtn,
-                      isConnected && !tokenExpired && styles.connectedBtn,
-                      tokenExpired && styles.reconnectBtn,
-                    ]}
-                    onPress={handleConnectLive}
-                    disabled={connecting}
-                  >
-                    {connecting ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <Text
-                        style={[
-                          styles.connectBtnText,
-                          isConnected && !tokenExpired && styles.connectedBtnText,
-                        ]}
-                      >
-                        {tokenExpired ? 'Reconnect' : isConnected ? 'Manage' : 'Connect'}
-                      </Text>
-                    )}
-                  </Pressable>
-                ) : (
-                  <GlassPill label="SOON" variant="default" />
+                <Text style={styles.cardSubtitle}>{card.blurb}</Text>
+                {tokenExpired && (
+                  <Text style={styles.expiredText}>
+                    Token expired — reconnect to resume autonomous posting.
+                  </Text>
                 )}
-              </GlassCard>
-            );
-          })}
+              </View>
+              );
+            })
+          )}
         </View>
 
         {linkedinConnected ? (
           <View style={styles.successNoteWrap}>
-            <Ionicons name="shield-checkmark" size={16} color={colors.positive} />
+            <Icon as={CheckCircle2} size={16} color={dark.positive} />
             <Text style={styles.successNoteText}>
               LinkedIn channel is authenticated & ready for autonomous posting.
             </Text>
@@ -259,7 +281,15 @@ export default function ConnectScreen() {
             You can also connect later from Dashboard Settings if you prefer to proceed first.
           </Text>
         )}
+      </ScrollView>
 
+      {/* ── Bottom nav: Back / step / Continue (consistent pattern) ── */}
+      <View style={styles.bottomBar}>
+        <Pressable style={styles.backBtn} onPress={handleBack} hitSlop={8}>
+          <Icon as={ArrowLeft} size={18} color={dark.ink} />
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
+        <Text style={styles.stepText}>1 / 5</Text>
         <Pressable
           style={styles.continueBtn}
           onPress={async () => {
@@ -267,123 +297,208 @@ export default function ConnectScreen() {
             router.push('/(onboarding)/mode');
           }}
         >
-          <Text style={styles.continueText}>Continue to Interview</Text>
-          <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+          <Text style={styles.continueText}>Continue</Text>
+          <Icon as={ArrowRight} size={18} color="#FFF" />
         </Pressable>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxxl },
-  header: { gap: spacing.xs },
-  eyebrow: {
-    ...typography.caption2,
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    fontWeight: '700',
+  flex: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: dark.canvas },
+  scroll: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
+    gap: spacing.md,
   },
-  title: { ...typography.display, color: colors.ink },
-  subtitle: { ...typography.body, color: colors.inkSoft },
+  eyebrow: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: dark.accent,
+  },
+  title: {
+    fontFamily: 'InterTight_700Bold',
+    fontSize: 26,
+    lineHeight: 30,
+    letterSpacing: -0.6,
+    color: dark.ink,
+  },
+  subtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: dark.inkSoft,
+  },
   field: { marginTop: spacing.xs },
   label: {
-    ...typography.label,
-    color: colors.inkSoft,
-    marginBottom: spacing.sm,
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: dark.inkSoft,
+    marginBottom: 8,
   },
-  input: {
-    backgroundColor: colors.surfaceSunken,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    ...typography.body,
-  },
-  platformList: { gap: spacing.md },
+  platformList: { gap: 12, marginTop: spacing.sm },
   card: {
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 20,
+    padding: 14,
+    gap: 10,
+  },
+  cardDisabled: { opacity: 0.55 },
+  cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    padding: spacing.lg,
   },
-  cardDisabled: { opacity: 0.5 },
-  cardIcon: {
+  brandBox: {
     width: 44,
     height: 44,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceSunken,
+    borderRadius: 12,
+    backgroundColor: dark.surfaceSunken,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  cardIconConnected: {
-    backgroundColor: colors.positiveFill,
-    borderColor: colors.positiveBorder,
+  cardTitleBlock: { flex: 1, flexShrink: 1, gap: 1 },
+  cardTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 16,
+    letterSpacing: -0.2,
+    color: dark.ink,
   },
-  cardIconWarning: {
-    backgroundColor: colors.negativeFill,
-    borderColor: colors.negativeBorder,
+  cardStatus: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    color: dark.inkFaint,
   },
-  cardBody: { flex: 1 },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  cardTitle: { ...typography.subheading, color: colors.ink, fontWeight: '700' },
+  cardStatusConnected: { color: dark.positive },
+  soonPill: {
+    backgroundColor: dark.surfaceElevated,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  soonPillText: {
+    fontFamily: fonts.semibold,
+    fontSize: 10,
+    letterSpacing: 0.5,
+    color: dark.inkFaint,
+  },
   cardSubtitle: {
-    ...typography.caption2,
-    color: colors.inkSoft,
-    marginTop: 2,
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: dark.inkSoft,
   },
-  expiredText: { ...typography.caption2, color: colors.negative, marginTop: 4, fontWeight: '600' },
+  expiredText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: dark.warning,
+  },
   connectBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    minWidth: 84,
     alignItems: 'center',
-    ...shadows.primaryBtn,
+    justifyContent: 'center',
+    alignSelf: 'center',
+    backgroundColor: dark.accent,
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    minHeight: 40,
+    flexShrink: 0,
+  },
+  connectBtnText: {
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 12,
   },
   connectedBtn: {
-    backgroundColor: colors.surface,
+    backgroundColor: dark.surfaceElevated,
     borderWidth: 1,
-    borderColor: colors.positiveBorder,
-    shadowOpacity: 0,
-    elevation: 0,
+    borderColor: dark.hairline,
   },
-  connectBtnText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
-  connectedBtnText: { color: colors.positive },
-  reconnectBtn: { backgroundColor: colors.negative },
+  connectedBtnText: { color: dark.ink },
+  reconnectBtn: { backgroundColor: dark.warning },
   successNoteWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.positiveFill,
-    padding: spacing.md,
-    borderRadius: radii.md,
+    backgroundColor: dark.surface,
     borderWidth: 1,
-    borderColor: colors.positiveBorder,
+    borderColor: dark.hairline,
+    borderRadius: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
   },
   successNoteText: {
-    ...typography.caption,
-    color: colors.positive,
-    fontWeight: '600',
     flex: 1,
+    flexShrink: 1,
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    lineHeight: 18,
+    color: dark.positive,
   },
-  hint: { ...typography.caption, color: colors.inkFaint, textAlign: 'center' },
+  hint: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: dark.inkFaint,
+    textAlign: 'center',
+  },
+  bottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderTopWidth: 1,
+    borderTopColor: dark.hairline,
+    backgroundColor: dark.canvas,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    minHeight: 48,
+  },
+  backText: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: dark.ink,
+  },
+  stepText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: dark.inkFaint,
+  },
   continueBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingVertical: spacing.lg,
-    marginTop: spacing.md,
-    ...shadows.primaryBtn,
+    gap: 8,
+    backgroundColor: dark.accent,
+    borderRadius: 999,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    minHeight: 52,
+    minWidth: 150,
   },
-  continueText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  continueText: {
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+  },
 });

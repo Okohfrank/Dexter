@@ -7,26 +7,20 @@ import {
   Pressable,
   StyleSheet,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Mic, MicOff, ArrowUp, ArrowLeft, Volume2, CheckCircle2 } from "lucide-react-native";
+import { Icon } from "../../src/components/rnr/icon";
 import * as Speech from "expo-speech";
-import {
-  colors,
-  spacing,
-  radii,
-  typography,
-  shadows,
-  fonts,
-} from "../../src/theme";
+import { dark, fonts, spacing } from "../../src/theme";
 import { sendChatMessage } from "../../src/api/chat";
 import { connectVoiceStream, transcribeAudio } from "../../src/api/voice";
 import { useAppStore } from "../../src/store/app";
-import { GlassCard, GlassPill } from "../../src/components/ui";
 import type { ChatMessage, ChatBrief, BusinessBrain } from "../../src/types";
 
 const OPENING: ChatMessage = {
@@ -35,23 +29,29 @@ const OPENING: ChatMessage = {
     "Hi! I'm Dexter, your autonomous brand employee. Let's establish your Business Brain. To start, tell me about your business — what products or services do you offer, and who is your ideal target audience?",
 };
 
+/* v2 step 3 (text) — stripped copilot: same interview logic, no
+ * suggestions, no history menu, no image upload. Just the conversation,
+ * voice toggle, mic input, and the brain-ready card forward. */
 export default function InterviewScreen() {
   const router = useRouter();
   const business = useAppStore((s) => s.business);
   const setBrain = useAppStore((s) => s.setBrain);
   const connectedAccounts = useAppStore((s) => s.connectedAccounts);
+  const insets = useSafeAreaInsets();
 
   const [messages, setMessages] = useState<ChatMessage[]>([OPENING]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [voiceActive, setVoiceActive] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [kbHeight, setKbHeight] = useState(0);
   const [voiceState, setVoiceState] = useState<
     "listening" | "processing" | "speaking"
   >("listening");
   const [brief, setBrief] = useState<ChatBrief | null>(null);
   const [hasBrainReady, setHasBrainReady] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const greetedVoiceRef = useRef(false);
   const voiceStreamRef = useRef<ReturnType<typeof connectVoiceStream> | null>(
     null,
   );
@@ -79,6 +79,19 @@ export default function InterviewScreen() {
   useEffect(() => {
     listRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
+
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    const onFrame = (e: any) => setKbHeight(e.endCoordinates.height);
+    const show = Keyboard.addListener("keyboardDidShow", onFrame);
+    const change = Keyboard.addListener("keyboardDidChangeFrame", onFrame);
+    const hide = Keyboard.addListener("keyboardDidHide", () => setKbHeight(0));
+    return () => {
+      show.remove();
+      change.remove();
+      hide.remove();
+    };
+  }, []);
 
   const startMicRecording = async () => {
     try {
@@ -168,7 +181,11 @@ export default function InterviewScreen() {
 
     setVoiceActive(true);
     setVoiceState("listening");
-    speak(OPENING.content);
+    // Greet only on first activation — replays on every toggle feel broken.
+    if (!greetedVoiceRef.current) {
+      greetedVoiceRef.current = true;
+      speak(OPENING.content);
+    }
 
     voiceStreamRef.current = connectVoiceStream({
       onOpen: () => {
@@ -215,7 +232,7 @@ export default function InterviewScreen() {
           setHasBrainReady(true);
         }
       },
-      onError: (err) => {
+      onError: () => {
         Alert.alert(
           "Voice Server Notice",
           "Real-time voice stream disconnected. You can continue speaking via mic or text.",
@@ -270,7 +287,7 @@ export default function InterviewScreen() {
         ...prev,
         {
           role: "assistant",
-          content: `⚠️ I encountered an issue: ${errorMsg}. Could you try rephrasing?`,
+          content: `I encountered an issue: ${errorMsg}. Could you try rephrasing?`,
         },
       ]);
     } finally {
@@ -282,110 +299,84 @@ export default function InterviewScreen() {
     handleSendText(input);
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(onboarding)/mode');
+    }
+  };
+
   const renderBubble = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === "user";
-    return (
-      <View
-        style={[
-          styles.bubbleRow,
-          isUser ? styles.userRow : styles.assistantRow,
-        ]}
-      >
-        {!isUser && (
-          <View style={styles.avatar}>
-            <Ionicons name="bulb-outline" size={14} color={colors.primary} />
-          </View>
-        )}
-        <View
-          style={[
-            styles.bubble,
-            isUser ? styles.userBubble : styles.assistantBubble,
-          ]}
-        >
-          <Text style={[styles.bubbleText, isUser && styles.userBubbleText]}>
-            {item.content}
-          </Text>
-          {!isUser && (
-            <Pressable
-              style={styles.bubbleSpeakBtn}
-              hitSlop={8}
-              onPress={() => speak(item.content)}
-            >
-              <Ionicons
-                name="volume-medium-outline"
-                size={14}
-                color={colors.primary}
-              />
-            </Pressable>
-          )}
+    if (isUser) {
+      return (
+        <View style={styles.userBubble}>
+          <Text style={styles.userText}>{item.content}</Text>
         </View>
+      );
+    }
+    return (
+      <View style={styles.assistantBlock}>
+        <Text style={styles.assistantText}>{item.content}</Text>
+        <Pressable
+          style={styles.speakBtn}
+          hitSlop={8}
+          onPress={() => speak(item.content)}
+          accessibilityRole="button"
+          accessibilityLabel="Read aloud"
+        >
+          <Icon as={Volume2} size={16} color={dark.accent} />
+        </Pressable>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={styles.header}>
-          <View style={styles.headerTitleWrap}>
-            <Text style={styles.eyebrow}>Step 3 of 5</Text>
-            <Text style={styles.title}>Business Interview</Text>
-            <Text style={styles.subtitle}>
-              {business
-                ? `Configuring profile for ${business.name}`
-                : "Answer naturally as Dexter asks questions."}
-            </Text>
-          </View>
-          <Pressable onPress={toggleVoiceMode} style={styles.voiceModeToggle}>
-            <GlassPill
-              label={voiceActive ? "VOICE ON" : "VOICE AI"}
-              variant={voiceActive ? "positive" : "primary"}
-              icon={voiceActive ? "mic" : "mic-outline"}
-            />
-          </Pressable>
-        </View>
-
-        {voiceActive && (
-          <View style={styles.voiceBanner}>
+        {/* ── Top bar ── */}
+        <View style={styles.topBar}>
+          <View style={styles.statusWrap}>
             <View
               style={[
-                styles.voiceIndicator,
-                voiceState === "speaking" && styles.voiceSpeaking,
-                voiceState === "processing" && styles.voiceProcessing,
+                styles.statusDot,
+                {
+                  backgroundColor:
+                    voiceState === "speaking"
+                      ? dark.positive
+                      : voiceActive
+                        ? dark.accent
+                        : dark.inkFaint,
+                },
               ]}
-            >
-              <Ionicons
-                name={
-                  voiceState === "speaking"
-                    ? "volume-high"
-                    : voiceState === "processing"
-                      ? "sync"
-                      : "mic"
-                }
-                size={16}
-                color="#FFFFFF"
-              />
-            </View>
-            <View style={styles.voiceBannerTextWrap}>
-              <Text style={styles.voiceBannerTitle}>
-                {voiceState === "speaking"
-                  ? "Dexter is speaking…"
-                  : voiceState === "processing"
-                    ? "Thinking…"
-                    : "Listening… speak or type freely"}
-              </Text>
-              <Text style={styles.voiceBannerSub}>
-                Real-time MisoLabs Voice Stream active
-              </Text>
-            </View>
-            <Pressable onPress={toggleVoiceMode} style={styles.voiceEndBtn}>
-              <Text style={styles.voiceEndText}>Mute</Text>
-            </Pressable>
+            />
           </View>
-        )}
+          <View style={styles.topBarTitles}>
+            <Text style={styles.topBarTitle}>Business Interview</Text>
+            <Text style={styles.topBarSub}>
+              {business ? `Configuring profile for ${business.name}` : 'Step 3 of 5'}
+            </Text>
+          </View>
+          <Pressable
+            style={[styles.voicePill, voiceActive && styles.voicePillOn]}
+            onPress={toggleVoiceMode}
+            accessibilityRole="button"
+            accessibilityLabel={voiceActive ? "Turn voice off" : "Turn voice on"}
+          >
+            <Icon
+              as={voiceActive ? MicOff : Mic}
+              size={14}
+              color={voiceActive ? "#FFF" : dark.accent}
+            />
+            <Text style={[styles.voicePillText, voiceActive && styles.voicePillTextOn]}>
+              {voiceActive ? "VOICE ON" : "VOICE"}
+            </Text>
+          </Pressable>
+        </View>
 
         <FlatList
           ref={listRef}
@@ -394,85 +385,99 @@ export default function InterviewScreen() {
           renderItem={renderBubble}
           contentContainerStyle={styles.list}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         />
 
         {sending && (
           <View style={styles.typingRow}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.typingText}>
-              Dexter is processing your input…
-            </Text>
+            <ActivityIndicator size="small" color={dark.accent} />
+            <Text style={styles.typingText}>Dexter is processing your input…</Text>
           </View>
         )}
 
+        {/* ── Brain ready → step 4 ── */}
         {(brief || hasBrainReady) && (
           <Pressable
-            style={styles.finalizeWrap}
+            style={styles.finalizeCard}
             onPress={() => router.push("/(onboarding)/brain")}
           >
-            <GlassCard style={styles.finalizeCard} highlighted elevated>
-              <Ionicons
-                name="checkmark-circle"
-                size={20}
-                color={colors.positive}
-              />
-              <Text style={styles.finalizeText}>
-                Dexter synthesized your Business Brain. Tap here to review &
-                refine.
-              </Text>
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={colors.primary}
-              />
-            </GlassCard>
+            <Icon as={CheckCircle2} size={20} color={dark.positive} />
+            <Text style={styles.finalizeText}>
+              Dexter synthesized your Business Brain. Tap here to review & refine.
+            </Text>
           </Pressable>
         )}
 
-        <View style={styles.inputRow}>
-          <Pressable
-            style={[
-              styles.micBtn,
-              (voiceActive || isRecording) && styles.micBtnActive,
-            ]}
-            onPress={isRecording ? stopMicRecording : startMicRecording}
-          >
-            <Ionicons
-              name={
-                isRecording
-                  ? "stop-circle"
-                  : voiceActive
-                    ? "mic"
-                    : "mic-outline"
-              }
-              size={20}
-              color={voiceActive || isRecording ? "#FFFFFF" : colors.primary}
-            />
-          </Pressable>
-          <View style={styles.inputContainer}>
+        {/* ── Composer (mic + input + send only) ── */}
+        <View
+          style={[
+            styles.composerOuter,
+            Platform.OS === "android" && kbHeight > 0
+              ? { paddingBottom: kbHeight }
+              : { paddingBottom: 0 },
+          ]}
+        >
+          <View style={styles.composerCard}>
             <TextInput
-              style={styles.input}
-              placeholder={
-                voiceActive
-                  ? "Speak or type your answer…"
-                  : "Type your response to Dexter…"
-              }
-              placeholderTextColor={colors.inkFaint}
+              style={styles.composerInput}
+              placeholder="Type your response to Dexter…"
+              placeholderTextColor={dark.inkFaint}
               value={input}
               onChangeText={setInput}
               multiline
               onSubmitEditing={handleSend}
             />
+            <View style={styles.composerRow}>
+              <Pressable
+                style={[
+                  styles.roundBtn,
+                  (voiceActive || isRecording) && styles.roundBtnActive,
+                ]}
+                hitSlop={8}
+                onPress={isRecording ? stopMicRecording : startMicRecording}
+                accessibilityRole="button"
+                accessibilityLabel="Voice input"
+              >
+                <Icon
+                  as={Mic}
+                  size={20}
+                  color={voiceActive || isRecording ? "#FFFFFF" : dark.inkSoft}
+                />
+              </Pressable>
+              <View style={styles.spacer} />
+              <Pressable
+                style={[
+                  styles.sendBtn,
+                  (!input.trim() || sending) && styles.sendBtnDisabled,
+                ]}
+                hitSlop={8}
+                onPress={handleSend}
+                disabled={!input.trim() || sending}
+                accessibilityRole="button"
+                accessibilityLabel="Send message"
+              >
+                {sending ? (
+                  <ActivityIndicator size="small" color={dark.inkFaint} />
+                ) : (
+                  <Icon
+                    as={ArrowUp}
+                    size={20}
+                    color={!input.trim() ? dark.inkFaint : "#FFFFFF"}
+                  />
+                )}
+              </Pressable>
+            </View>
           </View>
-          <Pressable
-            style={[
-              styles.sendBtn,
-              (!input.trim() || sending) && styles.sendBtnDisabled,
-            ]}
-            onPress={handleSend}
-          >
-            <Ionicons name="send" size={17} color="#FFFFFF" />
+        </View>
+
+        {/* ── Bottom nav ── */}
+        <View style={styles.bottomBar}>
+          <Pressable style={styles.backBtn} onPress={handleBack} hitSlop={8}>
+            <Icon as={ArrowLeft} size={18} color={dark.ink} />
+            <Text style={styles.backText}>Back</Text>
           </Pressable>
+          <Text style={styles.stepText}>3 / 5</Text>
+          <View style={styles.bottomSpacer} />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -480,190 +485,197 @@ export default function InterviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.xxl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.separator,
-  },
-  headerTitleWrap: { flex: 1 },
-  voiceModeToggle: { marginLeft: spacing.sm },
-  eyebrow: {
-    ...typography.caption2,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-    fontWeight: "700",
-  },
-  title: { ...typography.h1, color: colors.ink, marginTop: 2 },
-  subtitle: {
-    ...typography.caption2,
-    color: colors.inkSoft,
-    marginTop: 2,
-  },
-  voiceBanner: {
+  safeArea: { flex: 1, backgroundColor: dark.canvas },
+
+  topBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.primarySurface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.primaryBorder,
-    paddingHorizontal: spacing.xxl,
-    paddingVertical: spacing.sm,
-    gap: spacing.sm,
-  },
-  voiceIndicator: {
-    width: 28,
-    height: 28,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  voiceSpeaking: { backgroundColor: colors.positive },
-  voiceProcessing: { backgroundColor: colors.warning },
-  voiceBannerTextWrap: { flex: 1 },
-  voiceBannerTitle: {
-    ...typography.caption,
-    color: colors.ink,
-    fontWeight: "700",
-  },
-  voiceBannerSub: { ...typography.caption2, color: colors.inkSoft },
-  voiceEndBtn: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceSunken,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  voiceEndText: {
-    ...typography.caption2,
-    color: colors.inkSoft,
-    fontWeight: "600",
-  },
-  list: {
-    paddingHorizontal: spacing.xxl,
-    paddingVertical: spacing.lg,
-    gap: spacing.md,
-  },
-  bubbleRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: spacing.sm,
-    maxWidth: "100%",
-  },
-  userRow: { justifyContent: "flex-end" },
-  assistantRow: { justifyContent: "flex-start" },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primarySurface,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bubble: {
-    maxWidth: "82%",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderRadius: radii.lg,
+    gap: spacing.md,
   },
-  assistantBubble: {
-    backgroundColor: colors.surface,
+  statusWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: dark.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  statusDot: { width: 10, height: 10, borderRadius: 5 },
+  topBarTitles: { flex: 1, flexShrink: 1 },
+  topBarTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 17,
+    color: dark.ink,
+  },
+  topBarSub: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: dark.inkSoft,
+    marginTop: 1,
+  },
+  voicePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexShrink: 0,
+  },
+  voicePillOn: { backgroundColor: dark.accent, borderColor: dark.accent },
+  voicePillText: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    letterSpacing: 0.5,
+    color: dark.accent,
+  },
+  voicePillTextOn: { color: "#FFF" },
+
+  list: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
   },
   userBubble: {
-    backgroundColor: colors.primary,
-    ...shadows.primaryBtn,
-  },
-  bubbleText: {
-    ...typography.bodySmall,
-    color: colors.ink,
-  },
-  userBubbleText: { color: "#FFFFFF", fontWeight: "500" },
-  bubbleSpeakBtn: {
     alignSelf: "flex-end",
-    marginTop: 4,
-    padding: 2,
+    backgroundColor: dark.surfaceElevated,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 20,
+    padding: spacing.lg,
+    marginLeft: 40,
   },
+  userText: {
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    lineHeight: 23,
+    color: dark.ink,
+  },
+  assistantBlock: { gap: spacing.sm, paddingRight: spacing.sm },
+  assistantText: {
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    lineHeight: 25,
+    color: dark.ink,
+  },
+  speakBtn: { alignSelf: "flex-start", padding: 4 },
+
   typingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    paddingHorizontal: spacing.xxl,
-    paddingBottom: spacing.sm,
-  },
-  typingText: { ...typography.caption2, color: colors.inkSoft },
-  finalizeWrap: {
-    marginHorizontal: spacing.xxl,
-    marginBottom: spacing.md,
-  },
-  finalizeCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    padding: spacing.md,
-  },
-  finalizeText: {
-    flex: 1,
-    ...typography.caption,
-    color: colors.ink,
-    fontWeight: "600",
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.xxl,
-    paddingBottom: spacing.lg,
-    paddingTop: spacing.xs,
-  },
-  micBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceSunken,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  micBtnActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-    ...shadows.primaryBtn,
-  },
-  inputContainer: {
-    flex: 1,
-    backgroundColor: colors.surfaceSunken,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },
-  input: {
-    ...typography.body,
-    maxHeight: 100,
-    paddingVertical: spacing.xs,
+  typingText: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: dark.inkSoft,
   },
+
+  finalizeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.positive,
+    borderRadius: 20,
+    marginHorizontal: spacing.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  finalizeText: {
+    flex: 1,
+    flexShrink: 1,
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    lineHeight: 20,
+    color: dark.ink,
+  },
+
+  composerOuter: { paddingHorizontal: spacing.lg },
+  composerCard: {
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 28,
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  composerInput: {
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    lineHeight: 22,
+    color: dark.ink,
+    minHeight: 48,
+    maxHeight: 120,
+    textAlignVertical: "top",
+  },
+  composerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  roundBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  roundBtnActive: { backgroundColor: dark.accent },
+  spacer: { flex: 1 },
   sendBtn: {
     width: 44,
     height: 44,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primary,
+    borderRadius: 999,
+    backgroundColor: dark.accent,
     alignItems: "center",
     justifyContent: "center",
-    ...shadows.primaryBtn,
   },
-  sendBtnDisabled: { opacity: 0.3, shadowOpacity: 0 },
+  sendBtnDisabled: { backgroundColor: dark.surfaceElevated },
+
+  bottomBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderTopWidth: 1,
+    borderTopColor: dark.hairline,
+    backgroundColor: dark.canvas,
+  },
+  backBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    minHeight: 48,
+  },
+  backText: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: dark.ink,
+  },
+  stepText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: dark.inkFaint,
+  },
+  bottomSpacer: { width: 90 },
 });
