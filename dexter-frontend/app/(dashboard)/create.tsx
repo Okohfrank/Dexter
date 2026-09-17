@@ -8,20 +8,28 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Sparkles, Clock3, Send, X, ChevronRight } from 'lucide-react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows } from '../../src/theme';
+import { Icon } from '../../src/components/rnr/icon';
+import { dark, fonts, spacing } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
+import { useAuthStore } from '../../src/api/client';
 import { generateNextPost } from '../../src/api/strategy';
 import { listBusinesses, createBusiness } from '../../src/api/business';
 import { listConnectedAccounts } from '../../src/api/oauth';
 import { publishNow } from '../../src/api/publishing';
-import { GlassCard, GlassPill } from '../../src/components/ui';
 
+/* v2 create — Digg composer shell + Instagram option rows and sticky
+ * action button, on the Dexter dark system. Flow unchanged:
+ * topic → pillars → draft & queue → publish now / view feed. */
 export default function CreateScreen() {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const business = useAppStore((s) => s.business);
   const setBusiness = useAppStore((s) => s.setBusiness);
   const connectedAccounts = useAppStore((s) => s.connectedAccounts);
@@ -32,6 +40,11 @@ export default function CreateScreen() {
   const [generating, setGenerating] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [result, setResult] = useState<{ id?: string; content_text: string; scheduled_for?: string } | null>(null);
+
+  const authorName = user?.full_name?.trim() || 'Founder';
+  const authorHeadline = business?.name
+    ? `Founder & CEO • ${business.name}`
+    : 'Founder & CEO';
 
   const pillars = contentPlan?.pillars ?? [
     'Founder Thought Leadership',
@@ -92,193 +105,419 @@ export default function CreateScreen() {
     }
   };
 
+  const handleCancel = () => {
+    setTopic('');
+    setResult(null);
+    router.back();
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Create Post</Text>
-          <Text style={styles.subtitle}>
-            Have Dexter craft your next high-converting LinkedIn post with custom strategy.
-          </Text>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        {/* ── Top bar (Digg) ── */}
+        <View style={styles.topBar}>
+          <Pressable onPress={handleCancel} hitSlop={8}>
+            <Text style={styles.cancelText}>Cancel</Text>
+          </Pressable>
+          <Text style={styles.topBarTitle}>New post</Text>
+          <View style={styles.topBarSpacer} />
         </View>
 
-        {/* Topic Input */}
-        <GlassCard style={styles.topicCard} elevated>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="create-outline" size={18} color={colors.primary} />
-            <Text style={styles.sectionTitle}>Custom Topic or Angle (Optional)</Text>
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* ── Author row (Digg) ── */}
+          <View style={styles.authorRow}>
+            <View style={styles.avatarCircle}>
+              <Text style={styles.avatarText}>
+                {authorName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.authorInfo}>
+              <Text style={styles.authorName} numberOfLines={1}>
+                {authorName}
+              </Text>
+              <Text style={styles.authorHeadline} numberOfLines={1}>
+                {authorHeadline}
+              </Text>
+            </View>
           </View>
+
+          {/* ── Topic composer (Digg body) ── */}
           <TextInput
             style={styles.topicInput}
-            placeholder="e.g. 'Why founders should build in public in 2026' or leave empty for AI-chosen topic…"
-            placeholderTextColor={colors.inkFaint}
+            placeholder="What should Dexter write about?"
+            placeholderTextColor={dark.inkFaint}
             value={topic}
             onChangeText={setTopic}
             multiline
           />
-        </GlassCard>
 
-        {/* Content Pillars */}
-        <GlassCard style={styles.pillarsCard}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="layers-outline" size={18} color={colors.primary} />
-            <Text style={styles.sectionTitle}>Active Content Pillars</Text>
-          </View>
-          <View style={styles.pillarChips}>
+          {/* ── Pillar chips (Instagram action chips) ── */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chipsScroll}
+            contentContainerStyle={styles.chipsContent}
+          >
             {pillars.map((p, i) => (
-              <Pressable key={i} onPress={() => setTopic(p)}>
-                <GlassPill label={p} variant="primary" />
+              <Pressable key={i} style={styles.pillarChip} onPress={() => setTopic(p)}>
+                <Icon as={Sparkles} size={14} color={dark.accent} />
+                <Text style={styles.pillarChipText} numberOfLines={1}>
+                  {p}
+                </Text>
               </Pressable>
             ))}
-          </View>
-          <Text style={styles.hintText}>Tap any pillar to apply as the prompt</Text>
-        </GlassCard>
+          </ScrollView>
+          <Text style={styles.hintText}>Tap a pillar to use it as the prompt</Text>
 
-        {/* Generate Button */}
-        <Pressable
-          style={[styles.generateBtn, generating && { opacity: 0.7 }]}
-          onPress={handleGenerate}
-          disabled={generating}
-        >
-          {generating ? (
-            <ActivityIndicator size="small" color={colors.surface} />
-          ) : (
-            <>
-              <Ionicons name="flash" size={20} color={colors.surface} />
-              <Text style={styles.generateBtnText}>Draft & Queue Post with Dexter</Text>
-            </>
-          )}
-        </Pressable>
-
-        {/* Generated Result Card */}
-        {result && (
-          <GlassCard style={styles.resultCard} elevated highlighted>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="checkmark-circle" size={20} color={colors.positive} />
-              <Text style={styles.sectionTitle}>Post Drafted & Scheduled</Text>
+          {/* ── Details (Instagram option rows) ── */}
+          <View style={styles.detailsCard}>
+            <Pressable
+              style={styles.detailRow}
+              onPress={() => router.push('/(onboarding)')}
+              accessibilityRole="button"
+              accessibilityLabel="Manage connections"
+            >
+              <View style={styles.detailIconBox}>
+                <Ionicons name="logo-linkedin" size={18} color={dark.accent} />
+              </View>
+              <View style={styles.detailBody}>
+                <Text style={styles.detailLabel}>Posting to</Text>
+                <Text style={styles.detailSub}>LinkedIn account</Text>
+              </View>
+              <Icon as={ChevronRight} size={18} color={dark.inkFaint} />
+            </Pressable>
+            <View style={styles.detailDivider} />
+            <View style={styles.detailRow}>
+              <View style={styles.detailIconBox}>
+                <Icon as={Clock3} size={18} color={dark.inkSoft} />
+              </View>
+              <View style={styles.detailBody}>
+                <Text style={styles.detailLabel}>Schedule</Text>
+                <Text style={styles.detailSub}>Automatic — Dexter picks the best window</Text>
+              </View>
             </View>
-            <Text style={styles.resultText}>{result.content_text}</Text>
-            {result.scheduled_for && (
-              <View style={styles.scheduleRow}>
-                <Ionicons name="time-outline" size={14} color={colors.primary} />
-                <Text style={styles.resultSchedule}>
-                  Scheduled for {new Date(result.scheduled_for).toLocaleString()}
+            <View style={styles.detailDivider} />
+            <View style={styles.detailRow}>
+              <View style={styles.detailIconBox}>
+                <Icon as={Sparkles} size={18} color={dark.inkSoft} />
+              </View>
+              <View style={styles.detailBody}>
+                <Text style={styles.detailLabel}>Pillar</Text>
+                <Text style={styles.detailSub} numberOfLines={1}>
+                  {topic.trim() || 'AI-chosen topic'}
                 </Text>
               </View>
-            )}
-
-            <View style={styles.resultActions}>
-              <Pressable
-                style={styles.publishNowBtn}
-                onPress={handlePublishCreatedPost}
-                disabled={publishing}
-              >
-                {publishing ? (
-                  <ActivityIndicator size="small" color={colors.surface} />
-                ) : (
-                  <>
-                    <Ionicons name="send" size={16} color={colors.surface} />
-                    <Text style={styles.publishNowText}>Publish to LinkedIn Now</Text>
-                  </>
-                )}
-              </Pressable>
-              <Pressable style={styles.viewFeedBtn} onPress={() => router.push('/(dashboard)')}>
-                <Text style={styles.viewFeedText}>View in Upcoming Feed</Text>
-              </Pressable>
             </View>
-          </GlassCard>
-        )}
-      </ScrollView>
+          </View>
+
+          {/* ── Draft action ── */}
+          <Pressable
+            style={styles.shareBtn}
+            onPress={handleGenerate}
+            disabled={generating}
+          >
+            {generating ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <>
+                <Icon as={Sparkles} size={18} color="#FFF" />
+                <Text style={styles.shareBtnText}>Draft with Dexter</Text>
+              </>
+            )}
+          </Pressable>
+
+          {/* ── Draft result card (Digg preview card) ── */}
+          {result && (
+            <View style={styles.resultCard}>
+              <View style={styles.resultHeader}>
+                <View style={styles.resultIconBox}>
+                  <Icon as={Sparkles} size={16} color={dark.positive} />
+                </View>
+                <Text style={styles.resultTitle}>Drafted & scheduled</Text>
+                <Pressable
+                  style={styles.dismissBtn}
+                  hitSlop={8}
+                  onPress={() => setResult(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Dismiss draft"
+                >
+                  <Icon as={X} size={16} color={dark.inkFaint} />
+                </Pressable>
+              </View>
+              <Text style={styles.resultText}>{result.content_text}</Text>
+              {result.scheduled_for && (
+                <View style={styles.scheduleRow}>
+                  <Icon as={Clock3} size={14} color={dark.accent} />
+                  <Text style={styles.scheduleText}>
+                    Scheduled for {new Date(result.scheduled_for).toLocaleString()}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.resultActions}>
+                <Pressable
+                  style={styles.publishBtn}
+                  onPress={handlePublishCreatedPost}
+                  disabled={publishing}
+                >
+                  {publishing ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <>
+                      <Icon as={Send} size={16} color="#FFF" />
+                      <Text style={styles.publishBtnText}>Publish to LinkedIn Now</Text>
+                    </>
+                  )}
+                </Pressable>
+                <Pressable style={styles.feedBtn} onPress={() => router.push('/(dashboard)')}>
+                  <Text style={styles.feedBtnText}>View in Upcoming Feed</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: spacing.xxl, gap: spacing.lg, paddingBottom: spacing.xxxxl + 60 },
-  header: { gap: spacing.xs },
-  title: { ...typography.display, color: colors.ink },
-  subtitle: { ...typography.callout, color: colors.inkSoft },
+  flex: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: dark.canvas },
 
-  topicCard: { gap: spacing.md },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  sectionTitle: { ...typography.subheading, color: colors.ink, fontWeight: '700' },
-  topicInput: {
-    ...typography.body,
-    backgroundColor: colors.surfaceSunken,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    minHeight: 80,
+    paddingVertical: spacing.md,
+  },
+  cancelText: {
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    color: dark.inkSoft,
+  },
+  topBarTitle: {
+    fontFamily: 'InterTight_600SemiBold',
+    fontSize: 18,
+    letterSpacing: -0.2,
+    color: dark.ink,
+  },
+  topBarSpacer: { width: 60 },
+
+  scroll: {
+    paddingHorizontal: 20,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xl,
+    gap: spacing.md,
+  },
+
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  avatarCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    backgroundColor: dark.surfaceElevated,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  avatarText: {
+    fontFamily: 'InterTight_700Bold',
+    fontSize: 18,
+    color: dark.ink,
+  },
+  authorInfo: { flex: 1 },
+  authorName: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: dark.ink,
+  },
+  authorHeadline: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: dark.inkSoft,
+    marginTop: 1,
+  },
+
+  topicInput: {
+    fontFamily: 'InterTight_600SemiBold',
+    fontSize: 22,
+    lineHeight: 29,
+    letterSpacing: -0.3,
+    color: dark.ink,
+    minHeight: 120,
     textAlignVertical: 'top',
   },
 
-  pillarsCard: { gap: spacing.md },
-  pillarChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  hintText: { ...typography.caption2, color: colors.inkFaint, fontStyle: 'italic' },
-
-  generateBtn: {
+  chipsScroll: { height: 52, flexGrow: 0, flexShrink: 0 },
+  chipsContent: { alignItems: 'center', gap: spacing.sm, paddingRight: 20 },
+  pillarChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingVertical: 16,
-    ...shadows.primaryBtn,
-  },
-  generateBtnText: {
-    ...typography.h3,
-    color: colors.surface,
-  },
-
-  resultCard: { gap: spacing.md },
-  resultText: {
-    ...typography.callout,
-    color: colors.ink,
-  },
-  scheduleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  resultSchedule: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  resultActions: {
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  publishNowBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingVertical: 12,
-    ...shadows.primaryBtn,
-  },
-  publishNowText: {
-    ...typography.h3,
-    color: colors.surface,
-  },
-  viewFeedBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceSunken,
-    borderRadius: radii.pill,
-    paddingVertical: 12,
+    gap: 8,
+    backgroundColor: dark.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
+    borderRadius: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
+    maxWidth: 260,
   },
-  viewFeedText: {
-    ...typography.h3,
-    color: colors.ink,
+  pillarChipText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: dark.inkSoft,
+  },
+  hintText: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    fontStyle: 'italic',
+    color: dark.inkFaint,
+  },
+
+  detailsCard: {
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginTop: spacing.sm,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 14,
+    minHeight: 64,
+  },
+  detailIconBox: {
+    width: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  detailBody: { flex: 1, flexShrink: 1 },
+  detailLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: dark.ink,
+  },
+  detailSub: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: dark.inkSoft,
+    marginTop: 1,
+  },
+  detailDivider: {
+    height: 1,
+    backgroundColor: dark.hairline,
+    marginLeft: 64,
+    marginRight: spacing.lg,
+  },
+
+  resultCard: {
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 20,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  resultHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  resultIconBox: {
+    width: 30,
+    height: 30,
+    borderRadius: 999,
+    backgroundColor: dark.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  resultTitle: {
+    flex: 1,
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    color: dark.ink,
+  },
+  dismissBtn: { padding: 4 },
+  resultText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 23,
+    color: dark.ink,
+  },
+  scheduleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  scheduleText: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: dark.accent,
+  },
+  resultActions: { gap: spacing.sm, marginTop: spacing.xs },
+  publishBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: dark.accent,
+    borderRadius: 999,
+    paddingVertical: 13,
+    minHeight: 48,
+  },
+  publishBtnText: {
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+  },
+  feedBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: dark.surfaceElevated,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 999,
+    paddingVertical: 12,
+    minHeight: 48,
+  },
+  feedBtnText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    color: dark.ink,
+  },
+
+  stickyBar: {
+    paddingHorizontal: 20,
+    paddingTop: spacing.sm,
+    paddingBottom: 120,
+  },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: dark.accent,
+    borderRadius: 999,
+    paddingVertical: 17,
+    minHeight: 58,
+  },
+  shareBtnText: {
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
   },
 });
