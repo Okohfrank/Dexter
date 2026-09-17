@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Svg, Polyline, Polygon } from 'react-native-svg';
+import { BlurView } from 'expo-blur';
 import { dark, fonts, spacing, radii, typography } from '../../src/theme';
 import { useAuthStore } from '../../src/api/client';
 import { useAppStore } from '../../src/store/app';
@@ -32,6 +34,54 @@ const formatNum = (n: number): string => {
   if (!isFinite(n)) return '—';
   return n.toLocaleString('en-US');
 };
+
+/* Data-driven sparkline (react-native-svg). Real per-post series only —
+ * returns null when fewer than 2 points rather than faking data. */
+function Sparkline({
+  data,
+  color,
+  width = 128,
+  height = 36,
+}: {
+  data: number[];
+  color: string;
+  width?: number;
+  height?: number;
+}) {
+  if (!data || data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const span = max - min || 1;
+  const pad = 4;
+  const stepX = (width - pad * 2) / (data.length - 1);
+  const pts = data
+    .map(
+      (v, i) =>
+        `${(pad + i * stepX).toFixed(1)},${(
+          height -
+          pad -
+          ((v - min) / span) * (height - pad * 2)
+        ).toFixed(1)}`,
+    )
+    .join(' ');
+  return (
+    <Svg width={width} height={height}>
+      <Polygon
+        points={`${pad},${height} ${pts} ${width - pad},${height}`}
+        fill={color}
+        fillOpacity={0.14}
+      />
+      <Polyline
+        points={pts}
+        fill="none"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -233,6 +283,25 @@ export default function DashboardScreen() {
   const engagements = summary?.total_engagements ?? null;
   const rate = summary?.avg_engagement_rate_pct ?? null;
 
+  const impressionsSeries = published.map((p) => p.performance?.impressions ?? 0);
+  const engagementSeries = published.map(
+    (p) =>
+      (p.performance?.likes ?? 0) +
+      (p.performance?.comments ?? 0) +
+      (p.performance?.shares ?? 0),
+  );
+  const rateSeries = published.map((p) => {
+    const imp = p.performance?.impressions ?? 0;
+    if (!imp) return 0;
+    return (
+      ((p.performance?.likes ?? 0) +
+        (p.performance?.comments ?? 0) +
+        (p.performance?.shares ?? 0)) /
+      imp *
+      100
+    );
+  });
+
   const stats = [
     {
       icon: 'trending-up' as const,
@@ -240,6 +309,8 @@ export default function DashboardScreen() {
       value: reach != null ? formatNum(reach) : '—',
       meta: 'lifetime impressions',
       tone: dark.ink,
+      spark: dark.inkSoft,
+      series: impressionsSeries,
     },
     {
       icon: 'heart' as const,
@@ -247,6 +318,8 @@ export default function DashboardScreen() {
       value: engagements != null ? formatNum(engagements) : '—',
       meta: 'likes + comments + reposts',
       tone: '#E88BB0',
+      spark: '#E88BB0',
+      series: engagementSeries,
     },
     {
       icon: 'pulse' as const,
@@ -254,6 +327,8 @@ export default function DashboardScreen() {
       value: rate != null ? `${rate}%` : '—',
       meta: 'across published posts',
       tone: dark.positive,
+      spark: dark.positive,
+      series: rateSeries,
     },
     {
       icon: 'time' as const,
@@ -261,6 +336,8 @@ export default function DashboardScreen() {
       value: String(scheduled.length),
       meta: autonomousMode ? 'autonomous window' : 'awaiting approval',
       tone: dark.accent,
+      spark: dark.accent,
+      series: [] as number[],
     },
   ];
 
@@ -271,10 +348,10 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={dark.inkSoft} />}
       >
-        {/* ── Header ──────────────────────────────────── */}
+        {/* ── Header: quiet greeting eyebrow ─────────── */}
         <View style={styles.header}>
           <View style={styles.headerTextWrap}>
-            <Text style={styles.title}>Good morning, {firstName}</Text>
+            <Text style={styles.eyebrow}>Good morning, {firstName}</Text>
             <Text style={styles.subtitle}>
               {autonomousMode
                 ? `${business?.name ?? 'Your business'} is operating autonomously.`
@@ -286,9 +363,11 @@ export default function DashboardScreen() {
           </Pressable>
         </View>
 
-        {/* ── Hero Card ───────────────────────────────── */}
+        {/* ── Hero: oversized numeral + ambient glow ──── */}
         <View style={styles.heroCard}>
-          <View style={styles.heroLeft}>
+          <View style={styles.glowDisc} />
+          <BlurView intensity={50} tint="dark" style={styles.glowBlur} />
+          <View style={styles.heroContent}>
             <View style={styles.heroEyebrowRow}>
               {generatingQuick || loading ? (
                 <PulseDot active size={10} color={dark.accent} />
@@ -306,36 +385,43 @@ export default function DashboardScreen() {
             </View>
             <Text style={styles.heroStat}>{String(scheduled.length)}</Text>
             <Text style={styles.heroStatLabel}>Posts queued for publishing</Text>
-          </View>
-          <View style={styles.heroRight}>
-            <View style={styles.heroMiniRow}>
-              <Ionicons name={autonomousMode ? 'radio' : 'pause'} size={14} color={autonomousMode ? dark.positive : dark.inkSoft} />
-              <Text style={styles.heroMiniText}>
-                {autonomousMode ? 'Planning & publishing live' : 'You approve every post'}
-              </Text>
-            </View>
-            <View style={styles.heroMiniRow}>
-              <Ionicons name="link" size={14} color={dark.inkFaint} />
-              <Text style={styles.heroMiniTextMuted}>
-                {linkedinConnected ? 'LinkedIn linked' : 'LinkedIn not linked'}
-              </Text>
+            <View style={styles.heroFoot}>
+              <View style={styles.heroMiniRow}>
+                <Ionicons name={autonomousMode ? 'radio' : 'pause'} size={14} color={autonomousMode ? dark.positive : dark.inkSoft} />
+                <Text style={styles.heroMiniText}>
+                  {autonomousMode ? 'Planning & publishing live' : 'You approve every post'}
+                </Text>
+              </View>
+              <View style={styles.heroMiniRow}>
+                <Ionicons name="link" size={14} color={dark.inkFaint} />
+                <Text style={styles.heroMiniTextMuted}>
+                  {linkedinConnected ? 'LinkedIn linked' : 'LinkedIn not linked'}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
 
-        {/* ── Stat Grid ───────────────────────────────── */}
-        <View style={styles.statGrid}>
+        {/* ── Stat strip: snap-scroll tiles + sparklines ─ */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={176}
+          decelerationRate="fast"
+          contentContainerStyle={styles.statStrip}
+        >
           {stats.map((s) => (
-            <View key={s.label} style={styles.statCard}>
+            <View key={s.label} style={styles.statTile}>
               <View style={styles.statIcon}>
                 <Ionicons name={s.icon} size={17} color={s.tone} />
               </View>
               <Text style={styles.statLabel}>{s.label}</Text>
               <Text style={styles.statValue}>{s.value}</Text>
+              <Sparkline data={s.series} color={s.spark} />
               <Text style={styles.statMeta}>{s.meta}</Text>
             </View>
           ))}
-        </View>
+        </ScrollView>
 
         {/* ── Missing Channel Banner ──────────────────── */}
         {!linkedinConnected && (
@@ -535,12 +621,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headerTextWrap: { flex: 1, gap: spacing.xs },
-  title: {
-    fontFamily: 'InterTight_600SemiBold',
-    fontSize: 26,
-    lineHeight: 30,
-    letterSpacing: -0.5,
-    color: dark.ink,
+  eyebrow: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: dark.inkSoft,
     marginTop: spacing.xs,
   },
   subtitle: {
@@ -571,19 +655,36 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
 
-  // ── Hero Card ──
+  // ── Hero: glow canvas + oversized numeral ──
   heroCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    position: 'relative',
     backgroundColor: dark.surface,
     borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: dark.hairline,
-    padding: spacing.xl,
-    gap: spacing.lg,
+    overflow: 'hidden',
   },
-  heroLeft: { flex: 1, gap: spacing.xs },
+  glowDisc: {
+    position: 'absolute',
+    top: -110,
+    right: -70,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: dark.accent,
+    opacity: 0.28,
+  },
+  glowBlur: {
+    position: 'absolute',
+    top: -130,
+    right: -90,
+    width: 320,
+    height: 320,
+  },
+  heroContent: {
+    padding: spacing.xl,
+    gap: spacing.xs,
+  },
   heroEyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   heroEyebrow: {
     fontFamily: fonts.semibold,
@@ -595,19 +696,20 @@ const styles = StyleSheet.create({
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   heroStat: {
     fontFamily: 'InterTight_700Bold',
-    fontSize: 40,
-    lineHeight: 42,
-    letterSpacing: -1.2,
+    fontSize: 64,
+    lineHeight: 66,
+    letterSpacing: -2,
     color: dark.ink,
-    marginTop: spacing.xs,
+    marginTop: spacing.sm,
   },
   heroStatLabel: {
     fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 20,
     color: dark.inkSoft,
     marginTop: 2,
   },
+  heroFoot: { gap: spacing.sm, paddingTop: spacing.sm },
   heroRight: { gap: spacing.sm, paddingTop: spacing.xs },
   heroMiniRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   heroMiniText: {
@@ -621,21 +723,19 @@ const styles = StyleSheet.create({
     color: dark.inkFaint,
   },
 
-  // ── Stat Grid ──
-  statGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  // ── Stat strip: tall snap tiles ──
+  statStrip: {
     gap: spacing.md,
-    justifyContent: 'space-between',
+    paddingRight: spacing.lg,
   },
-  statCard: {
-    width: '48.2%',
+  statTile: {
+    width: 164,
     backgroundColor: dark.surface,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: dark.hairline,
     padding: spacing.lg,
-    gap: spacing.xs,
+    gap: 6,
   },
   statIcon: {
     width: 36,
