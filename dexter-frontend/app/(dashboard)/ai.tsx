@@ -9,20 +9,38 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Keyboard,
+  Modal,
+  Switch,
   Platform,
   Image,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SquarePen,
+  Volume2,
+  VolumeX,
+  ImagePlus,
+  Mic,
+  ArrowUp,
+  Send,
+  X,
+  Menu,
+  Trash2,
+  Plus,
+  Search,
+} from "lucide-react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Speech from "expo-speech";
 import * as ImagePicker from "expo-image-picker";
-import { colors, spacing, radii, typography, shadows } from "../../src/theme";
+import { dark, fonts, spacing } from "../../src/theme";
 import { useAppStore } from "../../src/store/app";
+import { useChatStore, sessionTitleFrom } from "../../src/store/chat";
 import { useAuthStore } from "../../src/api/client";
 import { sendChatMessage } from "../../src/api/chat";
 import { publishPost, publishNow } from "../../src/api/publishing";
 import { transcribeAudio } from "../../src/api/voice";
-import { PulseDot } from "../../src/components/ui";
+import { Icon } from "../../src/components/rnr/icon";
 import type { ChatMessage, ChatBrief } from "../../src/types";
 
 type AIState = "idle" | "listening" | "thinking" | "speaking";
@@ -34,10 +52,31 @@ const QUICK_SUGGESTIONS = [
   "Rewrite my next post to be punchier",
 ];
 
+const GREETING_FOLLOW_UPS = [
+  "How can Dexter help?",
+  "What are we creating today?",
+  "Ready to grow your LinkedIn?",
+  "What's on your mind today?",
+  "Let's make something worth publishing.",
+];
+
+function buildGreeting(firstName: string): { line1: string; line2: string } {
+  const hour = new Date().getHours();
+  const daypart = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+  const follow =
+    GREETING_FOLLOW_UPS[Math.floor(Math.random() * GREETING_FOLLOW_UPS.length)];
+  return { line1: `Good ${daypart}, ${firstName}.`, line2: follow };
+}
+
+/* v2 copilot — Microsoft Copilot app structure (Mobbin ref) on the
+ * Dexter dark system: top bar, big greeting empty-state, Today
+ * divider, tonal user bubbles, plain assistant text, card composer. */
 export default function AICopilotScreen() {
   const user = useAuthStore((s) => s.user);
   const business = useAppStore((s) => s.business);
   const connectedAccounts = useAppStore((s) => s.connectedAccounts);
+
+  const firstName = user?.full_name?.split(" ")[0] || "there";
 
   const [aiState, setAiState] = useState<AIState>("idle");
   const [inputText, setInputText] = useState("");
@@ -46,15 +85,50 @@ export default function AICopilotScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: `Hello ${user?.full_name?.split(" ")[0] || "there"}! I'm Dexter, your AI Social Media copilot. Ask me to draft a LinkedIn post, analyze a graphic, or refine your content strategy.`,
+      content: `Hello ${firstName}! I'm Dexter, your AI Social Media copilot. Ask me to draft a LinkedIn post, analyze a graphic, or refine your content strategy.`,
     },
   ]);
   const [activeBrief, setActiveBrief] = useState<ChatBrief | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyQuery, setHistoryQuery] = useState('');
+  const [greeting] = useState(() => buildGreeting(firstName));
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const sessions = useChatStore((s) => s.sessions);
+  const upsertSession = useChatStore((s) => s.upsertSession);
+  const removeSession = useChatStore((s) => s.removeSession);
+  const clearSessions = useChatStore((s) => s.clearSessions);
 
   const scrollRef = useRef<ScrollView>(null);
   const recordingRef = useRef<any>(null);
+  const insets = useSafeAreaInsets();
+  const [kbHeight, setKbHeight] = useState(0);
+
+  // Manual keyboard padding (Android): deterministic in Expo Go and
+  // dev builds regardless of windowSoftInputMode.
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    const onFrame = (e: any) => {
+      console.log("[kb] frame height:", e.endCoordinates.height);
+      setKbHeight(e.endCoordinates.height);
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    };
+    const show = Keyboard.addListener("keyboardDidShow", onFrame);
+    const change = Keyboard.addListener("keyboardDidChangeFrame", onFrame);
+    const hide = Keyboard.addListener("keyboardDidHide", () =>
+      setKbHeight(0),
+    );
+    return () => {
+      show.remove();
+      change.remove();
+      hide.remove();
+    };
+  }, []);
+
+  const isFresh = messages.length <= 1;
 
   const speakText = (text: string) => {
     try {
@@ -71,6 +145,38 @@ export default function AICopilotScreen() {
     } catch {
       setAiState("idle");
     }
+  };
+
+  const handleNewConversation = () => {
+    Speech.stop();
+    setAiState("idle");
+    setInputText("");
+    setAttachedImage(null);
+    setActiveBrief(null);
+    setSessionId(null);
+    setHistoryOpen(false);
+    setMessages([
+      {
+        role: "assistant",
+        content: `Hello ${firstName}! I'm Dexter, your AI Social Media copilot. Ask me to draft a LinkedIn post, analyze a graphic, or refine your content strategy.`,
+      },
+    ]);
+  };
+
+  const openSession = (id: string) => {
+    const s = useChatStore.getState().sessions.find((prev) => prev.id === id);
+    if (!s) return;
+    Speech.stop();
+    setAiState("idle");
+    setSessionId(s.id);
+    setMessages(s.messages);
+    setActiveBrief(s.brief);
+    setInputText("");
+    setAttachedImage(null);
+    setHistoryOpen(false);
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: false });
+    }, 100);
   };
 
   const handlePickImage = async () => {
@@ -102,7 +208,21 @@ export default function AICopilotScreen() {
     }
   };
 
-  const handleSend = async (textToSend?: string) => {
+  const persistSession = (
+    id: string,
+    msgs: ChatMessage[],
+    brief: ChatBrief | null,
+  ) => {
+    upsertSession({
+      id,
+      title: sessionTitleFrom(msgs),
+      messages: msgs,
+      brief,
+      updatedAt: Date.now(),
+    });
+  };
+
+  const handleSend = async (textToSend?: string, opts?: { silent?: boolean }) => {
     const query = (textToSend ?? inputText).trim();
     if (!query && !attachedImage) return;
 
@@ -120,6 +240,9 @@ export default function AICopilotScreen() {
 
     const newHistory: ChatMessage[] = [...messages, userMessage];
     setMessages(newHistory);
+    const id = sessionId ?? `s_${Date.now()}`;
+    setSessionId(id);
+    persistSession(id, newHistory, activeBrief);
     setAiState("thinking");
 
     setTimeout(() => {
@@ -138,14 +261,18 @@ export default function AICopilotScreen() {
         role: "assistant",
         content: res.reply,
       };
-      setMessages([...newHistory, assistantMsg]);
+      const fullHistory = [...newHistory, assistantMsg];
+      setMessages(fullHistory);
 
       if (res.brief) {
         setActiveBrief(res.brief);
       }
+      persistSession(id, fullHistory, res.brief ?? activeBrief);
 
       setAiState("idle");
-      if (isAutoSpeak) {
+      // Suggestion taps stay silent — hearing audio right after tapping
+      // a card feels like the microphone turned itself on.
+      if (isAutoSpeak && !opts?.silent) {
         speakText(res.reply);
       }
     } catch (e: any) {
@@ -239,89 +366,131 @@ export default function AICopilotScreen() {
     }
   };
 
+  const statusLabel =
+    aiState === "listening"
+      ? "Listening…"
+      : aiState === "thinking"
+        ? "Thinking…"
+        : aiState === "speaking"
+          ? "Speaking…"
+          : isFresh
+            ? "New conversation"
+            : "Dexter Copilot";
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        {/* Header (§8.3 copilot bar) */}
-        <View style={styles.header}>
-          <View style={styles.headerIdentity}>
-            <View style={styles.dexterAvatar}>
-              <PulseDot active={aiState === "thinking" || aiState === "listening"} size={12} />
-            </View>
-            <View>
-              <Text style={styles.headerTitle}>Dexter Copilot</Text>
-              <Text style={styles.headerSubtitle}>
-                {aiState === "listening"
-                  ? "Listening…"
-                  : aiState === "thinking"
-                    ? "Thinking…"
-                    : aiState === "speaking"
-                      ? "Speaking…"
-                      : "Always on"}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.headerActions}>
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        {/* ── Top bar ── */}
+        <View style={styles.topBar}>
+          <Pressable
+            style={styles.topBarBtn}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Conversation history and options"
+            onPress={() => setHistoryOpen(true)}
+          >
+            <Icon as={Menu} size={22} color={dark.ink} />
+          </Pressable>
+          <Text numberOfLines={1} style={styles.topBarTitle}>
+            {statusLabel}
+          </Text>
+          <View style={styles.topBarActions}>
             <Pressable
-              style={[styles.audioToggleBtn, isAutoSpeak && styles.audioToggleActive]}
+              style={styles.topBarBtn}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={isAutoSpeak ? "Mute Dexter" : "Unmute Dexter"}
               onPress={() => {
                 if (aiState === "speaking") Speech.stop();
                 setIsAutoSpeak(!isAutoSpeak);
               }}
             >
-              <Ionicons
-                name={isAutoSpeak ? "volume-high" : "volume-mute-outline"}
-                size={18}
-                color={isAutoSpeak ? colors.primary : colors.inkFaint}
+              <Icon
+                as={isAutoSpeak ? Volume2 : VolumeX}
+                size={20}
+                color={isAutoSpeak ? dark.ink : dark.inkFaint}
               />
+            </Pressable>
+            <Pressable
+              style={styles.topBarBtn}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="New conversation"
+              onPress={handleNewConversation}
+            >
+              <Icon as={SquarePen} size={20} color={dark.ink} />
             </Pressable>
           </View>
         </View>
 
-        {/* Chat History */}
-        <ScrollView
-          ref={scrollRef}
-          style={styles.chatScroll}
-          contentContainerStyle={styles.chatContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {messages.map((m, idx) => {
-            const isUser = m.role === "user";
-            return (
-              <View
-                key={idx}
-                style={[styles.messageBubbleWrap, isUser ? styles.userBubbleWrap : styles.assistantBubbleWrap]}
-              >
-                {!isUser && (
-                  <View style={styles.assistantAvatar}>
-                    <Ionicons name="bulb" size={14} color={colors.primary} />
-                  </View>
-                )}
-                <View style={[styles.messageBubble, isUser ? styles.userBubble : styles.assistantBubble]}>
-                  {m.image_url && (
-                    <Image
-                      source={{ uri: m.image_url }}
-                      style={styles.bubbleAttachedImage}
-                      resizeMode="cover"
-                    />
-                  )}
-                  <Text style={[styles.messageText, isUser ? styles.userMessageText : styles.assistantMessageText]}>
-                    {m.content}
-                  </Text>
-                  {!isUser && (
-                    <Pressable style={styles.speakBubbleBtn} hitSlop={8} onPress={() => speakText(m.content)}>
-                      <Ionicons name="volume-medium-outline" size={15} color={colors.primary} />
-                    </Pressable>
-                  )}
-                </View>
-              </View>
-            );
-          })}
+        {/* ── Empty state greeting ── */}
+        {isFresh ? (
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={styles.emptyContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.greeting}>
+              {greeting.line1}{"\n"}
+              <Text style={styles.greetingAccent}>{greeting.line2}</Text>
+            </Text>
+          </ScrollView>
+        ) : (
+          <ScrollView
+            ref={scrollRef}
+            style={styles.flex}
+            contentContainerStyle={styles.chatContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.dayDivider}>
+              <Text style={styles.dayLabel}>Today</Text>
+              <View style={styles.dayLine} />
+            </View>
 
-          {/* Active Post Draft Card */}
-          {activeBrief && (
-            <View style={styles.briefCardOuter}>
-              <View style={styles.briefCardContent}>
+            {messages.slice(1).map((m, idx) => {
+              const isUser = m.role === "user";
+              if (isUser) {
+                return (
+                  <View key={idx} style={styles.userBubble}>
+                    {m.image_url && (
+                      <Image
+                        source={{ uri: m.image_url }}
+                        style={styles.bubbleImage}
+                        resizeMode="cover"
+                      />
+                    )}
+                    <Text style={styles.userText}>{m.content}</Text>
+                  </View>
+                );
+              }
+              return (
+                <View key={idx} style={styles.assistantBlock}>
+                  <Text style={styles.assistantText}>{m.content}</Text>
+                  <Pressable
+                    style={styles.speakBtn}
+                    hitSlop={8}
+                    onPress={() => speakText(m.content)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Read aloud"
+                  >
+                    <Icon as={Volume2} size={16} color={dark.accent} />
+                  </Pressable>
+                </View>
+              );
+            })}
+
+            {aiState === "thinking" && (
+              <ActivityIndicator
+                color={dark.accent}
+                style={{ alignSelf: "flex-start", marginTop: 8 }}
+              />
+            )}
+
+            {activeBrief && (
+              <View style={styles.briefCard}>
                 <View style={styles.briefHeader}>
                   <View style={styles.briefIconWrap}>
                     <Ionicons name="logo-linkedin" size={16} color="#0A66C2" />
@@ -329,300 +498,644 @@ export default function AICopilotScreen() {
                   <Text style={styles.briefTitle}>Generated LinkedIn Post Draft</Text>
                 </View>
                 <Text style={styles.briefBody}>{activeBrief.content_text}</Text>
-                <Pressable style={styles.briefPublishBtn} onPress={handlePublishBrief} disabled={publishing}>
+                <Pressable
+                  style={styles.briefPublishBtn}
+                  onPress={handlePublishBrief}
+                  disabled={publishing}
+                >
                   {publishing ? (
                     <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
                     <>
-                      <Ionicons name="paper-plane" size={16} color="#FFFFFF" />
+                      <Icon as={Send} size={16} color="#FFFFFF" />
                       <Text style={styles.briefPublishBtnText}>Publish to LinkedIn Now</Text>
                     </>
                   )}
                 </Pressable>
               </View>
-            </View>
-          )}
-        </ScrollView>
+            )}
+          </ScrollView>
+        )}
 
-        {/* Attached Image Preview */}
+        {/* ── Attached image preview ── */}
         {attachedImage && (
-          <View style={styles.attachedPreviewRow}>
-            <Image source={{ uri: attachedImage }} style={styles.attachedThumbnail} />
-            <View style={styles.attachedTextWrap}>
-              <Text style={styles.attachedTitle}>Image Attached</Text>
-              <Text style={styles.attachedSub}>Dexter will analyze this visual graphic</Text>
+          <View style={styles.attachedRow}>
+            <Image source={{ uri: attachedImage }} style={styles.attachedThumb} />
+            <View style={styles.attachedBody}>
+              <Text style={styles.attachedTitle}>Image attached</Text>
+              <Text style={styles.attachedSub}>Dexter will analyze this visual</Text>
             </View>
-            <Pressable style={styles.removeAttachedBtn} onPress={() => setAttachedImage(null)}>
-              <Ionicons name="close-circle" size={20} color={colors.inkFaint} />
+            <Pressable
+              style={styles.attachedRemove}
+              hitSlop={8}
+              onPress={() => setAttachedImage(null)}
+            >
+              <Icon as={X} size={18} color={dark.inkFaint} />
             </Pressable>
           </View>
         )}
 
-        {/* Quick Suggestion Chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.suggestionScroll}
-          contentContainerStyle={styles.suggestionContent}
-        >
-          {QUICK_SUGGESTIONS.map((s, i) => (
-            <Pressable key={i} style={styles.suggestionChip} onPress={() => handleSend(s)}>
-              <Text style={styles.suggestionText}>{s}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        {/* ── Suggestion chips (fresh chat only) ── */}
+        {isFresh && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chipsScroll}
+            contentContainerStyle={styles.chipsContent}
+          >
+            {QUICK_SUGGESTIONS.map((s, i) => (
+              <Pressable key={i} style={styles.chip} onPress={() => handleSend(s, { silent: true })}>
+                <Text style={styles.chipText} numberOfLines={1}>
+                  {s}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
 
-        {/* Input Bar (§8.3 composer) */}
-        <View style={styles.inputBarOuter}>
-          <View style={styles.inputBar}>
-            <Pressable style={styles.attachmentBtn} onPress={handlePickImage}>
-              <Ionicons name="image-outline" size={20} color={colors.primary} />
-            </Pressable>
+        {/* ── Composer card ── */}
+        <View
+          style={[
+            styles.composerOuter,
+            Platform.OS === "android" && kbHeight > 0
+              ? { marginBottom: 0, paddingBottom: kbHeight + 56 }
+              : { marginBottom: insets.bottom + 100 },
+          ]}
+        >
+          <View style={styles.composerCard}>
             <TextInput
-              style={styles.textInput}
-              placeholder="Ask Dexter to draft, edit, or schedule…"
-              placeholderTextColor={colors.inkFaint}
+              style={styles.composerInput}
+              placeholder="Message Dexter"
+              placeholderTextColor={dark.inkFaint}
               value={inputText}
               onChangeText={setInputText}
               onSubmitEditing={() => handleSend()}
               returnKeyType="send"
               multiline
             />
-            <Pressable
-              style={[
-                styles.actionBtn,
-                (isVoiceActive || aiState === "speaking") && styles.actionBtnActive,
-              ]}
-              onPress={handleVoiceToggle}
-            >
-              <Ionicons
-                name={aiState === "speaking" ? "volume-high" : isVoiceActive ? "mic" : "mic-outline"}
-                size={20}
-                color={isVoiceActive || aiState === "speaking" ? "#FFFFFF" : colors.primary}
-              />
-            </Pressable>
-            <Pressable
-              style={[
-                styles.sendBtn,
-                !inputText.trim() && !attachedImage && styles.sendBtnDisabled,
-              ]}
-              onPress={() => handleSend()}
-              disabled={!inputText.trim() && !attachedImage}
-            >
-              <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
-            </Pressable>
+            <View style={styles.composerRow}>
+              <View style={styles.composerLeft}>
+                <Pressable
+                  style={styles.roundBtn}
+                  hitSlop={8}
+                  onPress={handlePickImage}
+                  accessibilityRole="button"
+                  accessibilityLabel="Attach image"
+                >
+                  <Icon as={ImagePlus} size={20} color={dark.inkSoft} />
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.roundBtn,
+                    (isVoiceActive || aiState === "speaking") && styles.roundBtnActive,
+                  ]}
+                  hitSlop={8}
+                  onPress={handleVoiceToggle}
+                  accessibilityRole="button"
+                  accessibilityLabel="Voice input"
+                >
+                  <Icon
+                    as={Mic}
+                    size={20}
+                    color={
+                      isVoiceActive || aiState === "speaking" ? "#FFFFFF" : dark.inkSoft
+                    }
+                  />
+                </Pressable>
+              </View>
+              <Pressable
+                style={[
+                  styles.sendBtn,
+                  !inputText.trim() && !attachedImage && styles.sendBtnDisabled,
+                ]}
+                hitSlop={8}
+                onPress={() => handleSend()}
+                disabled={!inputText.trim() && !attachedImage}
+                accessibilityRole="button"
+                accessibilityLabel="Send message"
+              >
+                <Icon
+                  as={ArrowUp}
+                  size={20}
+                  color={
+                    !inputText.trim() && !attachedImage ? dark.inkFaint : "#FFFFFF"
+                  }
+                />
+              </Pressable>
+            </View>
           </View>
         </View>
+        {/* ── History drawer (left sidebar) ── */}
+        <Modal visible={historyOpen} animationType="fade" transparent>
+          <View style={styles.drawerBackdrop}>
+            <View style={[styles.drawerCard, { paddingTop: Math.max(insets.top, 16) }]}>
+              <View style={styles.drawerHeader}>
+                <Text style={styles.drawerTitle}>Conversations</Text>
+                <View style={styles.drawerHeaderBtns}>
+                  <Pressable
+                    style={styles.drawerNewBtn}
+                    onPress={handleNewConversation}
+                    accessibilityRole="button"
+                    accessibilityLabel="Start new conversation"
+                  >
+                    <Icon as={Plus} size={16} color="#FFF" />
+                    <Text style={styles.drawerNewText}>New</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.drawerCloseBtn}
+                    onPress={() => setHistoryOpen(false)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close conversations"
+                  >
+                    <Icon as={X} size={18} color={dark.inkSoft} />
+                  </Pressable>
+                </View>
+              </View>
+
+              <View style={styles.drawerSearch}>
+                <Icon as={Search} size={16} color={dark.inkFaint} />
+                <TextInput
+                  style={styles.drawerSearchInput}
+                  placeholder="Search chats…"
+                  placeholderTextColor={dark.inkFaint}
+                  value={historyQuery}
+                  onChangeText={setHistoryQuery}
+                />
+                {historyQuery.length > 0 && (
+                  <Pressable onPress={() => setHistoryQuery('')} hitSlop={8}>
+                    <Icon as={X} size={16} color={dark.inkFaint} />
+                  </Pressable>
+                )}
+              </View>
+
+              <ScrollView style={styles.drawerList} showsVerticalScrollIndicator={false}>
+                {sessions.length === 0 && (
+                  <Text style={styles.drawerEmpty}>
+                    No previous chats yet — they appear here after your first message.
+                  </Text>
+                )}
+                {sessions
+                  .filter((s) =>
+                    !historyQuery.trim() ||
+                    s.title.toLowerCase().includes(historyQuery.trim().toLowerCase()) ||
+                    s.messages.some(
+                      (m) =>
+                        m.role === 'user' &&
+                        m.content.toLowerCase().includes(historyQuery.trim().toLowerCase()),
+                    ),
+                  )
+                  .map((s) => {
+                    const active = s.id === sessionId;
+                    const turns = s.messages.filter((m) => m.role === 'user').length;
+                    return (
+                      <Pressable
+                        key={s.id}
+                        style={[styles.sessionRow, active && styles.sessionRowActive]}
+                        onPress={() => openSession(s.id)}
+                      >
+                        <View style={styles.sessionBody}>
+                          <Text style={styles.sessionTitle} numberOfLines={1}>
+                            {s.title}
+                          </Text>
+                          <Text style={styles.sessionDate}>
+                            {new Date(s.updatedAt).toLocaleString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                            {turns > 0 ? ` • ${turns} message${turns === 1 ? '' : 's'}` : ''}
+                          </Text>
+                        </View>
+                        <Pressable
+                          hitSlop={8}
+                          onPress={() => {
+                            removeSession(s.id);
+                            if (s.id === sessionId) handleNewConversation();
+                          }}
+                          accessibilityRole="button"
+                          accessibilityLabel="Delete conversation"
+                        >
+                          <Icon as={Trash2} size={16} color={dark.inkFaint} />
+                        </Pressable>
+                      </Pressable>
+                    );
+                  })}
+              </ScrollView>
+
+              <Text style={styles.drawerSectionLabel}>Options</Text>
+              <View style={styles.drawerOptions}>
+                <View style={styles.optionRow}>
+                  <Text style={styles.optionLabel}>Read replies aloud</Text>
+                  <Switch
+                    value={isAutoSpeak}
+                    onValueChange={setIsAutoSpeak}
+                    trackColor={{ false: dark.hairlineStrong, true: dark.accent }}
+                    thumbColor="#FFFFFF"
+                    ios_backgroundColor={dark.hairlineStrong}
+                  />
+                </View>
+                <Pressable
+                  style={styles.optionRow}
+                  onPress={() => {
+                    Alert.alert(
+                      'Clear history?',
+                      'All previous copilot conversations on this device will be removed.',
+                      [
+                        { text: 'Keep', style: 'cancel' },
+                        {
+                          text: 'Clear all',
+                          style: 'destructive',
+                          onPress: () => {
+                            clearSessions();
+                            handleNewConversation();
+                          },
+                        },
+                      ],
+                    );
+                  }}
+                >
+                  <Text style={[styles.optionLabel, { color: dark.negative }]}>
+                    Clear all history
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+            <Pressable
+              style={styles.drawerScrim}
+              onPress={() => setHistoryOpen(false)}
+            />
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
+  flex: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: dark.canvas },
   container: { flex: 1 },
 
-  header: {
+  topBar: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    gap: spacing.md,
   },
-  headerIdentity: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  dexterAvatar: {
+  statusWrap: {
     width: 40,
     height: 40,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primarySurface,
+    borderRadius: 999,
+    backgroundColor: dark.surface,
     borderWidth: 1,
-    borderColor: colors.primaryBorder,
+    borderColor: dark.hairline,
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: { ...typography.subheading, color: colors.ink },
-  headerSubtitle: { ...typography.caption2, color: colors.primary, marginTop: 1, fontSize: 11 },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  audioToggleBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceSunken,
-    borderWidth: 1,
-    borderColor: colors.border,
+  topBarTitle: {
+    flex: 1,
+    fontFamily: fonts.semibold,
+    fontSize: 17,
+    color: dark.ink,
+  },
+  topBarActions: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  topBarBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
   },
-  audioToggleActive: { backgroundColor: colors.primarySurface, borderColor: colors.primaryBorder },
 
-  chatScroll: { flex: 1 },
+  emptyContent: {
+    flexGrow: 1,
+    justifyContent: "flex-start",
+    paddingHorizontal: 24,
+    paddingTop: 32,
+  },
+  greeting: {
+    fontFamily: "InterTight_700Bold",
+    fontSize: 40,
+    lineHeight: 44,
+    letterSpacing: -1.2,
+    color: dark.ink,
+  },
+  greetingAccent: {
+    color: dark.inkSoft,
+  },
+
   chatContent: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    paddingBottom: spacing.lg,
-    gap: spacing.xs,
-  },
-  messageBubbleWrap: {
-    flexDirection: "row",
-    marginVertical: 5,
-    maxWidth: "88%",
-  },
-  userBubbleWrap: { alignSelf: "flex-end" },
-  assistantBubbleWrap: { alignSelf: "flex-start", alignItems: "flex-end", gap: 6 },
-  assistantAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primarySurface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  messageBubble: {
-    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderRadius: radii.md,
+    paddingBottom: spacing.xl,
+    gap: spacing.md,
   },
-  userBubble: {
-    backgroundColor: colors.primary,
-    borderBottomRightRadius: 4,
-    ...shadows.primaryBtn,
-  },
-  assistantBubble: {
-    backgroundColor: colors.surface,
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.subtle,
-  },
-  bubbleAttachedImage: {
-    width: 200,
-    height: 120,
-    borderRadius: radii.sm,
+  dayDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
     marginBottom: spacing.sm,
   },
-  speakBubbleBtn: { alignSelf: "flex-end", marginTop: 4, paddingTop: 2 },
-  messageText: { fontSize: 15, lineHeight: 21 },
-  userMessageText: { color: "#FFFFFF" },
-  assistantMessageText: { color: colors.ink },
-
-  briefCardOuter: {
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.primaryBorder,
-    overflow: "hidden",
-    marginTop: spacing.sm,
-    ...shadows.md,
+  dayLabel: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: dark.inkSoft,
   },
-  briefCardContent: { padding: spacing.lg, gap: spacing.sm },
+  dayLine: { flex: 1, height: 1, backgroundColor: dark.hairline },
+
+  userBubble: {
+    backgroundColor: dark.surfaceElevated,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 20,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    marginLeft: 40,
+  },
+  bubbleImage: { width: "100%", height: 160, borderRadius: 12 },
+  userText: {
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    lineHeight: 23,
+    color: dark.ink,
+  },
+
+  assistantBlock: { gap: spacing.sm, paddingRight: spacing.sm },
+  assistantText: {
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    lineHeight: 25,
+    color: dark.ink,
+  },
+  speakBtn: { alignSelf: "flex-start", padding: 4 },
+
+  briefCard: {
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 20,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
   briefHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   briefIconWrap: {
     width: 30,
     height: 30,
-    borderRadius: radii.pill,
-    backgroundColor: colors.brandTint,
+    borderRadius: 999,
+    backgroundColor: dark.surfaceElevated,
     alignItems: "center",
     justifyContent: "center",
   },
-  briefTitle: { ...typography.caption, color: colors.ink, fontWeight: "600" },
-  briefBody: { ...typography.bodySmall, color: colors.inkSoft, lineHeight: 19 },
+  briefTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: dark.ink,
+  },
+  briefBody: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 21,
+    color: dark.inkSoft,
+  },
   briefPublishBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.sm,
-    backgroundColor: colors.brand,
-    paddingVertical: 12,
-    borderRadius: radii.pill,
+    backgroundColor: dark.accent,
+    paddingVertical: 13,
+    borderRadius: 999,
     marginTop: spacing.xs,
-    ...shadows.primaryBtn,
+    minHeight: 48,
   },
-  briefPublishBtnText: { ...typography.caption, color: "#FFFFFF", fontWeight: "700" },
+  briefPublishBtnText: {
+    color: "#FFF",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+  },
 
-  attachedPreviewRow: {
+  attachedRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: dark.surface,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.md,
+    borderColor: dark.hairline,
+    borderRadius: 16,
     marginHorizontal: spacing.lg,
     padding: spacing.sm,
     gap: spacing.md,
-    marginBottom: 4,
-    ...shadows.subtle,
+    marginBottom: spacing.sm,
   },
-  attachedThumbnail: { width: 44, height: 44, borderRadius: radii.sm },
-  attachedTextWrap: { flex: 1 },
-  attachedTitle: { ...typography.caption, color: colors.ink, fontWeight: "600" },
-  attachedSub: { ...typography.caption2, color: colors.inkSoft },
-  removeAttachedBtn: { padding: 4 },
+  attachedThumb: { width: 44, height: 44, borderRadius: 12 },
+  attachedBody: { flex: 1 },
+  attachedTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: dark.ink,
+  },
+  attachedSub: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: dark.inkSoft,
+  },
+  attachedRemove: { padding: 4 },
 
-  suggestionScroll: { maxHeight: 46, marginVertical: 4 },
-  suggestionContent: { paddingHorizontal: spacing.lg, gap: spacing.sm },
-  suggestionChip: {
-    backgroundColor: colors.surfaceSunken,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  suggestionText: { ...typography.caption2, color: colors.inkSoft, fontWeight: "500", fontSize: 11 },
-
-  inputBarOuter: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.sm,
-    marginBottom: Platform.OS === "ios" ? 84 : 76,
-  },
-  inputBar: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    paddingHorizontal: spacing.md,
+  chipsScroll: { height: 60, flexGrow: 0, flexShrink: 0 },
+  chipsContent: {
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
     paddingBottom: spacing.sm,
+  },
+  chip: {
+    backgroundColor: dark.surface,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    maxWidth: 260,
+  },
+  chipText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: dark.inkSoft,
+  },
+
+  composerOuter: {
+    paddingHorizontal: spacing.lg,
+  },
+  composerCard: {
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 28,
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
     gap: spacing.sm,
   },
-  attachmentBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primarySurface,
+  composerInput: {
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    lineHeight: 22,
+    color: dark.ink,
+    minHeight: 48,
+    maxHeight: 120,
+    textAlignVertical: "top",
+  },
+  composerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  composerLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  roundBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
   },
-  textInput: {
-    flex: 1,
-    backgroundColor: colors.surfaceSunken,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+  roundBtnActive: { backgroundColor: dark.accent },
+  sendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    backgroundColor: dark.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sendBtnDisabled: { backgroundColor: dark.surfaceElevated },
+
+  drawerBackdrop: { flex: 1, flexDirection: 'row' },
+  drawerCard: {
+    width: '84%',
+    maxWidth: 340,
+    height: '100%',
+    backgroundColor: dark.surface,
+    borderRightWidth: 1,
+    borderRightColor: dark.hairline,
     paddingHorizontal: spacing.lg,
+    paddingBottom: 32,
+    gap: spacing.md,
+  },
+  drawerScrim: { flex: 1, backgroundColor: dark.overlay },
+  drawerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  drawerTitle: {
+    fontFamily: 'InterTight_600SemiBold',
+    fontSize: 20,
+    color: dark.ink,
+  },
+  drawerHeaderBtns: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  drawerNewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: dark.accent,
+    borderRadius: 999,
     paddingVertical: 10,
+    paddingHorizontal: 16,
+    minHeight: 44,
+  },
+  drawerNewText: {
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+  },
+  drawerCloseBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  drawerSearch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: dark.surfaceSunken,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 999,
+    paddingHorizontal: spacing.lg,
+    minHeight: 48,
+  },
+  drawerSearchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    color: dark.ink,
+    fontSize: 14,
+    fontFamily: fonts.regular,
+  },
+  drawerList: { flexGrow: 1, flexShrink: 1 },
+  drawerEmpty: {
+    fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.ink,
-    maxHeight: 100,
+    color: dark.inkFaint,
+    textAlign: 'center',
+    paddingVertical: spacing.lg,
   },
-  actionBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primarySurface,
-    alignItems: "center",
-    justifyContent: "center",
+  sessionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 999,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 8,
+    marginBottom: spacing.sm,
+    minHeight: 52,
   },
-  actionBtnActive: { backgroundColor: colors.primary },
-  sendBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.primaryBtn,
+  sessionRowActive: { borderColor: dark.accent },
+  sessionBody: { flex: 1, flexShrink: 1 },
+  sessionTitle: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: dark.ink,
   },
-  sendBtnDisabled: { backgroundColor: colors.border },
+  sessionDate: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: dark.inkFaint,
+    marginTop: 2,
+  },
+  drawerSectionLabel: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    color: dark.inkFaint,
+    marginTop: spacing.xs,
+  },
+  drawerOptions: {
+    backgroundColor: dark.surfaceElevated,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 14,
+    minHeight: 56,
+  },
+  optionLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: dark.ink,
+  },
 });
