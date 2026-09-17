@@ -101,7 +101,6 @@ export default function AICopilotScreen() {
   const clearSessions = useChatStore((s) => s.clearSessions);
 
   const scrollRef = useRef<ScrollView>(null);
-  const recordingRef = useRef<any>(null);
   const insets = useSafeAreaInsets();
   const [kbHeight, setKbHeight] = useState(0);
 
@@ -302,31 +301,7 @@ export default function AICopilotScreen() {
 
     if (isVoiceActive) {
       setIsVoiceActive(false);
-      setAiState("thinking");
-
-      try {
-        if (recordingRef.current) {
-          const rec = recordingRef.current;
-          recordingRef.current = null;
-          await rec.stopAndUnloadAsync();
-          try { const { Audio } = require("expo-av"); await Audio.setAudioModeAsync({ allowsRecordingIOS: false }); } catch {}
-          const uri = rec.getURI();
-
-          if (uri) {
-            const transResult = await transcribeAudio(uri, business?.id);
-            if (transResult && transResult.transcript) {
-              await handleSend(transResult.transcript);
-              return;
-            } else {
-              Alert.alert("Voice Recognition", "Could not detect clear speech. Please try speaking again.");
-            }
-          }
-        }
-      } catch (err: any) {
-        Alert.alert("Voice Recording Error", `Voice processing failed: ${err.message || "Microphone error"}`);
-      } finally {
-        setAiState("idle");
-      }
+      setAiState("idle");
     } else {
       setIsVoiceActive(true);
       setAiState("listening");
