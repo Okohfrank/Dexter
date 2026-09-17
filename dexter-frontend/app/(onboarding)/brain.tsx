@@ -7,14 +7,28 @@ import {
   ScrollView,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows } from '../../src/theme';
+import {
+  Factory,
+  Package,
+  Users,
+  Target,
+  Megaphone,
+  ShieldAlert,
+  Hash,
+  MousePointerClick,
+  ArrowLeft,
+  ArrowRight,
+  Plus,
+  X,
+} from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
+import { Icon } from '../../src/components/rnr/icon';
+import { dark, fonts, spacing } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
-import { GlassCard } from '../../src/components/ui';
-import { OnboardingHeader } from '../../src/components/onboarding-header';
 import type { BusinessBrain } from '../../src/types';
 
 const EMPTY_BRAIN: BusinessBrain = {
@@ -33,35 +47,63 @@ const EMPTY_BRAIN: BusinessBrain = {
 type TextField = {
   key: 'industry' | 'brandVoice' | 'writingStyle' | 'visualStyle';
   label: string;
+  icon: LucideIcon;
 };
 
 type ListField = {
   key: 'products' | 'audience' | 'goals' | 'restrictions' | 'preferredHashtags' | 'preferredCtas';
   label: string;
+  icon: LucideIcon;
   list: true;
 };
 
 type Field = TextField | ListField;
 
-const FIELDS: Field[] = [
-  { key: 'industry', label: 'Industry & Sector' },
-  { key: 'products', label: 'Products & Core Offerings', list: true },
-  { key: 'audience', label: 'Target Audience Profile', list: true },
-  { key: 'goals', label: 'Primary Business Goals', list: true },
-  { key: 'brandVoice', label: 'Brand Voice & Tone' },
-  { key: 'restrictions', label: 'Content Restrictions & Guardrails', list: true },
-  { key: 'writingStyle', label: 'Writing & Hook Style' },
-  { key: 'visualStyle', label: 'Visual Design Style' },
-  { key: 'preferredHashtags', label: 'Target Hashtags', list: true },
-  { key: 'preferredCtas', label: 'Calls to Action (CTAs)', list: true },
+type Section = {
+  title: string;
+  subtitle: string;
+  fields: Field[];
+};
+
+/* Grouped IA: 10 flat cards → 3 sections (Identity / Voice & Style /
+ * Goals & Guardrails). Shorter perceived length, clearer mental model. */
+const SECTIONS: Section[] = [
+  {
+    title: 'Identity',
+    subtitle: 'Who you are and who you serve',
+    fields: [
+      { key: 'industry', label: 'Industry & Sector', icon: Factory },
+      { key: 'products', label: 'Products & Offerings', icon: Package, list: true },
+      { key: 'audience', label: 'Target Audience', icon: Users, list: true },
+    ],
+  },
+  {
+    title: 'Voice & Style',
+    subtitle: 'How Dexter sounds and looks',
+    fields: [
+      { key: 'brandVoice', label: 'Brand Voice & Tone', icon: Megaphone },
+      { key: 'preferredHashtags', label: 'Target Hashtags', icon: Hash, list: true },
+      { key: 'preferredCtas', label: 'Calls to Action', icon: MousePointerClick, list: true },
+    ],
+  },
+  {
+    title: 'Goals & Guardrails',
+    subtitle: 'What success looks like — and limits',
+    fields: [
+      { key: 'goals', label: 'Business Goals', icon: Target, list: true },
+      { key: 'restrictions', label: 'Content Restrictions', icon: ShieldAlert, list: true },
+    ],
+  },
 ];
 
+/* v2 step 4 — grouped review form with bottom Back / Save bar. */
 export default function BrainReviewScreen() {
   const router = useRouter();
   const storedBrain = useAppStore((s) => s.brain);
   const setBrain = useAppStore((s) => s.setBrain);
   const [brain, setBrainState] = useState<BusinessBrain>(storedBrain ?? EMPTY_BRAIN);
   const [newInputs, setNewInputs] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
   const updateText = (key: keyof BusinessBrain, value: string) => {
     setBrainState((prev) => ({ ...prev, [key]: value }));
@@ -85,7 +127,12 @@ export default function BrainReviewScreen() {
   };
 
   const handleSave = () => {
-    setBrain(brain);
+    setSaving(true);
+    try {
+      setBrain(brain);
+    } finally {
+      setSaving(false);
+    }
     if (storedBrain) {
       Alert.alert('Saved', 'Your Business Brain is updated.', [
         { text: 'Done', onPress: () => router.back() },
@@ -97,134 +144,232 @@ export default function BrainReviewScreen() {
     }
   };
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <OnboardingHeader step={4} />
-        <View style={styles.header}>
-          <Text style={styles.title}>Your Business Brain</Text>
-          <Text style={styles.subtitle}>
-            Dexter distilled your conversation into this persistent intelligence profile. Every post Dexter creates references this.
-          </Text>
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(onboarding)/interview');
+    }
+  };
+
+  const renderField = (field: Field) => (
+    <View key={field.key} style={styles.fieldBlock}>
+      <View style={styles.fieldHeader}>
+        <View style={styles.fieldIconBox}>
+          <Icon as={field.icon} size={16} color={dark.accent} />
         </View>
+        <Text style={styles.fieldLabel}>{field.label}</Text>
+      </View>
 
-        <View style={styles.fieldsContainer}>
-          {FIELDS.map((field) => (
-            <GlassCard key={field.key} style={styles.fieldCard}>
-              <View style={styles.fieldHeader}>
-                <Ionicons name="bulb" size={14} color={colors.primary} />
-                <Text style={styles.fieldLabel}>{field.label}</Text>
-              </View>
-
-              {'list' in field ? (
-                <View style={styles.listContainer}>
-                  <View style={styles.chips}>
-                    {brain[field.key].map((item, i) => (
-                      <View key={i} style={styles.chip}>
-                        <Text style={styles.chipText}>{item}</Text>
-                        <Pressable
-                          style={styles.chipRemoveBtn}
-                          hitSlop={8}
-                          onPress={() => removeListItem(field.key, i)}
-                        >
-                          <Ionicons name="close" size={12} color={colors.primary} />
-                        </Pressable>
-                      </View>
-                    ))}
-                  </View>
-
-                  <View style={styles.addChipRow}>
-                    <TextInput
-                      style={styles.addChipInput}
-                      placeholder={`Add to ${field.label.toLowerCase()}…`}
-                      placeholderTextColor={colors.inkFaint}
-                      value={newInputs[field.key] || ''}
-                      onChangeText={(t) =>
-                        setNewInputs((prev) => ({ ...prev, [field.key]: t }))
-                      }
-                      onSubmitEditing={() => addListItem(field.key)}
-                      returnKeyType="done"
-                    />
-                    <Pressable
-                      style={[
-                        styles.addChipBtn,
-                        !(newInputs[field.key] || '').trim() && styles.addChipBtnDisabled,
-                      ]}
-                      onPress={() => addListItem(field.key)}
-                    >
-                      <Ionicons name="add" size={18} color="#FFFFFF" />
-                    </Pressable>
-                  </View>
+      {'list' in field ? (
+        <View style={styles.listContainer}>
+          {(brain[field.key].length > 0) && (
+            <View style={styles.chips}>
+              {brain[field.key].map((item, i) => (
+                <View key={i} style={styles.chip}>
+                  <Text style={styles.chipText}>{item}</Text>
+                  <Pressable
+                    style={styles.chipRemoveBtn}
+                    hitSlop={8}
+                    onPress={() => removeListItem(field.key, i)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${item}`}
+                  >
+                    <Icon as={X} size={12} color={dark.inkSoft} />
+                  </Pressable>
                 </View>
-              ) : (
-                <TextInput
-                  style={styles.input}
-                  value={brain[field.key]}
-                  onChangeText={(text) => updateText(field.key, text)}
-                  placeholderTextColor={colors.inkFaint}
-                  placeholder={brain[field.key] ? undefined : `Add ${field.label.toLowerCase()}…`}
-                />
-              )}
-            </GlassCard>
-          ))}
-        </View>
+              ))}
+            </View>
+          )}
 
-        <Pressable style={styles.saveBtn} onPress={handleSave}>
-          <Text style={styles.saveText}>Save & Generate Strategy</Text>
-          <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-        </Pressable>
+          <View style={styles.addChipRow}>
+            <TextInput
+              style={styles.addChipInput}
+              placeholder={`Add to ${field.label.toLowerCase()}…`}
+              placeholderTextColor={dark.inkFaint}
+              value={newInputs[field.key] || ''}
+              onChangeText={(t) =>
+                setNewInputs((prev) => ({ ...prev, [field.key]: t }))
+              }
+              onSubmitEditing={() => addListItem(field.key)}
+              returnKeyType="done"
+            />
+            <Pressable
+              style={styles.addChipBtn}
+              onPress={() => addListItem(field.key)}
+              disabled={!(newInputs[field.key] || '').trim()}
+              accessibilityRole="button"
+              accessibilityLabel={`Add to ${field.label}`}
+            >
+              <Icon as={Plus} size={18} color="#FFF" />
+            </Pressable>
+          </View>
+        </View>
+      ) : (
+        <TextInput
+          style={styles.input}
+          value={brain[field.key]}
+          onChangeText={(text) => updateText(field.key, text)}
+          placeholderTextColor={dark.inkFaint}
+          placeholder={brain[field.key] ? undefined : `Add ${field.label.toLowerCase()}…`}
+          multiline
+        />
+      )}
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.eyebrow}>Step 4 of 5</Text>
+        <Text style={styles.title}>Your Business Brain</Text>
+        <Text style={styles.subtitle}>
+          Dexter distilled your conversation into this profile. Review it — every post references this.
+        </Text>
+
+        {SECTIONS.map((section) => (
+          <View key={section.title} style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <Text style={styles.sectionSubtitle}>{section.subtitle}</Text>
+            <View style={styles.sectionDivider} />
+            {section.fields.map(renderField)}
+          </View>
+        ))}
       </ScrollView>
+
+      <View style={styles.bottomBar}>
+        <Pressable style={styles.backBtn} onPress={handleBack} hitSlop={8}>
+          <Icon as={ArrowLeft} size={18} color={dark.ink} />
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
+        <Text style={styles.stepText}>4 / 5</Text>
+        <Pressable
+          style={styles.saveBtn}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <>
+              <Text style={styles.saveText}>Save & Continue</Text>
+              <Icon as={ArrowRight} size={18} color="#FFF" />
+            </>
+          )}
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: spacing.xl, gap: spacing.lg, paddingBottom: spacing.xxxl },
-  header: { gap: spacing.xs },
-  eyebrow: {
-    ...typography.caption2,
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    fontWeight: '700',
+  flex: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: dark.canvas },
+  scroll: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
+    gap: spacing.md,
   },
-  title: { ...typography.displaySmall, color: colors.ink },
-  subtitle: { ...typography.body, color: colors.inkSoft },
-  fieldsContainer: { gap: spacing.md },
-  fieldCard: { gap: spacing.sm, padding: spacing.lg },
-  fieldHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  fieldLabel: { ...typography.subheading, color: colors.ink, fontWeight: '700' },
+  eyebrow: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: dark.accent,
+  },
+  title: {
+    fontFamily: 'InterTight_700Bold',
+    fontSize: 26,
+    lineHeight: 30,
+    letterSpacing: -0.6,
+    color: dark.ink,
+  },
+  subtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: dark.inkSoft,
+  },
+  sectionCard: {
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 20,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  sectionTitle: {
+    fontFamily: 'InterTight_600SemiBold',
+    fontSize: 18,
+    letterSpacing: -0.2,
+    color: dark.ink,
+  },
+  sectionSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: dark.inkSoft,
+    marginTop: -8,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: dark.hairline,
+  },
+  fieldBlock: { gap: spacing.sm },
+  fieldHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  fieldIconBox: {
+    width: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  fieldLabel: {
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    color: dark.ink,
+  },
   listContainer: { gap: spacing.sm },
   input: {
-    backgroundColor: colors.surfaceSunken,
-    borderRadius: radii.md,
+    backgroundColor: dark.surfaceSunken,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    color: colors.ink,
+    borderColor: dark.hairline,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    color: dark.ink,
+    fontFamily: fonts.regular,
     fontSize: 14,
+    lineHeight: 20,
+    minHeight: 52,
+    textAlignVertical: 'top',
   },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.primarySurface,
-    borderRadius: radii.pill,
+    backgroundColor: dark.surfaceElevated,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.primaryBorder,
+    borderColor: dark.hairline,
     paddingLeft: spacing.md,
     paddingRight: spacing.sm,
-    paddingVertical: 5,
+    paddingVertical: 7,
   },
-  chipText: { ...typography.caption2, color: colors.primary, fontWeight: '600', fontSize: 12 },
+  chipText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: dark.ink,
+  },
   chipRemoveBtn: {
-    width: 18,
-    height: 18,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surface,
+    width: 20,
+    height: 20,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -232,38 +377,75 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginTop: spacing.xs,
   },
   addChipInput: {
     flex: 1,
-    backgroundColor: colors.surfaceSunken,
-    borderRadius: radii.pill,
+    flexShrink: 1,
+    backgroundColor: dark.surfaceSunken,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    color: colors.ink,
+    paddingVertical: 12,
+    color: dark.ink,
+    fontFamily: fonts.regular,
     fontSize: 13,
+    minHeight: 48,
   },
   addChipBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primary,
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: dark.accent,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  addChipBtnDisabled: { opacity: 0.3 },
+  bottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderTopWidth: 1,
+    borderTopColor: dark.hairline,
+    backgroundColor: dark.canvas,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    minHeight: 48,
+  },
+  backText: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: dark.ink,
+  },
+  stepText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: dark.inkFaint,
+  },
   saveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingVertical: 15,
-    marginTop: spacing.md,
-    ...shadows.primaryBtn,
+    gap: 8,
+    backgroundColor: dark.accent,
+    borderRadius: 999,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    minHeight: 52,
+    minWidth: 150,
   },
-  saveText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  saveText: {
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+  },
 });
