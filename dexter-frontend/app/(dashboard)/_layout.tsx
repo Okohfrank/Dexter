@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Keyboard, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Tabs } from 'expo-router';
 import { House, SquarePen, Sparkles, Images, Settings } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
@@ -13,10 +13,12 @@ type TabDef = {
   icon: LucideIcon;
 };
 
+type TabRoute = { key: string; name: string; params?: object };
+
 type FloatingTabBarProps = {
   state: {
     index: number;
-    routes: Array<{ key: string; name: string; params?: object }>;
+    routes: TabRoute[];
   };
   descriptors: Record<
     string,
@@ -35,6 +37,9 @@ type FloatingTabBarProps = {
     }) => unknown;
     navigate: (name: string, params?: object) => void;
   };
+  hidden: boolean;
+  bottomInset: number;
+  barWidth: number;
 };
 
 const TABS: TabDef[] = [
@@ -45,92 +50,110 @@ const TABS: TabDef[] = [
   { name: 'settings', title: 'Settings', icon: Settings },
 ];
 
-function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
-  const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
+function TabButton({
+  tab,
+  route,
+  focused,
+  options,
+  navigation,
+}: {
+  tab: TabDef;
+  route: TabRoute | undefined;
+  focused: boolean;
+  options?: {
+    tabBarAccessibilityLabel?: string;
+    tabBarButtonTestID?: string;
+  };
+  navigation: FloatingTabBarProps['navigation'];
+}) {
+  const handlePress = () => {
+    if (!route) return;
 
-  // Near full-width floating pill like the reference: 16px margins, capped.
-  const navBarWidth = Math.min(screenWidth - 32, 480);
-
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'production') return;
-
-    TABS.forEach((tab) => {
-      if (!state.routes.some((route) => route.name === tab.name)) {
-        console.warn(`[DashboardLayout] Missing tab route: ${tab.name}`);
-      }
+    const event = navigation.emit({
+      type: 'tabPress',
+      target: route.key,
+      canPreventDefault: true,
     });
-  }, [state.routes]);
 
+    const prevented =
+      typeof event === 'object' &&
+      event !== null &&
+      'defaultPrevented' in event &&
+      (event as { defaultPrevented?: boolean }).defaultPrevented;
+
+    if (!focused && !prevented) {
+      navigation.navigate(route.name, route.params);
+    }
+  };
+
+  return (
+    <Pressable
+      key={tab.name}
+      accessibilityRole="button"
+      accessibilityState={{ selected: focused, disabled: !route }}
+      accessibilityLabel={options?.tabBarAccessibilityLabel ?? tab.title}
+      testID={options?.tabBarButtonTestID}
+      disabled={!route}
+      onPress={handlePress}
+      onLongPress={() => {
+        if (route) {
+          navigation.emit({ type: 'tabLongPress', target: route.key });
+        }
+      }}
+      android_ripple={{ color: dark.hairlineStrong, borderless: false }}
+      style={[
+        styles.tabButton,
+        focused ? styles.tabButtonActive : styles.tabButtonInactive,
+        !route && styles.tabButtonDisabled,
+      ]}
+    >
+      <View style={styles.tabIconWrap}>
+        <Icon
+          as={tab.icon}
+          size={22}
+          color={focused ? dark.accent : dark.inkSoft}
+        />
+      </View>
+      <Text
+        numberOfLines={1}
+        style={focused ? styles.activeTabLabel : styles.inactiveTabLabel}
+      >
+        {tab.title}
+      </Text>
+    </Pressable>
+  );
+}
+
+/* NOTE: hook-free on purpose. This runs inside the navigator's tabBar
+ * render path, where hook state does not survive re-renders reliably
+ * (keyboard toggles crashed with "fewer hooks"). All state (insets,
+ * width, keyboard visibility) is computed in DashboardLayout and passed
+ * as props. Visibility uses display:none — never an early return. */
+function FloatingTabBar({ state, descriptors, navigation, hidden, bottomInset, barWidth }: FloatingTabBarProps) {
   return (
     <View
       style={[
         styles.tabBarWrapper,
-        { bottom: Math.max(insets.bottom, 12) + 6 },
+        { bottom: Math.max(bottomInset, 12) + 6 },
+        hidden && styles.tabBarHidden,
       ]}
       pointerEvents="box-none"
     >
-      <View style={[styles.tabBar, { width: navBarWidth }]}>
+      <View style={[styles.tabBar, { width: barWidth }]}>
         {TABS.map((tab) => {
           const route = state.routes.find((candidate) => candidate.name === tab.name);
           const focused = route?.key === state.routes[state.index]?.key;
           const options = route ? descriptors[route.key]?.options : undefined;
 
-          const handlePress = () => {
-            if (!route) return;
-
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-
-            const prevented =
-              typeof event === 'object' &&
-              event !== null &&
-              'defaultPrevented' in event &&
-              (event as { defaultPrevented?: boolean }).defaultPrevented;
-
-            if (!focused && !prevented) {
-              navigation.navigate(route.name, route.params);
-            }
-          };
-
           return (
-            <Pressable
+            <TabButton
               key={tab.name}
-              accessibilityRole="button"
-              accessibilityState={{ selected: focused, disabled: !route }}
-              accessibilityLabel={options?.tabBarAccessibilityLabel ?? tab.title}
-              testID={options?.tabBarButtonTestID}
-              disabled={!route}
-              onPress={handlePress}
-              onLongPress={() => {
-                if (route) {
-                  navigation.emit({ type: 'tabLongPress', target: route.key });
-                }
-              }}
-              style={({ pressed }) => [
-                styles.tabButton,
-                focused ? styles.tabButtonActive : styles.tabButtonInactive,
-                !route && styles.tabButtonDisabled,
-                pressed && styles.tabButtonPressed,
-              ]}
-            >
-              <View style={styles.tabIconWrap}>
-                <Icon
-                  as={tab.icon}
-                  size={22}
-                  color={focused ? dark.accent : dark.inkSoft}
-                />
-              </View>
-              <Text
-                numberOfLines={1}
-                style={focused ? styles.activeTabLabel : styles.inactiveTabLabel}
-              >
-                {tab.title}
-              </Text>
-            </Pressable>
+              tab={tab}
+              route={route}
+              focused={!!focused}
+              options={options}
+              navigation={navigation}
+            />
           );
         })}
       </View>
@@ -139,9 +162,35 @@ function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps)
 }
 
 export default function DashboardLayout() {
+  const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      () => setKeyboardVisible(true),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboardVisible(false),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
   return (
     <Tabs
-      tabBar={(props) => <FloatingTabBar {...props} />}
+      tabBar={(props) => (
+        <FloatingTabBar
+          {...props}
+          hidden={keyboardVisible}
+          bottomInset={insets.bottom}
+          barWidth={Math.min(screenWidth - 32, 480)}
+        />
+      )}
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
@@ -169,26 +218,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 100,
   },
+  tabBarHidden: {
+    display: 'none',
+  },
   tabBar: {
-    height: 72,
+    height: 66,
     borderRadius: 999,
     backgroundColor: dark.surface,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    justifyContent: 'center',
+    gap: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 6,
     borderWidth: 1,
     borderColor: dark.hairline,
+    overflow: 'hidden',
   },
   tabButton: {
     flex: 1,
-    height: 56,
+    height: 52,
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
+    gap: 4,
     borderRadius: 999,
+    paddingHorizontal: 10,
+    marginHorizontal: 0,
   },
   tabIconWrap: {
     width: 28,
@@ -200,15 +256,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#2E2E33',
     borderWidth: 1,
     borderColor: dark.hairlineStrong,
+    flexGrow: 1.9,
   },
   tabButtonInactive: {
     backgroundColor: 'transparent',
   },
   tabButtonDisabled: {
     opacity: 0.3,
-  },
-  tabButtonPressed: {
-    transform: [{ scale: 0.94 }],
   },
   activeTabLabel: {
     fontSize: 11,
