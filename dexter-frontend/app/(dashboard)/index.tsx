@@ -223,6 +223,8 @@ export default function DashboardScreen() {
 
   const rawName = user?.full_name?.trim() || 'Founder';
   const firstName = rawName.split(' ')[0] || 'Founder';
+  const hour = new Date().getHours();
+  const daypart = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
   const authorName = rawName || 'Founder';
   const authorHeadline = business?.name
     ? `Founder & CEO • ${business.name}`
@@ -307,27 +309,24 @@ export default function DashboardScreen() {
       icon: 'trending-up' as const,
       label: 'Total Reach',
       value: reach != null ? formatNum(reach) : '—',
-      meta: 'lifetime impressions',
-      tone: dark.ink,
-      spark: dark.inkSoft,
+      tone: dark.inkSoft,
+      spark: dark.inkFaint,
       series: impressionsSeries,
     },
     {
       icon: 'heart' as const,
       label: 'Engagements',
       value: engagements != null ? formatNum(engagements) : '—',
-      meta: 'likes + comments + reposts',
-      tone: '#E88BB0',
-      spark: '#E88BB0',
+      tone: dark.inkSoft,
+      spark: dark.inkFaint,
       series: engagementSeries,
     },
     {
       icon: 'pulse' as const,
       label: 'Engagement Rate',
       value: rate != null ? `${rate}%` : '—',
-      meta: 'across published posts',
-      tone: dark.positive,
-      spark: dark.positive,
+      tone: dark.inkSoft,
+      spark: dark.inkFaint,
       series: rateSeries,
     },
     {
@@ -351,54 +350,60 @@ export default function DashboardScreen() {
         {/* ── Header: quiet greeting eyebrow ─────────── */}
         <View style={styles.header}>
           <View style={styles.headerTextWrap}>
-            <Text style={styles.eyebrow}>Good morning, {firstName}</Text>
-            <Text style={styles.subtitle}>
-              {autonomousMode
-                ? `${business?.name ?? 'Your business'} is operating autonomously.`
-                : 'Dexter is standing by for instructions.'}
-            </Text>
+            <Text style={styles.eyebrow}>Good {daypart}, {firstName}</Text>
           </View>
           <Pressable style={styles.iconBtn} onPress={loadData} hitSlop={8}>
             <Ionicons name="refresh" size={18} color={dark.inkSoft} />
           </Pressable>
         </View>
 
-        {/* ── Hero: oversized numeral + ambient glow ──── */}
+        {/* ── Hero: queue command card ──────────── */}
         <View style={styles.heroCard}>
           <View style={styles.glowDisc} />
           <BlurView intensity={50} tint="dark" style={styles.glowBlur} />
           <View style={styles.heroContent}>
-            <View style={styles.heroEyebrowRow}>
-              {generatingQuick || loading ? (
-                <PulseDot active size={10} color={dark.accent} />
-              ) : (
+            <View style={styles.heroTopRow}>
+              <View style={styles.heroEyebrowRow}>
+                {generatingQuick || loading ? (
+                  <PulseDot active size={10} color={dark.accent} />
+                ) : (
+                  <View
+                    style={[
+                      styles.statusDot,
+                      { backgroundColor: autonomousMode ? dark.positive : dark.inkFaint },
+                    ]}
+                  />
+                )}
+                <Text style={styles.heroEyebrow}>
+                  {autonomousMode ? 'Autonomous Active' : 'Supervised Mode'}
+                </Text>
+              </View>
+              <View style={styles.linkPill}>
                 <View
                   style={[
-                    styles.statusDot,
-                    { backgroundColor: autonomousMode ? dark.positive : dark.inkFaint },
+                    styles.linkDot,
+                    { backgroundColor: linkedinConnected ? dark.positive : dark.inkFaint },
                   ]}
                 />
-              )}
-              <Text style={styles.heroEyebrow}>
-                {autonomousMode ? 'Autonomous Active' : 'Supervised Mode'}
-              </Text>
-            </View>
-            <Text style={styles.heroStat}>{String(scheduled.length)}</Text>
-            <Text style={styles.heroStatLabel}>Posts queued for publishing</Text>
-            <View style={styles.heroFoot}>
-              <View style={styles.heroMiniRow}>
-                <Ionicons name={autonomousMode ? 'radio' : 'pause'} size={14} color={autonomousMode ? dark.positive : dark.inkSoft} />
-                <Text style={styles.heroMiniText}>
-                  {autonomousMode ? 'Planning & publishing live' : 'You approve every post'}
-                </Text>
-              </View>
-              <View style={styles.heroMiniRow}>
-                <Ionicons name="link" size={14} color={dark.inkFaint} />
-                <Text style={styles.heroMiniTextMuted}>
-                  {linkedinConnected ? 'LinkedIn linked' : 'LinkedIn not linked'}
+                <Text style={styles.linkPillText}>
+                  {linkedinConnected ? 'LinkedIn live' : 'Not linked'}
                 </Text>
               </View>
             </View>
+            <View style={styles.heroStatRow}>
+              <Text style={styles.heroStat}>{String(scheduled.length)}</Text>
+              <Text style={styles.heroStatLabel}>Posts queued for publishing</Text>
+            </View>
+            <View style={styles.heroDivider} />
+            <Pressable
+              style={styles.heroCta}
+              onPress={() => router.push('/(dashboard)/ai')}
+              accessibilityRole="button"
+              accessibilityLabel="Ask Dexter to draft a post"
+            >
+              <Text style={styles.heroCtaText}>Draft a post</Text>
+              <Ionicons name="arrow-forward" size={14} color={dark.accent} />
+            </Pressable>
           </View>
         </View>
 
@@ -412,13 +417,14 @@ export default function DashboardScreen() {
         >
           {stats.map((s) => (
             <View key={s.label} style={styles.statTile}>
-              <View style={styles.statIcon}>
-                <Ionicons name={s.icon} size={17} color={s.tone} />
+              <View style={styles.statTopRow}>
+                <View style={styles.statIcon}>
+                  <Ionicons name={s.icon} size={17} color={s.tone} />
+                </View>
+                <Text style={styles.statLabel}>{s.label}</Text>
               </View>
-              <Text style={styles.statLabel}>{s.label}</Text>
               <Text style={styles.statValue}>{s.value}</Text>
               <Sparkline data={s.series} color={s.spark} />
-              <Text style={styles.statMeta}>{s.meta}</Text>
             </View>
           ))}
         </ScrollView>
@@ -516,10 +522,10 @@ export default function DashboardScreen() {
                     <View style={styles.decisionHeader}>
                       <Ionicons name="pulse" size={15} color={dark.accent} />
                       <Text style={styles.decisionLabel}>Dexter&apos;s Decision</Text>
+                      <Text style={styles.decisionTime}>
+                        {formatWhen(post.scheduled_for)}
+                      </Text>
                     </View>
-                    <Text style={styles.reasonText}>
-                      Scheduled for {formatWhen(post.scheduled_for)} because engagement peaks for your B2B audience during this window.
-                    </Text>
                     <View style={styles.postActions}>
                       <Pressable style={styles.ghostBtn} onPress={() => handleCancel(post.id)}>
                         <Text style={styles.ghostBtnText}>Skip</Text>
@@ -622,17 +628,11 @@ const styles = StyleSheet.create({
   },
   headerTextWrap: { flex: 1, gap: spacing.xs },
   eyebrow: {
-    fontFamily: fonts.semibold,
-    fontSize: 15,
-    color: dark.inkSoft,
+    fontFamily: 'InterTight_600SemiBold',
+    fontSize: 22,
+    letterSpacing: -0.4,
+    color: dark.ink,
     marginTop: spacing.xs,
-  },
-  subtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 19,
-    color: dark.inkSoft,
-    marginTop: 2,
   },
   iconBtn: {
     width: 44,
@@ -685,6 +685,30 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     gap: spacing.xs,
   },
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  linkPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: dark.surfaceElevated,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    flexShrink: 0,
+  },
+  linkDot: { width: 7, height: 7, borderRadius: 4 },
+  linkPillText: {
+    fontFamily: fonts.semibold,
+    fontSize: 11,
+    color: dark.inkSoft,
+  },
   heroEyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   heroEyebrow: {
     fontFamily: fonts.semibold,
@@ -694,33 +718,50 @@ const styles = StyleSheet.create({
     color: dark.accent,
   },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
-  heroStat: {
-    fontFamily: 'InterTight_700Bold',
-    fontSize: 64,
-    lineHeight: 66,
-    letterSpacing: -2,
-    color: dark.ink,
+  heroStatRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 12,
     marginTop: spacing.sm,
   },
+  heroStat: {
+    fontFamily: 'InterTight_700Bold',
+    fontSize: 72,
+    lineHeight: 74,
+    letterSpacing: -2.5,
+    color: dark.ink,
+  },
   heroStatLabel: {
+    flex: 1,
+    flexShrink: 1,
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
     color: dark.inkSoft,
-    marginTop: 2,
+    paddingBottom: 10,
   },
-  heroFoot: { gap: spacing.sm, paddingTop: spacing.sm },
-  heroRight: { gap: spacing.sm, paddingTop: spacing.xs },
-  heroMiniRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  heroMiniText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: dark.inkSoft,
+  heroDivider: {
+    height: 1,
+    backgroundColor: dark.hairline,
+    marginTop: spacing.md,
   },
-  heroMiniTextMuted: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: dark.inkFaint,
+  heroCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: dark.surfaceElevated,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: spacing.md,
+  },
+  heroCtaText: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: dark.accent,
   },
 
   // ── Stat strip: tall snap tiles ──
@@ -737,6 +778,11 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: 6,
   },
+  statTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   statIcon: {
     width: 36,
     height: 36,
@@ -746,6 +792,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   statLabel: {
+    flex: 1,
+    flexShrink: 1,
     fontFamily: fonts.semibold,
     fontSize: 11,
     letterSpacing: 0.5,
@@ -754,18 +802,11 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontFamily: 'InterTight_700Bold',
-    fontSize: 26,
-    lineHeight: 28,
-    letterSpacing: -0.5,
+    fontSize: 30,
+    lineHeight: 32,
+    letterSpacing: -0.6,
     color: dark.ink,
     marginTop: spacing.xs,
-  },
-  statMeta: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    lineHeight: 15,
-    color: dark.inkFaint,
-    marginTop: 2,
   },
 
   // ── Channel Banner / accent buttons ──
@@ -859,17 +900,17 @@ const styles = StyleSheet.create({
   postWrapper: { gap: spacing.sm },
   decisionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   decisionLabel: {
+    flex: 1,
     fontFamily: fonts.semibold,
     fontSize: 11,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
     color: dark.accent,
   },
-  reasonText: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: dark.ink,
-    lineHeight: 20,
+  decisionTime: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: dark.inkSoft,
   },
   postActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
   ghostBtn: {
