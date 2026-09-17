@@ -22,7 +22,7 @@ import {
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { Icon } from '../../src/components/rnr/icon';
-import { dark, fonts, spacing, radii } from '../../src/theme';
+import { dark, fonts, spacing } from '../../src/theme';
 import { useAuthStore } from '../../src/api/client';
 import { useAppStore } from '../../src/store/app';
 
@@ -57,13 +57,16 @@ function GroupedRow({
   row: SettingRow;
   hasDivider?: boolean;
 }) {
+  const [pressed, setPressed] = React.useState(false);
   return (
-    <>
+    <View>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={row.label}
         onPress={row.onPress}
-        style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        style={[styles.row, pressed && styles.rowPressed]}
       >
         <View style={styles.rowIconBox}>
           <Icon as={row.icon} size={22} color={dark.inkSoft} />
@@ -79,11 +82,12 @@ function GroupedRow({
         <Icon as={ChevronRight} size={18} color={dark.inkFaint} />
       </Pressable>
       {hasDivider && <View style={styles.rowDivider} />}
-    </>
+    </View>
   );
 }
 
 export default function SettingsScreen() {
+  const [signOutPressed, setSignOutPressed] = React.useState(false);
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
@@ -171,6 +175,22 @@ export default function SettingsScreen() {
 
         {/* ── Autopilot hero ── */}
         <View style={styles.heroCard}>
+          <View style={styles.heroEyebrowRow}>
+            <View
+              style={[
+                styles.heroDot,
+                { backgroundColor: autonomousMode ? dark.positive : dark.accent },
+              ]}
+            />
+            <Text
+              style={[
+                styles.heroEyebrow,
+                { color: autonomousMode ? dark.positive : dark.accent },
+              ]}
+            >
+              {autonomousMode ? 'Autopilot on' : 'Autopilot off'}
+            </Text>
+          </View>
           <Text style={styles.heroTitle}>Put Dexter on autopilot</Text>
           <Text style={styles.heroSubtitle}>
             {autonomousMode
@@ -240,7 +260,9 @@ export default function SettingsScreen() {
             accessibilityRole="button"
             accessibilityLabel="Sign out"
             onPress={handleLogout}
-            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+            onPressIn={() => setSignOutPressed(true)}
+            onPressOut={() => setSignOutPressed(false)}
+            style={[styles.row, signOutPressed && styles.rowPressed]}
           >
             <View style={styles.rowIconBox}>
               <Icon as={LogOut} size={22} color={dark.negative} />
@@ -271,7 +293,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
   headerSide: { width: 44 },
   headerTitle: {
@@ -296,10 +318,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: dark.hairline,
-    paddingVertical: 16,
+    paddingVertical: 18,
     paddingHorizontal: 20,
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
   emailText: {
     fontFamily: fonts.medium,
@@ -309,33 +331,42 @@ const styles = StyleSheet.create({
 
   heroCard: {
     backgroundColor: dark.surface,
-    borderRadius: radii.md,
+    borderRadius: 28,
     borderWidth: 1,
     borderColor: dark.hairline,
-    padding: spacing.xl,
-    gap: spacing.sm,
-    marginBottom: spacing.xl,
+    padding: 24,
+    gap: 10,
+    marginBottom: 28,
+  },
+  heroEyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  heroDot: { width: 8, height: 8, borderRadius: 4 },
+  heroEyebrow: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   heroTitle: {
     fontFamily: 'InterTight_700Bold',
-    fontSize: 22,
-    letterSpacing: -0.4,
+    fontSize: 26,
+    lineHeight: 30,
+    letterSpacing: -0.6,
     color: dark.ink,
   },
   heroSubtitle: {
     fontFamily: fonts.regular,
     fontSize: 15,
-    lineHeight: 22,
+    lineHeight: 23,
     color: dark.inkSoft,
   },
   heroBtn: {
     alignSelf: 'flex-start',
     backgroundColor: dark.accent,
     borderRadius: 999,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    marginTop: spacing.sm,
-    minHeight: 48,
+    paddingVertical: 14,
+    paddingHorizontal: 26,
+    marginTop: 8,
+    minHeight: 52,
     justifyContent: 'center',
   },
   heroBtnText: {
@@ -344,41 +375,43 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  section: { marginBottom: spacing.xl },
+  section: { marginBottom: 28 },
   sectionLabel: {
     fontFamily: fonts.semibold,
     fontSize: 13,
     color: dark.inkSoft,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.sm,
+    marginBottom: spacing.md,
+    marginLeft: spacing.md,
   },
   groupCard: {
     backgroundColor: dark.surface,
-    borderRadius: radii.md,
+    borderRadius: 28,
     borderWidth: 1,
     borderColor: dark.hairline,
     overflow: 'hidden',
   },
   row: {
-    minHeight: 64,
+    minHeight: 72,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
   },
   rowPressed: { opacity: 0.7 },
   rowIconBox: {
     width: 28,
+    marginRight: 16,
+    flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rowDivider: {
     height: 1,
     backgroundColor: dark.hairline,
-    marginLeft: 64,
+    marginLeft: 76,
+    marginRight: 24,
   },
-  rowBody: { flex: 1 },
+  rowBody: { flex: 1, flexShrink: 1, marginRight: 16 },
   rowLabel: {
     fontFamily: fonts.medium,
     fontSize: 16,
