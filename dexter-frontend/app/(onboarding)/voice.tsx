@@ -12,15 +12,27 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radii, typography, shadows } from '../../src/theme';
+import {
+  X,
+  MessageCircle,
+  Mic,
+  MicOff,
+  Volume2,
+  Loader2,
+  Check,
+  ArrowUp,
+  Lightbulb,
+} from 'lucide-react-native';
+import { Icon } from '../../src/components/rnr/icon';
+import { dark, fonts, spacing } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { connectVoiceStream } from '../../src/api/voice';
-import { GlassCard, GlassPill } from '../../src/components/ui';
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const { width: SCREEN_W } = Dimensions.get('window');
 const ORB_SIZE = Math.min(SCREEN_W * 0.48, 200);
 
+/* v2 voice interview — dark live-call chrome. Stream, orb physics,
+ * dock behavior, and brain hand-off logic unchanged. */
 export default function VoiceInterviewScreen() {
   const router = useRouter();
   const setBrain = useAppStore((s) => s.setBrain);
@@ -37,7 +49,7 @@ export default function VoiceInterviewScreen() {
 
   const streamRef = useRef<ReturnType<typeof connectVoiceStream> | null>(null);
 
-  // Animated values for ChatGPT-style fluid glowing Orb
+  // Animated values for fluid glowing Orb
   const orbScale = useRef(new Animated.Value(1)).current;
   const haloScale1 = useRef(new Animated.Value(1)).current;
   const haloScale2 = useRef(new Animated.Value(1)).current;
@@ -45,13 +57,21 @@ export default function VoiceInterviewScreen() {
   const haloOpacity2 = useRef(new Animated.Value(0.2)).current;
   const orbRotate = useRef(new Animated.Value(0)).current;
 
-  // ChatGPT Orb Animation Loop
+  // Orb animation: energy follows conversation state so motion reads
+  // as voice-reactive. Durations stay incommensurate (never visibly
+  // looping); amplitude and rotation speed scale with state.
   useEffect(() => {
-    // Rotation animation
+    const energy =
+      agentStatus === 'speaking'
+        ? { amp: 0.15, durA: 420, durB: 560, rotDur: 6000 }
+        : agentStatus === 'listening'
+          ? { amp: 0.07, durA: 1400, durB: 1800, rotDur: 14000 }
+          : { amp: 0.035, durA: 650, durB: 800, rotDur: 9000 };
+
     const rotateLoop = Animated.loop(
       Animated.timing(orbRotate, {
         toValue: 1,
-        duration: 12000,
+        duration: energy.rotDur,
         easing: Easing.linear,
         useNativeDriver: true,
       })
@@ -60,32 +80,50 @@ export default function VoiceInterviewScreen() {
 
     let pulseLoop: Animated.CompositeAnimation;
 
-    if (agentStatus === 'speaking') {
-      // Energetic undulating pulse when AI is speaking
+    if (isMuted) {
+      // Muted: near-static, barely breathing.
+      pulseLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(orbScale, {
+            toValue: 1.01,
+            duration: 2400,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(orbScale, {
+            toValue: 0.99,
+            duration: 2400,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    } else {
+      // Speaking/listening/processing: layered wobble + traveling halo.
       pulseLoop = Animated.loop(
         Animated.parallel([
           Animated.sequence([
             Animated.timing(orbScale, {
-              toValue: 1.18,
-              duration: 550,
+              toValue: 1 + energy.amp,
+              duration: energy.durA,
               easing: Easing.inOut(Easing.sin),
               useNativeDriver: true,
             }),
             Animated.timing(orbScale, {
-              toValue: 0.94,
-              duration: 500,
+              toValue: 1 - energy.amp * 0.7,
+              duration: energy.durB,
               easing: Easing.inOut(Easing.sin),
               useNativeDriver: true,
             }),
             Animated.timing(orbScale, {
-              toValue: 1.12,
-              duration: 450,
+              toValue: 1 + energy.amp * 0.5,
+              duration: Math.round(energy.durA * 0.8),
               easing: Easing.inOut(Easing.sin),
               useNativeDriver: true,
             }),
             Animated.timing(orbScale, {
-              toValue: 1.0,
-              duration: 400,
+              toValue: 1,
+              duration: Math.round(energy.durB * 0.7),
               easing: Easing.inOut(Easing.sin),
               useNativeDriver: true,
             }),
@@ -93,13 +131,13 @@ export default function VoiceInterviewScreen() {
           Animated.sequence([
             Animated.timing(haloScale1, {
               toValue: 1.45,
-              duration: 1000,
+              duration: energy.durB,
               easing: Easing.out(Easing.ease),
               useNativeDriver: true,
             }),
             Animated.timing(haloScale1, {
               toValue: 1.0,
-              duration: 900,
+              duration: energy.durA,
               easing: Easing.in(Easing.ease),
               useNativeDriver: true,
             }),
@@ -107,116 +145,12 @@ export default function VoiceInterviewScreen() {
           Animated.sequence([
             Animated.timing(haloOpacity1, {
               toValue: 0.6,
-              duration: 1000,
+              duration: energy.durB,
               useNativeDriver: true,
             }),
             Animated.timing(haloOpacity1, {
               toValue: 0.2,
-              duration: 900,
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.sequence([
-            Animated.timing(haloScale2, {
-              toValue: 1.75,
-              duration: 1400,
-              easing: Easing.out(Easing.ease),
-              useNativeDriver: true,
-            }),
-            Animated.timing(haloScale2, {
-              toValue: 1.0,
-              duration: 1200,
-              easing: Easing.in(Easing.ease),
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.sequence([
-            Animated.timing(haloOpacity2, {
-              toValue: 0.35,
-              duration: 1400,
-              useNativeDriver: true,
-            }),
-            Animated.timing(haloOpacity2, {
-              toValue: 0.05,
-              duration: 1200,
-              useNativeDriver: true,
-            }),
-          ]),
-        ])
-      );
-    } else if (agentStatus === 'listening') {
-      // Soft breathing glow when listening to user
-      pulseLoop = Animated.loop(
-        Animated.parallel([
-          Animated.sequence([
-            Animated.timing(orbScale, {
-              toValue: 1.08,
-              duration: 1600,
-              easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
-            }),
-            Animated.timing(orbScale, {
-              toValue: 0.98,
-              duration: 1600,
-              easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.sequence([
-            Animated.timing(haloScale1, {
-              toValue: 1.25,
-              duration: 1600,
-              easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
-            }),
-            Animated.timing(haloScale1, {
-              toValue: 1.0,
-              duration: 1600,
-              easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.sequence([
-            Animated.timing(haloOpacity1, {
-              toValue: 0.45,
-              duration: 1600,
-              useNativeDriver: true,
-            }),
-            Animated.timing(haloOpacity1, {
-              toValue: 0.15,
-              duration: 1600,
-              useNativeDriver: true,
-            }),
-          ]),
-        ])
-      );
-    } else {
-      // Thinking mode: subtle shimmering
-      pulseLoop = Animated.loop(
-        Animated.parallel([
-          Animated.sequence([
-            Animated.timing(orbScale, {
-              toValue: 1.04,
-              duration: 700,
-              easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
-            }),
-            Animated.timing(orbScale, {
-              toValue: 0.96,
-              duration: 700,
-              easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.sequence([
-            Animated.timing(haloOpacity1, {
-              toValue: 0.5,
-              duration: 700,
-              useNativeDriver: true,
-            }),
-            Animated.timing(haloOpacity1, {
-              toValue: 0.2,
-              duration: 700,
+              duration: energy.durA,
               useNativeDriver: true,
             }),
           ]),
@@ -230,7 +164,7 @@ export default function VoiceInterviewScreen() {
       rotateLoop.stop();
       pulseLoop.stop();
     };
-  }, [agentStatus]);
+  }, [agentStatus, isMuted]);
 
   // Connect WebSocket on mount
   useEffect(() => {
@@ -292,17 +226,24 @@ export default function VoiceInterviewScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* Top Bar (ChatGPT Style) */}
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+      {/* ── Top Bar ── */}
       <View style={styles.topBar}>
         <Pressable style={styles.topIconBtn} onPress={() => router.back()}>
-          <Ionicons name="close" size={22} color={colors.ink} />
+          <Icon as={X} size={22} color={dark.ink} />
         </Pressable>
 
         <View style={styles.agentTitleCluster}>
-          <View style={styles.statusLiveDot} />
+          <View
+            style={[
+              styles.statusLiveDot,
+              { backgroundColor: connected ? dark.positive : dark.inkFaint },
+            ]}
+          />
           <Text style={styles.agentTitleText}>Dexter</Text>
-          <Text style={styles.agentModeBadge}>Live</Text>
+          <View style={styles.liveBadge}>
+            <Text style={styles.liveBadgeText}>Live</Text>
+          </View>
         </View>
 
         <Pressable
@@ -312,138 +253,110 @@ export default function VoiceInterviewScreen() {
             router.replace('/(onboarding)/interview');
           }}
         >
-          <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.inkSoft} />
+          <Icon as={MessageCircle} size={20} color={dark.inkSoft} />
         </Pressable>
       </View>
 
-      {/* Main Center Area — Fluid ChatGPT Voice Orb */}
+      {/* ── Orb ── */}
       <View style={styles.centerContainer}>
         <View style={styles.orbWrapper}>
-          {/* Outer Halo Layer 2 */}
           <Animated.View
             style={[
               styles.haloOuter,
               {
                 transform: [{ scale: haloScale2 }],
-                opacity: isMuted ? 0.05 : haloOpacity2,
-                backgroundColor:
-                  isMuted
-                    ? colors.inkFaint
-                    : agentStatus === 'speaking'
-                    ? colors.primary
-                    : agentStatus === 'processing'
-                    ? colors.energy
-                    : colors.primarySurface,
+                opacity: isMuted ? 0.03 : haloOpacity2,
+                backgroundColor: '#FFFFFF',
               },
             ]}
           />
-
-          {/* Inner Halo Layer 1 */}
           <Animated.View
             style={[
               styles.haloInner,
               {
                 transform: [{ scale: haloScale1 }],
-                opacity: isMuted ? 0.08 : haloOpacity1,
-                backgroundColor:
-                  isMuted
-                    ? colors.inkFaint
-                    : agentStatus === 'speaking'
-                    ? colors.primary
-                    : agentStatus === 'processing'
-                    ? colors.energy
-                    : colors.primarySurface,
+                opacity: isMuted ? 0.05 : haloOpacity1,
+                backgroundColor: '#FFFFFF',
               },
             ]}
           />
-
-          {/* Main Glowing Fluid Orb */}
           <Animated.View
             style={[
               styles.orbCore,
               {
-                transform: [{ scale: orbScale }, { rotate: spin }],
-                borderColor:
-                  isMuted ? 'rgba(28, 18, 16, 0.40)' : 'rgba(28, 18, 16, 0.20)',
+                transform: [{ scale: orbScale }],
+                opacity: isMuted ? 0.35 : 1,
               },
             ]}
           >
-            <View
-              style={[
-                styles.orbGradientSimulation,
-                {
-                  backgroundColor:
-                    isMuted
-                      ? colors.ink
-                      : agentStatus === 'speaking'
-                      ? colors.primary
-                      : agentStatus === 'processing'
-                      ? colors.energy
-                      : colors.brandTint,
-                },
-              ]}
+            {/* ChatGPT-style silk: black core, counter-rotating white blobs */}
+            <Animated.View
+              style={[styles.silkSpinA, { transform: [{ rotate: spin }] }]}
             >
-              {/* Internal Organic Ring */}
-              <View style={styles.orbInnerCore}>
-                <Ionicons
-                  name={
-                    isMuted
-                      ? 'mic-off'
-                      : agentStatus === 'speaking'
-                      ? 'volume-high'
+              <View style={styles.blobA} />
+              <View style={styles.blobB} />
+            </Animated.View>
+            <Animated.View
+              style={[styles.silkSpinB, { transform: [{ rotate: spin }] }]}
+            >
+              <View style={styles.blobC} />
+            </Animated.View>
+            <View style={styles.orbIconWrap}>
+              <Icon
+                as={
+                  isMuted
+                    ? MicOff
+                    : agentStatus === 'speaking'
+                      ? Volume2
                       : agentStatus === 'processing'
-                      ? 'sync'
-                      : 'mic'
-                  }
-                  size={36}
-                  color={
-                    !isMuted && agentStatus === 'listening' ? colors.primary : '#FFFFFF'
-                  }
-                />
-              </View>
+                        ? Loader2
+                        : Mic
+                }
+                size={30}
+                color="rgba(255,255,255,0.92)"
+              />
             </View>
           </Animated.View>
         </View>
 
-        {/* Live Status Label */}
         <View style={styles.statusLabelWrap}>
           <Text style={styles.statusLabelText}>
             {isMuted
               ? 'Microphone muted'
               : agentStatus === 'speaking'
-              ? 'Dexter is speaking…'
-              : agentStatus === 'processing'
-              ? 'Dexter is thinking…'
-              : 'Listening… speak naturally'}
+                ? 'Dexter is speaking…'
+                : agentStatus === 'processing'
+                  ? 'Dexter is thinking…'
+                  : 'Listening… speak naturally'}
           </Text>
         </View>
       </View>
 
-      {/* Subtitles / Live Transcript Area (ChatGPT floating text style) */}
+      {/* ── Subtitles / brain card ── */}
       <View style={styles.subtitlesContainer}>
         {transcriptPreview ? (
-          <GlassCard style={styles.brainReadyCard} highlighted elevated>
+          <View style={styles.brainReadyCard}>
             <View style={styles.brainReadyHeader}>
-              <Ionicons name="bulb-outline" size={18} color={colors.positive} />
+              <Icon as={Lightbulb} size={18} color={dark.positive} />
               <Text style={styles.brainReadyTitle}>Business Brain Distilled!</Text>
             </View>
             <Text style={styles.brainReadyText}>{transcriptPreview}</Text>
             <Pressable style={styles.reviewBrainBtn} onPress={handleProceedToBrain}>
               <Text style={styles.reviewBrainText}>Review Strategy & Brain</Text>
-              <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+              <Icon as={ArrowUp} size={16} color="#FFFFFF" />
             </Pressable>
-          </GlassCard>
+          </View>
         ) : (
-          <GlassCard style={styles.subtitlesCard}>
+          <View style={styles.subtitlesCard}>
             <Text style={styles.subtitleCaption}>LIVE INTERACTION</Text>
             <Text style={styles.subtitleText} numberOfLines={4}>
               {assistantMessage}
             </Text>
-          </GlassCard>
+          </View>
         )}
       </View>
 
-      {/* Quick Prompts (Translucent Floating Pills) */}
+      {/* ── Quick Prompts ── */}
       <View style={styles.quickPromptsRow}>
         <Pressable
           style={styles.promptPill}
@@ -459,69 +372,61 @@ export default function VoiceInterviewScreen() {
         </Pressable>
       </View>
 
-      {/* Bottom Floating Control Dock (ChatGPT Style) */}
+      {/* ── Bottom Control Dock ── */}
       <View style={styles.bottomDockWrapper}>
         <View style={styles.bottomDock}>
-          {/* Keyboard / Text modal button */}
           <Pressable style={styles.dockCircleBtn} onPress={() => setTextModalVisible(true)}>
-            <Ionicons name="keypad-outline" size={22} color={colors.ink} />
+            <Icon as={MessageCircle} size={22} color={dark.ink} />
           </Pressable>
 
-          {/* Center Mic Mute / Unmute Button */}
           <Pressable
-            style={[
-              styles.dockMainMicBtn,
-              isMuted && styles.dockMainMicBtnMuted,
-              agentStatus === 'listening' && !isMuted && styles.dockMainMicBtnActive,
-            ]}
+            style={[styles.dockMainMicBtn, isMuted && styles.dockMainMicBtnMuted]}
             onPress={toggleMute}
           >
-            <Ionicons
-              name={isMuted ? 'mic-off' : 'mic'}
+            <Icon
+              as={isMuted ? MicOff : Mic}
               size={28}
-              color={isMuted ? colors.negative : '#FFFFFF'}
+              color={isMuted ? dark.negative : '#FFFFFF'}
             />
           </Pressable>
 
-          {/* End / Done Button */}
           <Pressable style={styles.dockDoneBtn} onPress={handleFinish}>
-            <Ionicons name="checkmark" size={22} color="#FFFFFF" />
+            <Icon as={Check} size={22} color="#FFFFFF" />
           </Pressable>
         </View>
       </View>
 
-      {/* Quick Text Input Drawer Modal */}
+      {/* ── Text Input Sheet ── */}
       <Modal visible={textModalVisible} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalOuter}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Type to Dexter</Text>
-                <Pressable
-                  style={styles.modalCloseBtn}
-                  onPress={() => setTextModalVisible(false)}
-                >
-                  <Ionicons name="close" size={20} color={colors.ink} />
-                </Pressable>
-              </View>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Type your answer (e.g. products, target audience, voice)…"
-                placeholderTextColor={colors.inkFaint}
-                value={userSpeechInput}
-                onChangeText={setUserSpeechInput}
-                multiline
-                autoFocus
-              />
+          <View style={styles.modalCard}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Type to Dexter</Text>
               <Pressable
-                style={[styles.modalSendBtn, !userSpeechInput.trim() && { opacity: 0.4 }]}
-                onPress={() => handleSendSpeech()}
-                disabled={!userSpeechInput.trim()}
+                style={styles.modalCloseBtn}
+                onPress={() => setTextModalVisible(false)}
               >
-                <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
-                <Text style={styles.modalSendText}>Send to Dexter</Text>
+                <Icon as={X} size={20} color={dark.ink} />
               </Pressable>
             </View>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Type your answer (e.g. products, target audience, voice)…"
+              placeholderTextColor={dark.inkFaint}
+              value={userSpeechInput}
+              onChangeText={setUserSpeechInput}
+              multiline
+              autoFocus
+            />
+            <Pressable
+              style={styles.modalSendBtn}
+              onPress={() => handleSendSpeech()}
+              disabled={!userSpeechInput.trim()}
+            >
+              <Icon as={ArrowUp} size={18} color="#FFFFFF" />
+              <Text style={styles.modalSendText}>Send to Dexter</Text>
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -529,24 +434,25 @@ export default function VoiceInterviewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
+const ORB_R = ORB_SIZE / 2;
 
-  // ── Top Bar ──
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: dark.canvas },
+
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
   topIconBtn: {
     width: 44,
     height: 44,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceSunken,
+    borderRadius: 999,
+    backgroundColor: dark.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -554,268 +460,294 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.surfaceSunken,
+    backgroundColor: dark.surface,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.pill,
+    borderColor: dark.hairline,
+    borderRadius: 999,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },
-  statusLiveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: radii.pill,
-    backgroundColor: colors.positive,
-  },
+  statusLiveDot: { width: 8, height: 8, borderRadius: 4 },
   agentTitleText: {
-    ...typography.h3,
-    color: colors.ink,
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: dark.ink,
   },
-  agentModeBadge: {
-    ...typography.caption2,
-    color: colors.primary,
-    textTransform: 'uppercase',
+  liveBadge: {
+    backgroundColor: dark.surfaceElevated,
+    borderWidth: 1,
+    borderColor: dark.positive,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  liveBadgeText: {
+    fontFamily: fonts.semibold,
+    fontSize: 10,
     letterSpacing: 0.5,
+    color: dark.positive,
   },
 
-  // ── Center ChatGPT Orb ──
   centerContainer: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: spacing.xl,
   },
   orbWrapper: {
     width: ORB_SIZE * 1.8,
     height: ORB_SIZE * 1.8,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
   },
   haloOuter: {
     position: 'absolute',
-    width: ORB_SIZE * 1.3,
-    height: ORB_SIZE * 1.3,
-    borderRadius: (ORB_SIZE * 1.3) / 2,
+    width: ORB_SIZE,
+    height: ORB_SIZE,
+    borderRadius: ORB_R,
   },
   haloInner: {
     position: 'absolute',
-    width: ORB_SIZE * 1.15,
-    height: ORB_SIZE * 1.15,
-    borderRadius: (ORB_SIZE * 1.15) / 2,
+    width: ORB_SIZE,
+    height: ORB_SIZE,
+    borderRadius: ORB_R,
   },
   orbCore: {
     width: ORB_SIZE,
     height: ORB_SIZE,
-    borderRadius: ORB_SIZE / 2,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: ORB_R,
+    backgroundColor: '#000000',
     overflow: 'hidden',
-    shadowColor: colors.primary,
-    shadowOpacity: 0.4,
-    shadowRadius: 30,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 15,
-  },
-  orbGradientSimulation: {
-    width: '100%',
-    height: '100%',
-    borderRadius: ORB_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  orbInnerCore: {
-    width: ORB_SIZE * 0.7,
-    height: ORB_SIZE * 0.7,
-    borderRadius: (ORB_SIZE * 0.7) / 2,
-    backgroundColor: 'rgba(28, 18, 16, 0.12)',
+  silkSpinA: {
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  statusLabelWrap: {
-    marginTop: spacing.xl,
-    paddingHorizontal: spacing.xxl,
+  silkSpinB: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  statusLabelText: {
-    ...typography.subheading,
-    color: colors.inkSoft,
-    letterSpacing: -0.2,
-    textAlign: 'center',
+  blobA: {
+    position: 'absolute',
+    width: ORB_SIZE * 0.85,
+    height: ORB_SIZE * 0.55,
+    borderRadius: ORB_SIZE * 0.28,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    transform: [{ rotate: '24deg' }],
+  },
+  blobB: {
+    position: 'absolute',
+    width: ORB_SIZE * 0.6,
+    height: ORB_SIZE * 0.9,
+    borderRadius: ORB_SIZE * 0.3,
+    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    transform: [{ rotate: '-30deg' }],
+  },
+  blobC: {
+    position: 'absolute',
+    width: ORB_SIZE * 0.45,
+    height: ORB_SIZE * 0.45,
+    borderRadius: ORB_SIZE * 0.225,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  orbIconWrap: {
+    width: ORB_SIZE * 0.34,
+    height: ORB_SIZE * 0.34,
+    borderRadius: ORB_SIZE * 0.17,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
-  // ── Subtitles / Transcript ──
-  subtitlesContainer: {
-    paddingHorizontal: spacing.xxl,
-    marginBottom: spacing.sm,
+  statusLabelWrap: { marginTop: spacing.md },
+  statusLabelText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: dark.inkSoft,
   },
+
+  subtitlesContainer: { paddingHorizontal: spacing.lg },
   subtitlesCard: {
-    padding: spacing.lg,
-    backgroundColor: colors.surfaceSunken,
+    backgroundColor: dark.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
+    borderRadius: 20,
+    padding: spacing.lg,
+    gap: 6,
   },
   subtitleCaption: {
-    ...typography.caption2,
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
+    fontFamily: fonts.semibold,
+    fontSize: 11,
+    letterSpacing: 0.8,
+    color: dark.inkFaint,
   },
   subtitleText: {
-    ...typography.bodySmall,
-    color: colors.ink,
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 22,
+    color: dark.ink,
   },
   brainReadyCard: {
-    gap: spacing.sm,
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.positive,
+    borderRadius: 20,
     padding: spacing.lg,
-  },
-  brainReadyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing.sm,
   },
+  brainReadyHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   brainReadyTitle: {
-    ...typography.subheading,
-    color: colors.positive,
-    fontWeight: '700',
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: dark.ink,
   },
   brainReadyText: {
-    ...typography.caption,
-    color: colors.ink,
-    lineHeight: 18,
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: dark.inkSoft,
   },
   reviewBrainBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingVertical: spacing.md,
-    marginTop: 4,
-    ...shadows.primaryBtn,
+    backgroundColor: dark.accent,
+    borderRadius: 999,
+    paddingVertical: 13,
+    minHeight: 48,
+    marginTop: spacing.xs,
   },
   reviewBrainText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
     fontSize: 14,
   },
 
-  // ── Quick Prompts ──
   quickPromptsRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    paddingVertical: spacing.md,
   },
   promptPill: {
-    backgroundColor: colors.surfaceSunken,
-    borderRadius: radii.pill,
+    flex: 1,
+    backgroundColor: dark.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
+    borderRadius: 999,
+    paddingVertical: 12,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    alignItems: 'center',
   },
   promptPillText: {
-    ...typography.caption2,
-    color: colors.inkSoft,
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: dark.inkSoft,
+    textAlign: 'center',
   },
 
-  // ── Bottom Dock (ChatGPT Style) ──
   bottomDockWrapper: {
-    marginHorizontal: spacing.xxl,
-    marginBottom: spacing.lg,
-    borderRadius: radii.xxxl,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceSunken,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    ...shadows.md,
+    alignItems: 'center',
+    paddingBottom: spacing.md,
+    marginTop: 'auto',
   },
   bottomDock: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.lg,
+    backgroundColor: dark.surface,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    borderRadius: 999,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   dockCircleBtn: {
     width: 48,
     height: 48,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surface,
+    borderRadius: 999,
+    backgroundColor: dark.surfaceElevated,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: dark.hairline,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dockMainMicBtn: {
     width: 64,
     height: 64,
-    borderRadius: radii.pill,
-    backgroundColor: colors.primary,
+    borderRadius: 999,
+    backgroundColor: dark.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.primaryBtn,
-  },
-  dockMainMicBtnActive: {
-    backgroundColor: colors.primary,
   },
   dockMainMicBtnMuted: {
-    backgroundColor: colors.negativeFill,
-    borderWidth: 1.5,
-    borderColor: colors.negativeBorder,
+    backgroundColor: dark.surfaceElevated,
+    borderWidth: 1,
+    borderColor: dark.negative,
   },
   dockDoneBtn: {
     width: 48,
     height: 48,
-    borderRadius: radii.pill,
-    backgroundColor: colors.positive,
+    borderRadius: 999,
+    backgroundColor: dark.positive,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.subtle,
   },
 
-  // ── Text Modal ──
-  modalBackdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
-  modalOuter: {
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
-    overflow: 'hidden',
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: colors.border,
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: dark.overlay,
+    justifyContent: 'flex-end',
   },
-  modalContent: {
-    padding: spacing.xxl,
+  modalCard: {
+    backgroundColor: dark.surfaceElevated,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderColor: dark.hairline,
+    padding: spacing.xl,
+    paddingBottom: 40,
     gap: spacing.md,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: dark.hairlineStrong,
+    alignSelf: 'center',
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  modalTitle: { ...typography.h1, color: colors.ink },
+  modalTitle: {
+    fontFamily: 'InterTight_600SemiBold',
+    fontSize: 20,
+    color: dark.ink,
+  },
   modalCloseBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surfaceSunken,
+    width: 36,
+    height: 36,
+    borderRadius: 999,
+    backgroundColor: dark.surfaceSunken,
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalInput: {
-    backgroundColor: colors.surfaceSunken,
-    borderRadius: radii.md,
+    backgroundColor: dark.surfaceSunken,
     borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    ...typography.body,
-    minHeight: 90,
+    borderColor: dark.hairline,
+    borderRadius: 16,
+    padding: spacing.lg,
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 22,
+    color: dark.ink,
+    minHeight: 100,
     textAlignVertical: 'top',
   },
   modalSendBtn: {
@@ -823,10 +755,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.primary,
-    borderRadius: radii.pill,
-    paddingVertical: spacing.lg,
-    ...shadows.primaryBtn,
+    backgroundColor: dark.accent,
+    borderRadius: 999,
+    paddingVertical: 14,
+    minHeight: 52,
   },
-  modalSendText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  modalSendText: {
+    color: '#FFF',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+  },
 });
