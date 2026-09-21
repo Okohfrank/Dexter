@@ -17,6 +17,7 @@ import { Sparkles, Clock3, Send, X, ChevronRight } from 'lucide-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Icon } from '../../src/components/rnr/icon';
 import { dark, fonts, spacing } from '../../src/theme';
+import { usePressFeedback } from '../../src/lib/animate';
 import { useAppStore } from '../../src/store/app';
 import { useAuthStore } from '../../src/api/client';
 import { generateNextPost } from '../../src/api/strategy';
@@ -40,6 +41,9 @@ export default function CreateScreen() {
   const [generating, setGenerating] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [result, setResult] = useState<{ id?: string; content_text: string; scheduled_for?: string } | null>(null);
+  const fbShare = usePressFeedback();
+  const fbPublish = usePressFeedback();
+  const fbFeed = usePressFeedback();
 
   const authorName = user?.full_name?.trim() || 'Founder';
   const authorHeadline = business?.name
@@ -220,9 +224,10 @@ export default function CreateScreen() {
 
           {/* ── Draft action ── */}
           <Pressable
-            style={styles.shareBtn}
+            style={[styles.shareBtn, fbShare.feedback]}
             onPress={handleGenerate}
             disabled={generating}
+            {...fbShare.bind}
           >
             {generating ? (
               <ActivityIndicator size="small" color="#FFF" />
@@ -263,9 +268,10 @@ export default function CreateScreen() {
               )}
               <View style={styles.resultActions}>
                 <Pressable
-                  style={styles.publishBtn}
+                  style={[styles.publishBtn, fbPublish.feedback]}
                   onPress={handlePublishCreatedPost}
                   disabled={publishing}
+                  {...fbPublish.bind}
                 >
                   {publishing ? (
                     <ActivityIndicator size="small" color="#FFF" />
@@ -276,7 +282,7 @@ export default function CreateScreen() {
                     </>
                   )}
                 </Pressable>
-                <Pressable style={styles.feedBtn} onPress={() => router.push('/(dashboard)')}>
+                <Pressable style={[styles.feedBtn, fbFeed.feedback]} onPress={() => router.push('/(dashboard)')} {...fbFeed.bind}>
                   <Text style={styles.feedBtnText}>View in Upcoming Feed</Text>
                 </Pressable>
               </View>

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { Icon } from '../../src/components/rnr/icon';
+import { usePressFeedback } from '../../src/lib/animate';
 import { dark, fonts, spacing } from '../../src/theme';
 import { useAuthStore } from '../../src/api/client';
 import { useAppStore } from '../../src/store/app';
@@ -94,6 +95,7 @@ export default function SettingsScreen() {
   const business = useAppStore((s) => s.business);
   const autonomousMode = useAppStore((s) => s.autonomousMode);
   const setAutonomousMode = useAppStore((s) => s.setAutonomousMode);
+  const fbHero = usePressFeedback();
 
   const handleLogout = () => {
     Alert.alert('Sign out?', 'You will need to log in again to access Dexter.', [
@@ -198,8 +200,9 @@ export default function SettingsScreen() {
               : 'Upgrade to autonomous mode and let Dexter run your LinkedIn.'}
           </Text>
           <Pressable
-            style={styles.heroBtn}
+            style={[styles.heroBtn, fbHero.feedback]}
             onPress={() => handleToggleAutonomous(!autonomousMode)}
+            {...fbHero.bind}
           >
             <Text style={styles.heroBtnText}>
               {autonomousMode ? 'Pause autopilot' : 'Enable autopilot'}

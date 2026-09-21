@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Search, Plus, X, Info, Video, Tag, ImagePlus } from 'lucide-react-native';
 import { Icon } from '../../src/components/rnr/icon';
+import { usePressFeedback } from '../../src/lib/animate';
 import { dark, fonts, spacing } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { listMediaAssets, uploadMediaAsset } from '../../src/api/media';
@@ -37,6 +38,7 @@ export default function MediaLibraryScreen() {
 
   const [editingAsset, setEditingAsset] = useState<MediaAsset | null>(null);
   const [newTagInput, setNewTagInput] = useState('');
+  const fbAdd = usePressFeedback();
 
   useEffect(() => {
     (async () => {
@@ -139,11 +141,12 @@ export default function MediaLibraryScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Media Library</Text>
         <Pressable
-          style={styles.addBtn}
+          style={[styles.addBtn, fbAdd.feedback]}
           onPress={pickAndUpload}
           disabled={uploading}
           accessibilityRole="button"
           accessibilityLabel="Add media"
+          {...fbAdd.bind}
         >
           {uploading ? (
             <ActivityIndicator size="small" color="#FFF" />

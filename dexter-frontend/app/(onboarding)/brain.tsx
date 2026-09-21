@@ -27,6 +27,7 @@ import {
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { Icon } from '../../src/components/rnr/icon';
+import { usePressFeedback } from '../../src/lib/animate';
 import { dark, fonts, spacing } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import type { BusinessBrain } from '../../src/types';
@@ -104,6 +105,7 @@ export default function BrainReviewScreen() {
   const [brain, setBrainState] = useState<BusinessBrain>(storedBrain ?? EMPTY_BRAIN);
   const [newInputs, setNewInputs] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const fbSave = usePressFeedback();
 
   const updateText = (key: keyof BusinessBrain, value: string) => {
     setBrainState((prev) => ({ ...prev, [key]: value }));
@@ -249,9 +251,10 @@ export default function BrainReviewScreen() {
         </Pressable>
         <Text style={styles.stepText}>4 / 5</Text>
         <Pressable
-          style={styles.saveBtn}
+          style={[styles.saveBtn, fbSave.feedback]}
           onPress={handleSave}
           disabled={saving}
+          {...fbSave.bind}
         >
           {saving ? (
             <ActivityIndicator size="small" color="#FFF" />

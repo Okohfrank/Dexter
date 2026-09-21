@@ -16,6 +16,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter } from "expo-router";
 import { Mic, MicOff, ArrowUp, ArrowLeft, ArrowRight, Volume2, CheckCircle2 } from "lucide-react-native";
 import { Icon } from "../../src/components/rnr/icon";
+import { usePressFeedback } from "../../src/lib/animate";
 import {
   useAudioRecorder,
   RecordingPresets,
@@ -50,6 +51,8 @@ export default function InterviewScreen() {
   const [voiceActive, setVoiceActive] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [kbHeight, setKbHeight] = useState(0);
+  const fbContinue = usePressFeedback();
+  const fbSend = usePressFeedback();
   const [voiceState, setVoiceState] = useState<
     "listening" | "processing" | "speaking"
   >("listening");
@@ -435,12 +438,14 @@ export default function InterviewScreen() {
                 style={[
                   styles.sendBtn,
                   (!input.trim() || sending) && styles.sendBtnDisabled,
+                  fbSend.feedback,
                 ]}
                 hitSlop={8}
                 onPress={handleSend}
                 disabled={!input.trim() || sending}
                 accessibilityRole="button"
                 accessibilityLabel="Send message"
+                {...fbSend.bind}
               >
                 {sending ? (
                   <ActivityIndicator size="small" color={dark.inkFaint} />
@@ -464,10 +469,11 @@ export default function InterviewScreen() {
           </Pressable>
           <Text style={styles.stepText}>3 / 5</Text>
           <Pressable
-            style={styles.continueBtn}
+            style={[styles.continueBtn, fbContinue.feedback]}
             onPress={() => router.push('/(onboarding)/brain')}
             accessibilityRole="button"
             accessibilityLabel="Continue to Business Brain"
+            {...fbContinue.bind}
           >
             <Text style={styles.continueText}>Continue</Text>
             <Icon as={ArrowRight} size={18} color="#FFF" />

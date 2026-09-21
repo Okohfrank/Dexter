@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Keyboard, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Keyboard, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions, LayoutAnimation, UIManager } from 'react-native';
 import { Tabs } from 'expo-router';
 import { House, SquarePen, Sparkles, Images, Settings } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
@@ -50,6 +50,34 @@ const TABS: TabDef[] = [
   { name: 'settings', title: 'Settings', icon: Settings },
 ];
 
+// LayoutAnimation is driven off the main thread; required flag on Android.
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+/* Spring capsule resize on tab switch — slightly under-damped so the
+ * motion reads clearly, settling without bounce. */
+function animateTabSwitch() {
+  LayoutAnimation.configureNext({
+    duration: 280,
+    create: {
+      type: LayoutAnimation.Types.easeInEaseOut,
+      property: LayoutAnimation.Properties.opacity,
+    },
+    update: {
+      type: LayoutAnimation.Types.spring,
+      springDamping: 0.85,
+    },
+    delete: {
+      type: LayoutAnimation.Types.easeInEaseOut,
+      property: LayoutAnimation.Properties.opacity,
+    },
+  });
+}
+
 function TabButton({
   tab,
   route,
@@ -82,6 +110,7 @@ function TabButton({
       (event as { defaultPrevented?: boolean }).defaultPrevented;
 
     if (!focused && !prevented) {
+      animateTabSwitch();
       navigation.navigate(route.name, route.params);
     }
   };

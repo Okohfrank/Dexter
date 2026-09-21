@@ -19,6 +19,7 @@ import { Text as RNRText } from "@/src/components/rnr/text";
 import { Input } from "@/src/components/rnr/input";
 import { Icon } from "@/src/components/rnr/icon";
 import { dark, fonts } from "@/src/theme";
+import { AnimatedSegmented } from "@/src/components/rnr/segmented";
 import { login, getMe } from "@/src/api/auth";
 import { listBusinesses } from "@/src/api/business";
 import { listConnectedAccounts } from "@/src/api/oauth";
@@ -137,29 +138,14 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.form}>
-              <View style={styles.segTrack}>
-                {(
-                  [
-                    { key: "phone" as LoginMode, label: "Phone number" },
-                    { key: "email" as LoginMode, label: "Email" },
-                  ]
-                ).map((opt) => {
-                  const active = opt.key === mode;
-                  return (
-                    <Pressable
-                      key={opt.key}
-                      style={[styles.seg, active && styles.segActive]}
-                      onPress={() => setMode(opt.key)}
-                    >
-                      <Text
-                        style={[styles.segLabel, active && styles.segLabelActive]}
-                      >
-                        {opt.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              <AnimatedSegmented
+                options={[
+                  { key: "phone", label: "Phone number" },
+                  { key: "email", label: "Email" },
+                ]}
+                selected={mode}
+                onChange={(key) => setMode(key as LoginMode)}
+              />
 
               {mode === "phone" ? (
                 <Input

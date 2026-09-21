@@ -21,6 +21,7 @@ import {
   Plus,
 } from 'lucide-react-native';
 import { Icon } from '../../src/components/rnr/icon';
+import { usePressFeedback } from '../../src/lib/animate';
 import { dark, fonts, spacing } from '../../src/theme';
 import { useAppStore } from '../../src/store/app';
 import { generateContentStrategy } from '../../src/api/strategy';
@@ -42,6 +43,7 @@ export default function StrategyReviewScreen() {
   const [frequency, setFrequency] = useState(4);
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(autonomousMode);
+  const fbDashboard = usePressFeedback();
 
   useEffect(() => {
     (async () => {
@@ -230,7 +232,7 @@ export default function StrategyReviewScreen() {
           <Text style={styles.backText}>Back</Text>
         </Pressable>
         <Text style={styles.stepText}>5 / 5</Text>
-        <Pressable style={styles.dashboardBtn} onPress={handleGoDashboard}>
+        <Pressable style={[styles.dashboardBtn, fbDashboard.feedback]} onPress={handleGoDashboard} {...fbDashboard.bind}>
           <Text style={styles.dashboardBtnText}>Go to Dashboard</Text>
           <Icon as={ArrowRight} size={18} color="#FFF" />
         </Pressable>

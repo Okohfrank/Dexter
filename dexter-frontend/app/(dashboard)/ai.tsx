@@ -41,6 +41,7 @@ import { sendChatMessage } from "../../src/api/chat";
 import { publishPost, publishNow } from "../../src/api/publishing";
 import { transcribeAudio } from "../../src/api/voice";
 import { Icon } from "../../src/components/rnr/icon";
+import { usePressFeedback } from "../../src/lib/animate";
 import type { ChatMessage, ChatBrief } from "../../src/types";
 
 type AIState = "idle" | "listening" | "thinking" | "speaking";
@@ -95,6 +96,8 @@ export default function AICopilotScreen() {
   const [historyQuery, setHistoryQuery] = useState('');
   const [greeting] = useState(() => buildGreeting(firstName));
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const fbPublish = usePressFeedback();
+  const fbSend = usePressFeedback();
   const sessions = useChatStore((s) => s.sessions);
   const upsertSession = useChatStore((s) => s.upsertSession);
   const removeSession = useChatStore((s) => s.removeSession);
@@ -474,9 +477,10 @@ export default function AICopilotScreen() {
                 </View>
                 <Text style={styles.briefBody}>{activeBrief.content_text}</Text>
                 <Pressable
-                  style={styles.briefPublishBtn}
+                  style={[styles.briefPublishBtn, fbPublish.feedback]}
                   onPress={handlePublishBrief}
                   disabled={publishing}
+                  {...fbPublish.bind}
                 >
                   {publishing ? (
                     <ActivityIndicator color="#FFFFFF" size="small" />
@@ -582,12 +586,14 @@ export default function AICopilotScreen() {
                 style={[
                   styles.sendBtn,
                   !inputText.trim() && !attachedImage && styles.sendBtnDisabled,
+                  fbSend.feedback,
                 ]}
                 hitSlop={8}
                 onPress={() => handleSend()}
                 disabled={!inputText.trim() && !attachedImage}
                 accessibilityRole="button"
                 accessibilityLabel="Send message"
+                {...fbSend.bind}
               >
                 <Icon
                   as={ArrowUp}

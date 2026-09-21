@@ -1,5 +1,7 @@
 import { TextClassContext } from '@/src/components/rnr/text';
+import * as React from 'react';
 import { cn } from '@/src/lib/utils';
+import { usePressFeedback } from '@/src/lib/animate';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Platform, Pressable } from 'react-native';
 
@@ -92,13 +94,16 @@ const buttonTextVariants = cva(
 
 type ButtonProps = React.ComponentProps<typeof Pressable> & React.RefAttributes<typeof Pressable> & VariantProps<typeof buttonVariants>;
 
-function Button({ className, variant, size, ...props }: ButtonProps) {
+function Button({ className, variant, size, style, ...props }: ButtonProps) {
+  const fb = usePressFeedback();
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
       <Pressable
         className={cn(props.disabled && 'opacity-50', buttonVariants({ variant, size }), className)}
         role="button"
+        {...fb.bind}
         {...props}
+        style={typeof style === 'function' ? style : [fb.feedback, style]}
       />
     </TextClassContext.Provider>
   );

@@ -15,6 +15,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { CheckCircle2, AlertTriangle, ArrowRight, ArrowLeft } from 'lucide-react-native';
 import { Icon } from '../../src/components/rnr/icon';
+import { usePressFeedback } from '../../src/lib/animate';
 import { Input } from '../../src/components/rnr/input';
 import { dark, fonts, spacing } from '../../src/theme';
 import { createBusiness, listBusinesses } from '../../src/api/business';
@@ -73,6 +74,7 @@ export default function ConnectScreen() {
   const [businessName, setBusinessName] = useState(business?.name ?? '');
   const [connecting, setConnecting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const fbContinue = usePressFeedback();
 
   useEffect(() => {
     (async () => {
@@ -291,11 +293,12 @@ export default function ConnectScreen() {
         </Pressable>
         <Text style={styles.stepText}>1 / 5</Text>
         <Pressable
-          style={styles.continueBtn}
+          style={[styles.continueBtn, fbContinue.feedback]}
           onPress={async () => {
             await ensureBusiness();
             router.push('/(onboarding)/mode');
           }}
+          {...fbContinue.bind}
         >
           <Text style={styles.continueText}>Continue</Text>
           <Icon as={ArrowRight} size={18} color="#FFF" />

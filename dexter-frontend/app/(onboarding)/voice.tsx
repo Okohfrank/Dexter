@@ -26,6 +26,7 @@ import {
   Lightbulb,
 } from 'lucide-react-native';
 import { Icon } from '../../src/components/rnr/icon';
+import { usePressFeedback } from '../../src/lib/animate';
 import {
   useAudioRecorder,
   RecordingPresets,
@@ -91,6 +92,10 @@ export default function VoiceInterviewScreen() {
 
   const streamRef = useRef<ReturnType<typeof connectVoiceStream> | null>(null);
   const voiceRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const fbReview = usePressFeedback();
+  const fbModalSend = usePressFeedback();
+  const fbMic = usePressFeedback();
+  const fbDone = usePressFeedback();
 
   // Animated values for fluid glowing Orb
   const orbScale = useRef(new Animated.Value(1)).current;
@@ -375,7 +380,7 @@ export default function VoiceInterviewScreen() {
               <Text style={styles.brainReadyTitle}>Business Brain Distilled!</Text>
             </View>
             <Text style={styles.brainReadyText}>{transcriptPreview}</Text>
-            <Pressable style={styles.reviewBrainBtn} onPress={handleProceedToBrain}>
+            <Pressable style={[styles.reviewBrainBtn, fbReview.feedback]} onPress={handleProceedToBrain} {...fbReview.bind}>
               <Text style={styles.reviewBrainText}>Review Strategy & Brain</Text>
               <Icon as={ArrowUp} size={16} color="#FFFFFF" />
             </Pressable>
@@ -418,8 +423,9 @@ export default function VoiceInterviewScreen() {
           </Pressable>
 
           <Pressable
-            style={[styles.dockMainMicBtn, isMuted && styles.dockMainMicBtnMuted]}
+            style={[styles.dockMainMicBtn, isMuted && styles.dockMainMicBtnMuted, fbMic.feedback]}
             onPress={toggleMute}
+            {...fbMic.bind}
           >
             <Icon
               as={isMuted ? MicOff : Mic}
@@ -428,7 +434,7 @@ export default function VoiceInterviewScreen() {
             />
           </Pressable>
 
-          <Pressable style={styles.dockDoneBtn} onPress={handleFinish}>
+          <Pressable style={[styles.dockDoneBtn, fbDone.feedback]} onPress={handleFinish} {...fbDone.bind}>
             <Icon as={Check} size={22} color="#FFFFFF" />
           </Pressable>
         </View>
@@ -458,9 +464,10 @@ export default function VoiceInterviewScreen() {
               autoFocus
             />
             <Pressable
-              style={styles.modalSendBtn}
+              style={[styles.modalSendBtn, fbModalSend.feedback]}
               onPress={() => handleSendSpeech()}
               disabled={!userSpeechInput.trim()}
+              {...fbModalSend.bind}
             >
               <Icon as={ArrowUp} size={18} color="#FFFFFF" />
               <Text style={styles.modalSendText}>Send to Dexter</Text>

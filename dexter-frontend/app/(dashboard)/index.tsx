@@ -14,7 +14,10 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Svg, Polyline, Polygon } from 'react-native-svg';
 import { BlurView } from 'expo-blur';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { dark, fonts, spacing, radii, typography } from '../../src/theme';
+import { AnimatedSegmented } from '../../src/components/rnr/segmented';
+import { usePressFeedback } from '../../src/lib/animate';
 import { useAuthStore } from '../../src/api/client';
 import { useAppStore } from '../../src/store/app';
 import * as WebBrowser from 'expo-web-browser';
@@ -101,6 +104,10 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [generatingQuick, setGeneratingQuick] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [ctaPressed, setCtaPressed] = useState(false);
+  const fbConnect = usePressFeedback();
+  const fbDraft = usePressFeedback();
+  const fbPublish = usePressFeedback();
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -396,13 +403,15 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.heroDivider} />
             <Pressable
-              style={styles.heroCta}
+              style={[styles.heroCta, ctaPressed && styles.heroCtaPressed]}
               onPress={() => router.push('/(dashboard)/ai')}
+              onPressIn={() => setCtaPressed(true)}
+              onPressOut={() => setCtaPressed(false)}
               accessibilityRole="button"
               accessibilityLabel="Ask Dexter to draft a post"
             >
               <Text style={styles.heroCtaText}>Draft a post</Text>
-              <Ionicons name="arrow-forward" size={14} color={dark.accent} />
+              <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
             </Pressable>
           </View>
         </View>
@@ -440,9 +449,10 @@ export default function DashboardScreen() {
               Connect your account so Dexter can draft and publish thought-leadership posts for you.
             </Text>
             <Pressable
-              style={[styles.accentBtn, connecting && { opacity: 0.6 }]}
+              style={[styles.accentBtn, connecting && { opacity: 0.6 }, fbConnect.feedback]}
               onPress={handleQuickConnect}
               disabled={connecting}
+              {...fbConnect.bind}
             >
               {connecting ? (
                 <ActivityIndicator size="small" color="#FFF" />
@@ -454,34 +464,48 @@ export default function DashboardScreen() {
         )}
 
         {/* ── Segmented Tabs ──────────────────────────── */}
-        <View style={styles.segTrack}>
-          {(
-            [
-              { key: 'planned' as Tab, label: 'Upcoming', icon: 'calendar' },
-              { key: 'published' as Tab, label: 'Published', icon: 'checkmark-done' },
-              { key: 'learned' as Tab, label: 'Insights', icon: 'bulb' },
-            ]
-          ).map((seg) => {
-            const active = seg.key === tab;
-            return (
-              <Pressable
-                key={seg.key}
-                style={[styles.seg, active && styles.segActive]}
-                onPress={() => setTab(seg.key)}
-              >
+        <AnimatedSegmented
+          options={[
+            {
+              key: 'planned',
+              label: 'Upcoming',
+              icon: (
                 <Ionicons
-                  name={seg.icon as any}
+                  name="calendar"
                   size={14}
-                  color={active ? dark.ink : dark.inkSoft}
+                  color={tab === 'planned' ? dark.ink : dark.inkSoft}
                   style={{ marginRight: 6 }}
                 />
-                <Text style={[styles.segLabel, active && styles.segLabelActive]}>
-                  {seg.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+              ),
+            },
+            {
+              key: 'published',
+              label: 'Published',
+              icon: (
+                <Ionicons
+                  name="checkmark-done"
+                  size={14}
+                  color={tab === 'published' ? dark.ink : dark.inkSoft}
+                  style={{ marginRight: 6 }}
+                />
+              ),
+            },
+            {
+              key: 'learned',
+              label: 'Insights',
+              icon: (
+                <Ionicons
+                  name="bulb"
+                  size={14}
+                  color={tab === 'learned' ? dark.ink : dark.inkSoft}
+                  style={{ marginRight: 6 }}
+                />
+              ),
+            },
+          ]}
+          selected={tab}
+          onChange={(key) => setTab(key as Tab)}
+        />
 
         {loading && !refreshing && (
           <ActivityIndicator color={dark.accent} style={{ marginTop: spacing.xl }} />
@@ -489,7 +513,11 @@ export default function DashboardScreen() {
 
         {/* ── Planned Posts Tab ───────────────────────── */}
         {tab === 'planned' && (
-          <View style={styles.feedContainer}>
+          <Animated.View
+            key="planned"
+            entering={FadeInUp.duration(220)}
+            style={styles.feedContainer}
+          >
             {scheduled.length === 0 && !loading ? (
               <View style={[styles.card, styles.emptyCard]}>
                 <Ionicons name="calendar-outline" size={34} color={dark.inkFaint} />
@@ -497,7 +525,7 @@ export default function DashboardScreen() {
                 <Text style={styles.emptySubtitle}>
                   No posts scheduled yet — ask Dexter to draft one now.
                 </Text>
-                <Pressable style={styles.accentBtn} onPress={handleQuickGenerate} disabled={generatingQuick}>
+                <Pressable style={[styles.accentBtn, fbDraft.feedback]} onPress={handleQuickGenerate} disabled={generatingQuick} {...fbDraft.bind}>
                   {generatingQuick ? (
                     <ActivityIndicator size="small" color="#FFF" />
                   ) : (
@@ -541,7 +569,7 @@ export default function DashboardScreen() {
                       >
                         <Text style={styles.ghostBtnText}>Edit / Swap</Text>
                       </Pressable>
-                      <Pressable style={styles.accentBtnSmall} onPress={() => handlePublishNow(post.id)}>
+                      <Pressable style={[styles.accentBtnSmall, fbPublish.feedback]} onPress={() => handlePublishNow(post.id)} {...fbPublish.bind}>
                         <Text style={styles.accentBtnTextSmall}>Publish now</Text>
                       </Pressable>
                     </View>
@@ -549,12 +577,16 @@ export default function DashboardScreen() {
                 </View>
               ))
             )}
-          </View>
+          </Animated.View>
         )}
 
         {/* ── Published Posts Tab ─────────────────────── */}
         {tab === 'published' && (
-          <View style={styles.feedContainer}>
+          <Animated.View
+            key="published"
+            entering={FadeInUp.duration(220)}
+            style={styles.feedContainer}
+          >
             {published.length === 0 && !loading ? (
               <View style={[styles.card, styles.emptyCard]}>
                 <Ionicons name="checkmark-done-circle-outline" size={34} color={dark.inkFaint} />
@@ -577,12 +609,16 @@ export default function DashboardScreen() {
                 </View>
               ))
             )}
-          </View>
+          </Animated.View>
         )}
 
         {/* ── Learned Insights Tab ────────────────────── */}
         {tab === 'learned' && (
-          <View style={styles.feedContainer}>
+          <Animated.View
+            key="learned"
+            entering={FadeInUp.duration(220)}
+            style={styles.feedContainer}
+          >
             {learnings.length === 0 && !loading ? (
               <View style={[styles.card, styles.emptyCard]}>
                 <Ionicons name="bulb-outline" size={34} color={dark.inkFaint} />
@@ -606,7 +642,7 @@ export default function DashboardScreen() {
                 </View>
               ))
             )}
-          </View>
+          </Animated.View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -749,19 +785,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    backgroundColor: dark.surfaceElevated,
-    borderWidth: 1,
-    borderColor: dark.hairline,
+    gap: 8,
+    backgroundColor: dark.accent,
     borderRadius: 999,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 15,
     marginTop: spacing.md,
+    minHeight: 54,
   },
   heroCtaText: {
     fontFamily: fonts.semibold,
-    fontSize: 13,
-    color: dark.accent,
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
+  heroCtaPressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.85,
   },
 
   // ── Stat strip: tall snap tiles ──
