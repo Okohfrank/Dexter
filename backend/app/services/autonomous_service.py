@@ -10,6 +10,8 @@ from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from app.services.dexter_controller import DexterController
+
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.core.llm import LLMGateway
@@ -53,10 +55,47 @@ class AutonomousContentService:
         self._logger = get_logger(__name__)
         self._gateway = LLMGateway()
 
+    async def generate_from_controller(
+        self,
+        business_id: uuid.UUID,
+        follower_target: int = 1000,
+        current_followers: int = 0,
+    ) -> Optional[ScheduledPost]:
+        """Let the DQN controller decide whether and what to post."""
+        controller = DexterController()
+        decision = await controller.decide(
+            self.db, business_id,
+            follower_target=follower_target,
+            current_followers=current_followers,
+        )
+
+        if not decision.should_post:
+            self._logger.info(
+                "controller_decided_wait",
+                business_id=str(business_id),
+                reason=decision.reason,
+            )
+            return None
+
+        # Map strategy to topic override
+        strategy_topics = {
+            "thought_leadership": "Founder thought leadership, bold opinions, and industry vision",
+            "case_study": "Customer success story, metrics, and real-world impact",
+            "contrarian_take": "Contrarian industry take that challenges conventional wisdom",
+        }
+        topic = strategy_topics.get(decision.strategy, "Founder insights and lessons learned")
+
+        return await self.generate_post_for_business(
+            business_id=business_id,
+            override_topic=topic,
+            recommended_hour=decision.recommended_hour,
+        )
+
     async def generate_post_for_business(
         self,
         business_id: uuid.UUID,
         override_topic: Optional[str] = None,
+        recommended_hour: Optional[int] = None,
     ) -> Optional[ScheduledPost]:
         """
         Generate a single brand-tailored post and schedule it in the database.
@@ -112,9 +151,17 @@ Topic Focus: {override_topic or 'Founder lessons, scaling insights, or future of
 
         # Calculate scheduled time (e.g. 36 hours from now at peak 8:30 AM)
         offset_hours = post_data.get("suggested_time_offset_hours", 36)
-        scheduled_for = datetime.now(timezone.utc) + timedelta(hours=offset_hours)
+        if recommended_hour is not None:
+            # Schedule for the next occurrence of recommended_hour
+            scheduled_for = datetime.now(timezone.utc).replace(
+                hour=recommended_hour, minute=0, second=0, microsecond=0
+            )
+            if scheduled_for <= datetime.now(timezone.utc):
+                scheduled_for += timedelta(days=1)
+        else:
+            scheduled_for = datetime.now(timezone.utc) + timedelta(hours=offset_hours)
 
-        # Auto-generate branded thought-leadership visual card if no media attached
+        # ALWAYS generate a visual — images must be attached to every post
         if not selected_media:
             try:
                 from app.services.image_generation_service import ImageGenerationService
@@ -126,7 +173,26 @@ Topic Focus: {override_topic or 'Founder lessons, scaling insights, or future of
                     brand_name=business.name,
                 )
             except Exception as img_err:
-                self._logger.warning("auto_image_generation_skipped", error=str(img_err))
+                self._logger.warning("image_generation_failed_trying_pollinations", error=str(img_err))
+                # Fallback: generate via Pollinations/Flux
+                try:
+                    image_url = await self._gateway.generate_image_for_post(
+                        post_data.get("topic", business.name)
+                    )
+                    # Store as a lightweight media reference
+                    from app.models.media_asset import MediaAsset
+                    from app.core.enums import MediaType as MType
+                    selected_media = MediaAsset(
+                        business_id=business.id,
+                        file_name=f"auto_{uuid.uuid4().hex[:8]}.jpg",
+                        media_type=MType.IMAGE,
+                        file_url=image_url,
+                        mime_type="image/jpeg",
+                    )
+                    self.db.add(selected_media)
+                    await self.db.flush()
+                except Exception as poll_err:
+                    self._logger.error("all_image_generation_failed", error=str(poll_err))
 
         scheduled_post = ScheduledPost(
             business_id=business.id,
@@ -134,7 +200,7 @@ Topic Focus: {override_topic or 'Founder lessons, scaling insights, or future of
             content_text=post_data["content_text"],
             media_asset_id=selected_media.id if selected_media else None,
             scheduled_for=scheduled_for,
-            status=PostStatus.QUEUED,
+            status=PostStatus.DRAFT,  # Changed: approval_required
             platform_post_type="linkedin",
         )
         self.db.add(scheduled_post)

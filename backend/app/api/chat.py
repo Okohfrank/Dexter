@@ -27,10 +27,20 @@ async def chat_message(
 
     # 2. If brief is finalized and auto_publish is requested, schedule/publish directly
     if response.is_finalized and response.brief and request.auto_publish and request.connected_account_id and current_user:
+        # Determine schedule time: explicit request > AI suggestion > None (immediate)
+        schedule_time = request.scheduled_for
+        if not schedule_time and response.brief.recommended_time:
+            try:
+                from datetime import datetime as dt
+                schedule_time = dt.fromisoformat(response.brief.recommended_time.replace("Z", "+00:00"))
+            except Exception:
+                pass
+
         pub_request = PublishRequest(
             platform=Platform.LINKEDIN,
             content_text=response.brief.content_text,
             connected_account_id=request.connected_account_id,
+            scheduled_for=schedule_time,
         )
         pub_response = await publishing_service.publish(current_user.id, pub_request)
         response.published_post_id = pub_response.post_id

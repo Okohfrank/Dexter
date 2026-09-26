@@ -139,6 +139,7 @@ export type ChatBrief = {
   suggested_hashtags: string[];
   call_to_action?: string | null;
   recommended_time?: string | null;
+  scheduled_for?: string | null;
 };
 
 export type ChatResponse = {
@@ -146,4 +147,18 @@ export type ChatResponse = {
   is_finalized: boolean;
   brief?: ChatBrief | null;
   published_post_id?: string | null;
+  scheduled_for?: string | null;
+};
+
+/** Growth campaign goal for the DQN agent. */
+export type Campaign = {
+  id: string;
+  business_id: string;
+  follower_target: number;
+  current_followers: number;
+  start_date: string;
+  end_date?: string | null;
+  posts_per_week_target: number;
+  autonomy_mode: 'approval_required' | 'full_auto';
+  is_active: boolean;
 };

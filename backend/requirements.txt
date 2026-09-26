@@ -45,3 +45,14 @@ anthropic>=0.28.0
 # Graphics & WebSockets
 pillow>=10.0.0
 websockets>=12.0
+
+# RL Agent
+stable-baselines3>=2.9.0
+gymnasium>=1.3.0
+torch>=2.0.0
+
+# Google Generative AI
+google-genai>=1.0.0
+
+# TTS
+edge-tts>=6.1.0

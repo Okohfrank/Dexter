@@ -9,6 +9,7 @@ from app.models.oauth_token import OAuthToken
 from app.models.media_asset import MediaAsset
 from app.models.post import ScheduledPost, PublishedPost
 from app.models.event_log import EventLog
+from app.models.campaign import Campaign
 
 __all__ = [
     "Base",
@@ -21,4 +22,5 @@ __all__ = [
     "ScheduledPost",
     "PublishedPost",
     "EventLog",
+    "Campaign",
 ]

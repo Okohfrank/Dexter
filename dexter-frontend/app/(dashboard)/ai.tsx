@@ -29,6 +29,7 @@ import {
   Trash2,
   Plus,
   Search,
+  CalendarClock,
 } from "lucide-react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Speech from "expo-speech";
@@ -67,6 +68,45 @@ function buildGreeting(firstName: string): { line1: string; line2: string } {
   const follow =
     GREETING_FOLLOW_UPS[Math.floor(Math.random() * GREETING_FOLLOW_UPS.length)];
   return { line1: `Good ${daypart}, ${firstName}.`, line2: follow };
+}
+
+/**
+ * Converts markdown-style formatting to React Native Text components.
+ * Handles **bold**, *italic*, and strips remaining markdown artifacts.
+ */
+function renderFormattedText(text: string, baseStyle: any) {
+  const parts: React.ReactNode[] = [];
+  // Match **bold**, *italic*, or plain text segments
+  const regex = /\*\*(.+?)\*\*|\*(.+?)\*|([^*]+)/g;
+  let match;
+  let key = 0;
+  while ((match = regex.exec(text)) !== null) {
+    if (match[1]) {
+      // **bold**
+      parts.push(
+        <Text key={key++} style={[baseStyle, { fontWeight: "700" }]}>
+          {match[1]}
+        </Text>
+      );
+    } else if (match[2]) {
+      // *italic*
+      parts.push(
+        <Text key={key++} style={[baseStyle, { fontStyle: "italic" }]}>
+          {match[2]}
+        </Text>
+      );
+    } else if (match[3]) {
+      parts.push(
+        <Text key={key++} style={baseStyle}>
+          {match[3]}
+        </Text>
+      );
+    }
+  }
+  if (parts.length === 0) {
+    return <Text style={baseStyle}>{text}</Text>;
+  }
+  return <Text style={baseStyle}>{parts}</Text>;
 }
 
 /* v2 copilot — Microsoft Copilot app structure (Mobbin ref) on the
@@ -446,7 +486,7 @@ export default function AICopilotScreen() {
               }
               return (
                 <View key={idx} style={styles.assistantBlock}>
-                  <Text style={styles.assistantText}>{m.content}</Text>
+                  {renderFormattedText(m.content, styles.assistantText)}
                   <Pressable
                     style={styles.speakBtn}
                     hitSlop={8}
@@ -476,21 +516,63 @@ export default function AICopilotScreen() {
                   <Text style={styles.briefTitle}>Generated LinkedIn Post Draft</Text>
                 </View>
                 <Text style={styles.briefBody}>{activeBrief.content_text}</Text>
-                <Pressable
-                  style={[styles.briefPublishBtn, fbPublish.feedback]}
-                  onPress={handlePublishBrief}
-                  disabled={publishing}
-                  {...fbPublish.bind}
-                >
-                  {publishing ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                  ) : (
-                    <>
-                      <Icon as={Send} size={16} color="#FFFFFF" />
-                      <Text style={styles.briefPublishBtnText}>Publish to LinkedIn Now</Text>
-                    </>
-                  )}
-                </Pressable>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <Pressable
+                    style={[styles.briefPublishBtn, { flex: 1 }, fbPublish.feedback]}
+                    onPress={handlePublishBrief}
+                    disabled={publishing}
+                    {...fbPublish.bind}
+                  >
+                    {publishing ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <>
+                        <Icon as={Send} size={16} color="#FFFFFF" />
+                        <Text style={styles.briefPublishBtnText}>Publish Now</Text>
+                      </>
+                    )}
+                  </Pressable>
+                  <Pressable
+                    style={[styles.briefPublishBtn, { flex: 1, backgroundColor: dark.card }]}
+                    onPress={() => {
+                      if (!activeBrief) return;
+                      const linkedin = connectedAccounts.find((a) => a.platform === "linkedin");
+                      if (!linkedin) {
+                        Alert.alert("LinkedIn Not Connected", "Connect LinkedIn first.");
+                        return;
+                      }
+                      Alert.alert(
+                        "Schedule Post",
+                        "This post will be queued for the AI-optimized best time. You can adjust the time from the dashboard.",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          {
+                            text: "Schedule",
+                            onPress: async () => {
+                              try {
+                                setPublishing(true);
+                                await publishPost({
+                                  platform: "linkedin",
+                                  content_text: activeBrief.content_text,
+                                  connected_account_id: linkedin.id,
+                                });
+                                Alert.alert("Scheduled!", "Post queued for optimal time. Review it on your dashboard.");
+                                setActiveBrief(null);
+                              } catch (e: any) {
+                                Alert.alert("Error", e.message || "Could not schedule post.");
+                              } finally {
+                                setPublishing(false);
+                              }
+                            },
+                          },
+                        ],
+                      );
+                    }}
+                  >
+                    <Icon as={CalendarClock} size={16} color={dark.accent} />
+                    <Text style={[styles.briefPublishBtnText, { color: dark.accent }]}>Schedule</Text>
+                  </Pressable>
+                </View>
               </View>
             )}
           </ScrollView>
