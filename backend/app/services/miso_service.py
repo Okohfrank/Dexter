@@ -14,7 +14,11 @@ Your goal is to converse naturally with the user to understand what LinkedIn pos
 Instructions:
 1. Conduct a friendly, professional conversation to refine the user's intent.
 2. Ask clarifying questions about the key message, audience, tone, or image attachments if ambiguous.
-3. Once the user's requirement is completely clear and you have crafted a high-converting LinkedIn post, output a JSON block at the very end of your response formatted as follows:
+3. Format your responses as clean, readable conversational text.
+4. Do NOT use markdown formatting like **bold**, *italic*, bullet points with -, or headers with #.
+5. Use plain language with clear line breaks and emoji for emphasis where appropriate.
+6. When you want to emphasize something, use CAPS or emoji instead of asterisks.
+7. Once the user's requirement is completely clear and you have crafted a high-converting LinkedIn post, output a JSON block at the very end of your response formatted as follows:
 
 ```json
 {
@@ -23,12 +27,17 @@ Instructions:
   "content_text": "The complete, ready-to-post LinkedIn content with formatting, line breaks, and emojis",
   "image_url": "optional image url if uploaded by user",
   "suggested_hashtags": ["#Hashtag1", "#Hashtag2"],
-  "call_to_action": "e.g., Share your thoughts in the comments!"
+  "call_to_action": "e.g., Share your thoughts in the comments!",
+  "scheduled_for": null
 }
 ```
 
 If you need more details from the user, set `"is_finalized": false` or do not include the json block.
 Always format LinkedIn copy with strong hooks (first 2 lines), clear line breaks, and actionable points.
+
+IMPORTANT SCHEDULING:
+- If the user mentions a specific time to schedule (e.g. "schedule for Tuesday at 2pm", "post tomorrow morning"), include a "scheduled_for" field in the JSON with an ISO 8601 datetime string.
+- If no time is mentioned, set "scheduled_for" to null.
 """
 
 
@@ -64,6 +73,7 @@ class MisoService:
                         image_url=data.get("image_url"),
                         suggested_hashtags=data.get("suggested_hashtags", []),
                         call_to_action=data.get("call_to_action"),
+                        recommended_time=data.get("scheduled_for"),
                     )
                     clean_reply = ai_reply.split("```json")[0].strip()
                     if not clean_reply:

@@ -78,3 +78,54 @@ async def generate_next_post(
         "content_text": post.content_text,
         "scheduled_for": post.scheduled_for.isoformat() if post.scheduled_for else None,
     }
+
+
+class SetGoalRequest(BaseModel):
+    follower_target: int = Field(ge=100, description="Target follower count")
+    timeline_days: int = Field(default=30, ge=7, le=365, description="Days to reach target")
+    posts_per_week: int = Field(default=4, ge=1, le=14, description="Posts per week")
+    autonomy_mode: str = Field(default="approval_required", description="approval_required or full_auto")
+
+
+@router.post("/{business_id}/set-goal")
+async def set_campaign_goal(
+    business_id: uuid.UUID,
+    payload: SetGoalRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Set or update the growth campaign goal for the DQN agent."""
+    from app.models.campaign import Campaign
+    from sqlalchemy import select
+    from datetime import datetime, timedelta, timezone
+
+    # Deactivate existing campaigns
+    existing = await db.execute(
+        select(Campaign).where(Campaign.business_id == business_id, Campaign.is_active == True)
+    )
+    for camp in existing.scalars().all():
+        camp.is_active = False
+
+    campaign = Campaign(
+        business_id=business_id,
+        follower_target=payload.follower_target,
+        current_followers=0,
+        start_date=datetime.now(timezone.utc),
+        end_date=datetime.now(timezone.utc) + timedelta(days=payload.timeline_days),
+        posts_per_week_target=payload.posts_per_week,
+        autonomy_mode="approval_required",  # Always require approval
+        is_active=True,
+    )
+    db.add(campaign)
+    await db.commit()
+    await db.refresh(campaign)
+
+    return {
+        "status": "success",
+        "campaign_id": str(campaign.id),
+        "follower_target": campaign.follower_target,
+        "timeline_days": payload.timeline_days,
+        "posts_per_week": campaign.posts_per_week_target,
+        "autonomy_mode": campaign.autonomy_mode,
+        "message": f"Campaign set: reach {payload.follower_target} followers in {payload.timeline_days} days",
+    }

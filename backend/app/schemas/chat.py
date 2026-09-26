@@ -2,6 +2,7 @@
 import uuid
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, ConfigDict
+from datetime import datetime
 
 
 class ChatMessage(BaseModel):
@@ -17,6 +18,7 @@ class ChatRequest(BaseModel):
     business_id: Optional[uuid.UUID] = None
     connected_account_id: Optional[uuid.UUID] = None
     auto_publish: bool = False  # If True, automatically publish to LinkedIn once brief is finalized
+    scheduled_for: Optional[datetime] = None  # ADD THIS
 
 
 class LinkedInPostBrief(BaseModel):
