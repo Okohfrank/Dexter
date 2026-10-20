@@ -49,7 +49,7 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "node ./scripts/start.js",
+    "start": "node init && node ./scripts/start.js",
     "android": "node ./scripts/start.js --android",
     "ios": "node ./scripts/start.js --ios",
     "web": "node ./scripts/start.js --web"
